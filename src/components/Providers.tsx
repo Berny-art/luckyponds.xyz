@@ -31,7 +31,7 @@ const hyperliquid = {
 
 const config = getDefaultConfig({
 	appName: "Hyper Frogs",
-	projectId: "YOUR_PROJECT_ID",
+	projectId: process.env.WC_PROJECT_ID ?? 'ID',
 	chains: [hyperliquid],
 	ssr: true,
 });
