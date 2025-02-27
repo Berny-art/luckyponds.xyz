@@ -1,0 +1,389 @@
+{
+    "Backdrop": [
+        {
+            "value": "Hyper",
+            "count": 2222,
+            "rarity_percent": 100.0
+        }
+    ],
+    "Hat": [
+        {
+            "value": "Tadpole",
+            "count": 1,
+            "rarity_percent": 0.05
+        },
+        {
+            "value": "Snapback",
+            "count": 216,
+            "rarity_percent": 9.72
+        },
+        {
+            "value": "Party Hat",
+            "count": 120,
+            "rarity_percent": 5.4
+        },
+        {
+            "value": "Hat",
+            "count": 375,
+            "rarity_percent": 16.88
+        },
+        {
+            "value": "Cycling Cap",
+            "count": 208,
+            "rarity_percent": 9.36
+        },
+        {
+            "value": "Cap",
+            "count": 347,
+            "rarity_percent": 15.62
+        },
+        {
+            "value": "Trapper Hat",
+            "count": 124,
+            "rarity_percent": 5.58
+        },
+        {
+            "value": "Halo",
+            "count": 25,
+            "rarity_percent": 1.13
+        },
+        {
+            "value": "Docker Cap",
+            "count": 107,
+            "rarity_percent": 4.82
+        },
+        {
+            "value": "Wizard Hat",
+            "count": 37,
+            "rarity_percent": 1.67
+        },
+        {
+            "value": "Birthday Hat",
+            "count": 114,
+            "rarity_percent": 5.13
+        },
+        {
+            "value": "Bucket Hat",
+            "count": 224,
+            "rarity_percent": 10.08
+        },
+        {
+            "value": "Loading",
+            "count": 47,
+            "rarity_percent": 2.12
+        },
+        {
+            "value": "Sailor",
+            "count": 150,
+            "rarity_percent": 6.75
+        },
+        {
+            "value": "Chef",
+            "count": 103,
+            "rarity_percent": 4.64
+        },
+        {
+            "value": "Frogspawn",
+            "count": 1,
+            "rarity_percent": 0.05
+        },
+        {
+            "value": "Crown",
+            "count": 23,
+            "rarity_percent": 1.04
+        }
+    ],
+    "Eyes": [
+        {
+            "value": "Tadpole",
+            "count": 1,
+            "rarity_percent": 0.05
+        },
+        {
+            "value": "Dazzled",
+            "count": 106,
+            "rarity_percent": 4.77
+        },
+        {
+            "value": "R.I.P.",
+            "count": 148,
+            "rarity_percent": 6.66
+        },
+        {
+            "value": "Redacted",
+            "count": 27,
+            "rarity_percent": 1.22
+        },
+        {
+            "value": "Big Confused",
+            "count": 114,
+            "rarity_percent": 5.13
+        },
+        {
+            "value": "Lazy",
+            "count": 85,
+            "rarity_percent": 3.83
+        },
+        {
+            "value": "Sides",
+            "count": 139,
+            "rarity_percent": 6.26
+        },
+        {
+            "value": "Big Split",
+            "count": 90,
+            "rarity_percent": 4.05
+        },
+        {
+            "value": "Saturated",
+            "count": 136,
+            "rarity_percent": 6.12
+        },
+        {
+            "value": "Disapproved",
+            "count": 113,
+            "rarity_percent": 5.09
+        },
+        {
+            "value": "Open",
+            "count": 148,
+            "rarity_percent": 6.66
+        },
+        {
+            "value": "Squeezed",
+            "count": 141,
+            "rarity_percent": 6.35
+        },
+        {
+            "value": "Asian",
+            "count": 45,
+            "rarity_percent": 2.03
+        },
+        {
+            "value": "Wavey",
+            "count": 150,
+            "rarity_percent": 6.75
+        },
+        {
+            "value": "Rekt",
+            "count": 137,
+            "rarity_percent": 6.17
+        },
+        {
+            "value": "Big Squeezed",
+            "count": 128,
+            "rarity_percent": 5.76
+        },
+        {
+            "value": "Wtf",
+            "count": 59,
+            "rarity_percent": 2.66
+        },
+        {
+            "value": "Bruised",
+            "count": 33,
+            "rarity_percent": 1.49
+        },
+        {
+            "value": "Sigh",
+            "count": 127,
+            "rarity_percent": 5.72
+        },
+        {
+            "value": "Frogspawn",
+            "count": 1,
+            "rarity_percent": 0.05
+        },
+        {
+            "value": "Alien",
+            "count": 58,
+            "rarity_percent": 2.61
+        },
+        {
+            "value": "Confused",
+            "count": 133,
+            "rarity_percent": 5.99
+        },
+        {
+            "value": "Nouns",
+            "count": 24,
+            "rarity_percent": 1.08
+        },
+        {
+            "value": "Sunglasses",
+            "count": 19,
+            "rarity_percent": 0.86
+        },
+        {
+            "value": "Cyborg",
+            "count": 36,
+            "rarity_percent": 1.62
+        },
+        {
+            "value": "Laser",
+            "count": 24,
+            "rarity_percent": 1.08
+        }
+    ],
+    "Mouth": [
+        {
+            "value": "Tadpole",
+            "count": 1,
+            "rarity_percent": 0.05
+        },
+        {
+            "value": "Frog",
+            "count": 292,
+            "rarity_percent": 13.14
+        },
+        {
+            "value": "Chewing",
+            "count": 297,
+            "rarity_percent": 13.37
+        },
+        {
+            "value": "Lipped",
+            "count": 310,
+            "rarity_percent": 13.95
+        },
+        {
+            "value": "Air Pockets",
+            "count": 354,
+            "rarity_percent": 15.93
+        },
+        {
+            "value": "Tongue",
+            "count": 308,
+            "rarity_percent": 13.86
+        },
+        {
+            "value": "Open",
+            "count": 292,
+            "rarity_percent": 13.14
+        },
+        {
+            "value": "Ribbit",
+            "count": 279,
+            "rarity_percent": 12.56
+        },
+        {
+            "value": "Smoker",
+            "count": 88,
+            "rarity_percent": 3.96
+        },
+        {
+            "value": "Frogspawn",
+            "count": 1,
+            "rarity_percent": 0.05
+        }
+    ],
+    "Body": [
+        {
+            "value": "Tadpole",
+            "count": 1,
+            "rarity_percent": 0.05
+        },
+        {
+            "value": "Hype",
+            "count": 294,
+            "rarity_percent": 13.23
+        },
+        {
+            "value": "Frogger",
+            "count": 337,
+            "rarity_percent": 15.17
+        },
+        {
+            "value": "Big",
+            "count": 412,
+            "rarity_percent": 18.54
+        },
+        {
+            "value": "Bitcoin Maxi",
+            "count": 108,
+            "rarity_percent": 4.86
+        },
+        {
+            "value": "Wealthy",
+            "count": 251,
+            "rarity_percent": 11.3
+        },
+        {
+            "value": "Corporate",
+            "count": 83,
+            "rarity_percent": 3.74
+        },
+        {
+            "value": "Normal",
+            "count": 333,
+            "rarity_percent": 14.99
+        },
+        {
+            "value": "Priest",
+            "count": 90,
+            "rarity_percent": 4.05
+        },
+        {
+            "value": "Shirt",
+            "count": 312,
+            "rarity_percent": 14.04
+        },
+        {
+            "value": "Frogspawn",
+            "count": 1,
+            "rarity_percent": 0.05
+        }
+    ],
+    "Feet": [
+        {
+            "value": "Tadpole",
+            "count": 1,
+            "rarity_percent": 0.05
+        },
+        {
+            "value": "Sharp",
+            "count": 330,
+            "rarity_percent": 14.85
+        },
+        {
+            "value": "Dots",
+            "count": 307,
+            "rarity_percent": 13.82
+        },
+        {
+            "value": "Big Feet",
+            "count": 381,
+            "rarity_percent": 17.15
+        },
+        {
+            "value": "Wet",
+            "count": 124,
+            "rarity_percent": 5.58
+        },
+        {
+            "value": "Flat Toes",
+            "count": 346,
+            "rarity_percent": 15.57
+        },
+        {
+            "value": "Flat",
+            "count": 316,
+            "rarity_percent": 14.22
+        },
+        {
+            "value": "Pointy",
+            "count": 317,
+            "rarity_percent": 14.27
+        },
+        {
+            "value": "Frogspawn",
+            "count": 1,
+            "rarity_percent": 0.05
+        },
+        {
+            "value": "Skater",
+            "count": 99,
+            "rarity_percent": 4.46
+        }
+    ]
+}
