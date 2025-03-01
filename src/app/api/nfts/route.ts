@@ -49,8 +49,6 @@ export async function GET(req: Request) {
 
     const query: Record<string, string | number | { $in: number[] }> = {};
 
-    // ✅ Search by multiple Token IDs (comma-separated)
-    console.log("Search Token IDs:", searchTokenIds); // Debug
     if (searchTokenIds) {
       const decodedSearchTokenIds = decodeURIComponent(searchTokenIds);
     
@@ -93,7 +91,6 @@ export async function GET(req: Request) {
     }
 
     // ✅ Fetch paginated NFTs with sorting
-    console.log("Final MongoDB Query:", JSON.stringify(query, null, 2)); // ✅ Debugging log
     const nfts = await nftsCollection
       .find(query) // ✅ Ensure this is applied
       .sort({ [sortBy]: sortOrder })

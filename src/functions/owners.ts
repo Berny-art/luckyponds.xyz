@@ -7,31 +7,30 @@ export const fetchOwnerById = async (nftId: number) => {
 	return data.owner;
 };
 
-export const fetchTokensByAddress = async (
-	walletAddress: string,
-	contractAddress: string,
-): Promise<string> => {
+export const fetchTokensByOwner = async (
+	contract: string,
+	owner: string,
+	start: number,
+	end: number,
+) => {
 	try {
-		const response = await fetch(
-			`https://hyperliquid.cloud.blockscout.com/api/v2/addresses/${walletAddress}/nft?type=ERC-721%2CERC-404%2CERC-1155`,
+		const res = await fetch(
+			`/api/getTokensByOwner?contract=${contract}&owner=${owner}&start=${start}&end=${end}`,
 		);
-		if (!response.ok) {
-			throw new Error(`Failed to fetch NFTs for ${walletAddress}`);
+		if (!res.ok) {
+			throw new Error(`Error: ${res.status} ${res.statusText}`);
 		}
-		const data = await response.json();
-		const tokens = data.items.filter(
-			(item: { token: { address: string } }) =>
-				item.token.address.toLowerCase() === contractAddress.toLowerCase(),
-		);
-		if (tokens.length > 0) {
-			const tokenIds = tokens
-				.map((token: { id: string }) => token.id)
-				.join(",");
-			return tokenIds;
+
+		const data = await res.json();
+
+		if (!data.ownedTokens || data.ownedTokens.length === 0) {
+			return "No tokens owned";
 		}
-		return "";
+
+		// Convert array to comma-separated string
+		return data.ownedTokens.join(",");
 	} catch (error) {
-		console.error("Error fetching tokens:", error);
-		return "";
+		console.error("Failed to fetch tokens:", error);
+		return "Error fetching tokens";
 	}
 };

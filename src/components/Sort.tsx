@@ -10,7 +10,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useAccount } from "wagmi";
-import { fetchTokensByAddress } from "@/functions/owners";
+import { fetchTokensByOwner } from "@/functions/owners";
 
 export default function Sort() {
 	const {
@@ -39,7 +39,7 @@ export default function Sort() {
 	const handleViewMyFrogs = async () => {
 		if (address && contractAddress) {
 			try {
-				const tokens = await fetchTokensByAddress(address, contractAddress);
+				const tokens = await fetchTokensByOwner(contractAddress, address, 1, 2222);
 				if (tokens) {
 					setSearchInput(tokens);
 					setSearchTokenId(tokens);
@@ -91,10 +91,9 @@ export default function Sort() {
 			{isConnected && address && contractAddress && (
 				<Button
 					onClick={handleViewMyFrogs}
-					className="flex flex-col gap-0 bg-primary-200 hover:bg-primary-200/70 text-secondary-950 w-full font-bold uppercase text-md py-6"
+					className="bg-primary-200 hover:bg-primary-200/70 text-secondary-950 w-full font-bold uppercase text-md py-6"
 				>
 					View my Frogs 
-          <span className="text-xs text-secondary-950/50 underline">Could show not all owned frogs</span>
 				</Button>
 			)}
 			<Button
