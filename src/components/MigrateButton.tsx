@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { useWalletClient, useAccount, useSwitchChain } from "wagmi";
 import { claimToken } from "@/functions/claimToken";
@@ -15,39 +15,21 @@ interface MigrateFrogsButtonProps {
 
 const REQUIRED_CHAIN_ID = Number(process.env.NEXT_PUBLIC_CHAIN_ID);
 
-const MigrateFrogsButton = ({ tokenIds = [], fetchUserTokens = false }: MigrateFrogsButtonProps) => {
+const MigrateFrogsButton = ({
+	tokenIds = [],
+	fetchUserTokens = false,
+}: MigrateFrogsButtonProps) => {
 	const [processing, setProcessing] = useState(false);
-	const [userTokens, setUserTokens] = useState<number[]>([]);
 	const { data: walletClient } = useWalletClient();
 	const { address, isConnected, chainId } = useAccount();
-  const { switchChainAsync } = useSwitchChain();
-
-	const migrationTokenIds = fetchUserTokens ? userTokens : tokenIds;
-	const isSingleToken = migrationTokenIds.length === 1;
-
-	useEffect(() => {
-		const fetchUserOwnedTokens = async () => {
-			if (!address || !fetchUserTokens || userTokens.length) return;
-			try {
-				const contractAddress = process.env.NEXT_PUBLIC_CONTRACT_ADDRESS;
-				if (!contractAddress) throw new Error("Contract address not set.");
-				const tokens = await fetchTokensByOwner(contractAddress, address, 1, 2222);
-				setUserTokens(tokens.slice(0, 20));
-			} catch (error) {
-				console.error("Failed to fetch user tokens:", error);
-				toast.error("Failed to fetch your Frogs.");
-			}
-		};
-		fetchUserOwnedTokens();
-	}, [address, fetchUserTokens, userTokens.length]);
+	const { switchChainAsync } = useSwitchChain();
 
 	const handleMigrate = async () => {
 		if (!walletClient) {
 			toast.error("Wallet not connected");
 			return;
 		}
-    console.log({chainId, REQUIRED_CHAIN_ID});
-    if (chainId !== REQUIRED_CHAIN_ID) {
+		if (chainId !== REQUIRED_CHAIN_ID) {
 			try {
 				await switchChainAsync({ chainId: REQUIRED_CHAIN_ID });
 				toast.success("Network switched!");
@@ -57,31 +39,53 @@ const MigrateFrogsButton = ({ tokenIds = [], fetchUserTokens = false }: MigrateF
 				return;
 			}
 		}
-		if (migrationTokenIds.length === 0) {
-			toast.error("No tokens provided for migration");
-			return;
-		}
 
 		setProcessing(true);
 
 		try {
+			let migrationTokenIds = tokenIds;
+
+			if (fetchUserTokens) {
+				if (!address) throw new Error("Wallet not connected.");
+				const contractAddress = process.env.NEXT_PUBLIC_CONTRACT_ADDRESS;
+				if (!contractAddress) throw new Error("Contract address not set.");
+
+				const tokens = await fetchTokensByOwner(
+					contractAddress,
+					address,
+					1,
+					2222,
+				);
+				migrationTokenIds = tokens.split(",").filter(Boolean).map(Number);
+
+				if (migrationTokenIds.length === 0) {
+					toast.error("No tokens found to migrate.");
+					setProcessing(false);
+					return;
+				}
+			}
+
 			await claimToken(migrationTokenIds);
 			toast.success("Migration complete", {
-				description: `${migrationTokenIds.length} Frog${migrationTokenIds.length > 1 ? "s" : ""} successfully migrated.`,
+				description: `${migrationTokenIds.length} Frog${
+					migrationTokenIds.length > 1 ? "s" : ""
+				} successfully migrated.`,
 			});
 		} catch (error) {
 			console.error("Migration error:", error);
 
 			if (
 				error instanceof UserRejectedRequestError ||
-				(error instanceof Error && error.message.toLowerCase().includes("user rejected"))
+				(error instanceof Error &&
+					error.message.toLowerCase().includes("user rejected"))
 			) {
 				toast.error("Migration cancelled", {
 					description: "You rejected the transaction.",
 				});
 			} else {
 				toast.error("Migration failed", {
-					description: error instanceof Error ? error.message : "Unknown error occurred.",
+					description:
+						error instanceof Error ? error.message : "Unknown error occurred.",
 				});
 			}
 		}
@@ -92,16 +96,18 @@ const MigrateFrogsButton = ({ tokenIds = [], fetchUserTokens = false }: MigrateF
 	return (
 		<Button
 			onClick={handleMigrate}
-			disabled={processing || migrationTokenIds.length === 0 || !isConnected}
+			disabled={processing || !isConnected}
 			className="bg-blue-400 hover:bg-blue-400/70 text-secondary-950 w-full font-bold uppercase text-md py-6"
 		>
 			{processing
 				? "Processing..."
-				: migrationTokenIds.length === 0
-				? "No Frogs to Migrate"
-				: isSingleToken
-				? "Migrate my Frog"
-				: "Migrate my Frogs"}
+				: fetchUserTokens
+					? "Migrate my Frogs"
+					: tokenIds.length === 0
+						? "No Frogs to Migrate"
+						: tokenIds.length === 1
+							? "Migrate my Frog"
+							: "Migrate my Frogs"}
 		</Button>
 	);
 };
