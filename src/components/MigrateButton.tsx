@@ -23,6 +23,7 @@ const MigrateFrogsButton = ({
 	const { data: walletClient } = useWalletClient();
 	const { address, isConnected, chainId } = useAccount();
 	const { switchChainAsync } = useSwitchChain();
+	const contractAddress = process.env.NEXT_PUBLIC_CONTRACT_ADDRESS;
 
 	const handleMigrate = async () => {
 		if (!walletClient) {
@@ -47,7 +48,6 @@ const MigrateFrogsButton = ({
 
 			if (fetchUserTokens) {
 				if (!address) throw new Error("Wallet not connected.");
-				const contractAddress = process.env.NEXT_PUBLIC_CONTRACT_ADDRESS;
 				if (!contractAddress) throw new Error("Contract address not set.");
 
 				const tokens = await fetchTokensByOwner(
@@ -56,7 +56,17 @@ const MigrateFrogsButton = ({
 					1,
 					2222,
 				);
-				migrationTokenIds = tokens.split(",").filter(Boolean).map(Number);
+
+				if (!tokens) {
+					toast.error("No tokens found to migrate.");
+					setProcessing(false);
+					return;
+				}
+
+				migrationTokenIds = tokens
+					.split(",")
+					.filter(Boolean)
+					.map(Number);
 
 				if (migrationTokenIds.length === 0) {
 					toast.error("No tokens found to migrate.");
