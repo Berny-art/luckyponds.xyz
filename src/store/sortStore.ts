@@ -6,6 +6,8 @@ type SortState = {
   searchTokenId: string;
   traitFilters: { [traitType: string]: string[] };
   page: number;
+  showMigratedFrogs: boolean;
+  setShowMigratedFrogs: (show: boolean) => void;
   setSortBy: (sortBy: "rank" | "id") => void;
   setSortOrder: (sortOrder: "ASC" | "DESC") => void;
   setSearchTokenId: (tokenId: string) => void;
@@ -20,6 +22,8 @@ export const useSortStore = create<SortState>((set) => ({
   searchTokenId: "",
   traitFilters: {},
   page: 1,
+  showMigratedFrogs: false,
+  setShowMigratedFrogs: (show) => set({ showMigratedFrogs: show, page: 1 }),
   setSortBy: (sortBy) => set({ sortBy, page: 1 }),
   setSortOrder: (sortOrder) => set({ sortOrder, page: 1 }),
   setSearchTokenId: (tokenId) => set({ searchTokenId: tokenId, page: 1 }),
@@ -50,5 +54,6 @@ export const useSortStore = create<SortState>((set) => ({
       searchTokenId: "",
       traitFilters: {},
       page: 1,
+      showMigratedFrogs: false,
     }),
 }));
