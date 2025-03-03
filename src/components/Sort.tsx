@@ -9,7 +9,7 @@ import {
 } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-// import { Switch } from "@/components/ui/switch";
+import { Switch } from "@/components/ui/switch";
 import { useAccount } from "wagmi";
 import { fetchTokensByOwner } from "@/functions/owners";
 import MigrateFrogsButton from "./MigrateButton";
@@ -23,14 +23,16 @@ export default function Sort() {
 		setSortBy,
 		setSortOrder,
 		setSearchTokenId,
-		// setShowMigratedFrogs,
+		setShowMigratedFrogs,
 		reset,
 	} = useSortStore();
 
 	const [searchInput, setSearchInput] = useState(searchTokenId);
 	const [processing, setProcessing] = useState(false);
+	const [hasOldTokens, setHasOldTokens] = useState(false);
+	const [hasMigratedTokens, setHasMigratedTokens] = useState(false);
 
-	const { address, isConnected } = useAccount();
+	const { address } = useAccount();
 
 	const oldContractAddress = process.env.NEXT_PUBLIC_CONTRACT_ADDRESS;
 	const migrationContractAddress =
@@ -48,11 +50,43 @@ export default function Sort() {
 		return () => clearTimeout(delayDebounce);
 	}, [searchInput, setSearchTokenId]);
 
+	useEffect(() => {
+		if (address && oldContractAddress) {
+			const fetchOldTokens = async () => {
+				const tokens = await fetchTokensByOwner(
+					oldContractAddress,
+					address,
+					1,
+					2222,
+				);
+				setHasOldTokens(tokens.length > 0);
+			};
+			fetchOldTokens();
+		}
+		if (address && migrationContractAddress) {
+			const fetchMigratedTokens = async () => {
+				const tokens = await fetchTokensByOwner(
+					migrationContractAddress,
+					address,
+					1,
+					2222,
+				);
+				setHasMigratedTokens(tokens.length > 0);
+			};
+			fetchMigratedTokens();
+		}
+	}, [address, oldContractAddress, migrationContractAddress]);
+
 	const handleViewMyFrogs = async () => {
 		if (address && contractAddress) {
 			setProcessing(true);
 			try {
-				const tokens = await fetchTokensByOwner(contractAddress, address, 1, 2222);
+				const tokens = await fetchTokensByOwner(
+					contractAddress,
+					address,
+					1,
+					2222,
+				);
 				if (tokens) {
 					setSearchInput(tokens.toString());
 					setSearchTokenId(tokens.toString());
@@ -66,17 +100,7 @@ export default function Sort() {
 
 	return (
 		<div className="flex flex-col items-center justify-center w-full gap-4">
-
-			{/* <div className="flex items-center gap-2">
-				<Switch
-					checked={showMigratedFrogs}
-					onCheckedChange={setShowMigratedFrogs}
-				/>
-				<span className="text-primary-200 font-bold uppercase">
-					Show Migrated Frogs
-				</span>
-			</div> */}
-
+			
 			<div className="flex items-center justify-center w-full gap-2">
 				<Select
 					value={sortBy}
@@ -114,18 +138,42 @@ export default function Sort() {
 				/>
 			</div>
 
-			{isConnected && address && contractAddress && (
+			<div className="flex w-full items-center gap-2">
+				<Switch
+					checked={showMigratedFrogs}
+					onCheckedChange={setShowMigratedFrogs}
+					className="data-[state=checked]:bg-drip-300 data-[state=unchecked]:bg-primary-200/50 [&>span]:bg-secondary-950"
+				/>
+				<span className="text-primary-200 font-bold uppercase">
+					Show Migrated
+				</span>
+			</div>
+
+			{address && (
 				<Button
 					onClick={handleViewMyFrogs}
-					disabled={processing}
+					disabled={processing || (showMigratedFrogs && !hasMigratedTokens) || (!showMigratedFrogs && !hasOldTokens)}
 					className="bg-primary-200 hover:bg-primary-200/70 text-secondary-950 w-full font-bold uppercase text-md py-6"
 				>
-					{processing ? "Loading..." : "View my Frogs"}
+					{processing
+						? "Loading..."
+						: (showMigratedFrogs && hasMigratedTokens) || (!showMigratedFrogs && hasOldTokens)
+						? "View my Frogs"
+						: "No Frogs Owned"}
 				</Button>
 			)}
 
-			{isConnected && (
-				<MigrateFrogsButton fetchUserTokens={!showMigratedFrogs} />
+			{!showMigratedFrogs && hasOldTokens && (
+				<>
+					<Button
+						onClick={handleViewMyFrogs}
+						disabled={processing}
+						className="bg-primary-200 hover:bg-primary-200/70 text-secondary-950 w-full font-bold uppercase text-md py-6"
+					>
+						{processing ? "Loading..." : "View my Frogs"}
+					</Button>
+					<MigrateFrogsButton fetchUserTokens />
+				</>
 			)}
 
 			<Button

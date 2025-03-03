@@ -24,7 +24,7 @@ export const fetchTokensByOwner = async (
 		const data = await res.json();
 
 		if (!data.ownedTokens || data.ownedTokens.length === 0) {
-			return "No tokens owned";
+			return null;
 		}
 
 		// Convert array to comma-separated string
