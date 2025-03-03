@@ -3,6 +3,7 @@ import { Roboto_Mono } from "next/font/google";
 import "./globals.css";
 import Providers from "@/components/Providers";
 import Header from "@/components/Header";
+import { Toaster } from "@/components/ui/sonner"
 
 const RobotoMono = Roboto_Mono({
 	variable: "--font-roboto-mono",
@@ -60,6 +61,14 @@ export default function RootLayout({
 					<Header />
 					{children}
 				</Providers>
+				<Toaster  
+					expand={true} 
+					toastOptions={{classNames: {
+						toast: '!bg-primary-100 !text-secondary-950 !border-none !shadow-lg',
+						title: '!font-bold !font-roboto-mono text-sm',
+						description: '!font-mono !text-sm !text-secondary-950'
+					} }}
+				/>
 			</body>
 		</html>
 	);

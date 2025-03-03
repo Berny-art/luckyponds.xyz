@@ -5,6 +5,8 @@ import { useQuery } from "@tanstack/react-query";
 import { fetchOwnerById } from "@/functions/owners";
 import { truncateAddress } from "@/functions/trunacteAddress";
 import { ExternalLink } from "lucide-react";
+import MigrateFrogsButton from "./MigrateButton";
+import { useAccount } from "wagmi";
 
 const NFTDialogContent = ({ nft }: { nft: NFTMetadata }) => {
 
@@ -13,6 +15,8 @@ const NFTDialogContent = ({ nft }: { nft: NFTMetadata }) => {
 		queryFn: () => fetchOwnerById(nft.nft_id),
 		enabled: !!nft.nft_id, // Ensures query only runs when nftId is available
 	});
+
+	const { address, isConnected } = useAccount();
 
 	const ownerAddress = isLoading ? "Searching..." : error ? 'Not found' : owner;
 
@@ -90,6 +94,11 @@ const NFTDialogContent = ({ nft }: { nft: NFTMetadata }) => {
 				<div className="flex w-full items-center justify-between font-mono pb-4 md:pb-8">
 					<p>Owner:</p>{" "}
 					<a href={`https://hyperliquid.cloud.blockscout.com/address/${ownerAddress}?tab=tokens_nfts`} className="flex items-center gap-2 text-secondary-600 underline truncate">{truncateAddress(ownerAddress)} <ExternalLink size={16} /></a>
+				</div>
+				<div className="flex items-center justify-end pb-4 md:pb-8">
+					{isConnected && address && (
+						<MigrateFrogsButton tokenIds={[nft.nft_id]} />
+					)}
 				</div>
 				<div className="flex w-full flex-wrap gap-2 items-center justify-between pb-6">
 					<Button
