@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { useWalletClient, useAccount } from "wagmi";
+import { useWalletClient, useAccount, useChainId, useSwitchChain } from "wagmi";
 import { claimToken } from "@/functions/claimToken";
 import { fetchTokensByOwner } from "@/functions/owners";
 import { toast } from "sonner";
@@ -13,11 +13,15 @@ interface MigrateFrogsButtonProps {
 	fetchUserTokens?: boolean;
 }
 
+const REQUIRED_CHAIN_ID = Number(process.env.NEXT_PUBLIC_CHAIN_ID);
+
 const MigrateFrogsButton = ({ tokenIds = [], fetchUserTokens = false }: MigrateFrogsButtonProps) => {
 	const [processing, setProcessing] = useState(false);
 	const [userTokens, setUserTokens] = useState<number[]>([]);
 	const { data: walletClient } = useWalletClient();
 	const { address, isConnected } = useAccount();
+  const chainId = useChainId();
+  const { switchChainAsync } = useSwitchChain();
 
 	const migrationTokenIds = fetchUserTokens ? userTokens : tokenIds;
 	const isSingleToken = migrationTokenIds.length === 1;
@@ -42,6 +46,16 @@ const MigrateFrogsButton = ({ tokenIds = [], fetchUserTokens = false }: MigrateF
 		if (!walletClient) {
 			toast.error("Wallet not connected");
 			return;
+		}
+    if (chainId !== REQUIRED_CHAIN_ID) {
+			try {
+				await switchChainAsync({ chainId: REQUIRED_CHAIN_ID });
+				toast.success("Network switched!");
+			} catch (error) {
+				console.error("Network switch failed:", error);
+				toast.error("Please switch to the correct network to migrate.");
+				return;
+			}
 		}
 		if (migrationTokenIds.length === 0) {
 			toast.error("No tokens provided for migration");
