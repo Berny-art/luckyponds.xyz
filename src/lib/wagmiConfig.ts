@@ -4,7 +4,7 @@ import { http } from "wagmi";
 
 export const hyperliquid = {
 	id: Number(process.env.NEXT_PUBLIC_CHAIN_ID) ?? 999,
-	name: "Hyperliquid",
+	name: Number(process.env.NEXT_PUBLIC_CHAIN_ID) === 999 ? "HyperLiquid EVM" : "Hyperliquid Testnet",
 	iconUrl: "https://s2.coinmarketcap.com/static/img/coins/64x64/32196.png",
 	iconBackground: "#12221F",
 	nativeCurrency: { name: "Hype", symbol: "HYPE", decimals: 18 },

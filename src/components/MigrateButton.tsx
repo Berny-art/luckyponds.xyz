@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { useWalletClient, useAccount, useChainId, useSwitchChain } from "wagmi";
+import { useWalletClient, useAccount, useSwitchChain } from "wagmi";
 import { claimToken } from "@/functions/claimToken";
 import { fetchTokensByOwner } from "@/functions/owners";
 import { toast } from "sonner";
@@ -19,8 +19,7 @@ const MigrateFrogsButton = ({ tokenIds = [], fetchUserTokens = false }: MigrateF
 	const [processing, setProcessing] = useState(false);
 	const [userTokens, setUserTokens] = useState<number[]>([]);
 	const { data: walletClient } = useWalletClient();
-	const { address, isConnected } = useAccount();
-  const chainId = useChainId();
+	const { address, isConnected, chainId } = useAccount();
   const { switchChainAsync } = useSwitchChain();
 
 	const migrationTokenIds = fetchUserTokens ? userTokens : tokenIds;
@@ -47,6 +46,7 @@ const MigrateFrogsButton = ({ tokenIds = [], fetchUserTokens = false }: MigrateF
 			toast.error("Wallet not connected");
 			return;
 		}
+    console.log({chainId, REQUIRED_CHAIN_ID});
     if (chainId !== REQUIRED_CHAIN_ID) {
 			try {
 				await switchChainAsync({ chainId: REQUIRED_CHAIN_ID });
