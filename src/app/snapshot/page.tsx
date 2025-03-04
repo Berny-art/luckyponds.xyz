@@ -107,7 +107,7 @@ export default function Page() {
 					/>
 				</svg>
 
-				<div className="flex justify-center items-center flex-col gap- text-primary-200 font-normal">
+				<div className="flex justify-center items-center flex-col gap-0 text-primary-200 font-normal">
 					<h1 className="text-xl text-drip-300 font-bold">
 						Hyper Frogs Snapshot Tool
 					</h1>
