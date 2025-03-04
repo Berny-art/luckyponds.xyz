@@ -41,38 +41,47 @@ export default function Page() {
 	const isFormValid = contractAddress;
 
 	const handleSnapshot = async () => {
-		setProcessing(true);
-		try {
-			const { tokenIds, owners } = await takeSnapshot({
-				nftAddress: contractAddress as `0x${string}`,
-			});
-
-			const formattedResults = owners.map((owner: string, index: number) => ({
-				tokenId:
-					returnIds && tokenIds[index] !== undefined
-						? Number(tokenIds[index])
-						: null,
-				owner,
-			}));
-
-			setSnapshotResults(formattedResults);
-
-			const textContent = formattedResults
-				.map(({ tokenId, owner }) =>
-					returnIds && tokenId !== null ? `${tokenId},${owner}` : `${owner}`,
-				)
-				.join("\n");
-
-			const blob = new Blob([textContent], { type: "text/plain" });
-			const url = URL.createObjectURL(blob);
-
-			setDownloadUrl(url);
-			setDownloadFilename(`snapshot_${contractAddress}_${Date.now()}.txt`);
-		} catch (error) {
-			console.error("Snapshot failed:", error);
-		}
-		setProcessing(false);
-	};
+			setProcessing(true);
+			try {
+				const { tokenIds, owners } = await takeSnapshot({
+					nftAddress: contractAddress as `0x${string}`,
+				  });
+				  
+				  let formattedResults: { tokenId: number | null; owner: string }[] = [];
+				  
+				  if (returnIds) {
+					// Keep full list of tokenIds and owners
+					formattedResults = tokenIds.map((tokenId: string, index: number) => ({
+					  tokenId: Number(tokenId),
+					  owner: owners[index],
+					}));
+				  } else {
+					// Deduplicate owners
+					const uniqueOwners = Array.from(new Set(owners));
+					formattedResults = uniqueOwners.map((owner) => ({
+					  tokenId: null,
+					  owner,
+					}));
+				  }
+				  
+				  setSnapshotResults(formattedResults);
+				  
+				  const textContent = formattedResults
+					.map(({ tokenId, owner }) =>
+					  returnIds && tokenId !== null ? `${tokenId},${owner}` : `${owner}`
+					)
+					.join("\n");
+				  
+				  const blob = new Blob([textContent], { type: "text/plain" });
+				  const url = URL.createObjectURL(blob);
+				  
+				  setDownloadUrl(url);
+				  setDownloadFilename(`snapshot_${contractAddress}_${Date.now()}.txt`);			  
+			} catch (error) {
+				console.error("Snapshot failed:", error);
+			}
+			setProcessing(false);
+		};
 
 	const resetForm = () => {
 		setNftAddress("");
