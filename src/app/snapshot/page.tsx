@@ -27,6 +27,7 @@ export default function Page() {
 
 	const predefinedAddresses: { [key: string]: string } = {
 		"Hyper Frogs": "0xd9a3CFC4c5C9Bdf0b9500B8dB03321463f81Ef55",
+		"Hyper Frogs [OLD]": "0x4Adb7665C72ccdad25eD5B0BD87c34e4Ee9Da3c4",
 		"Tiny Hyper Cats": "0xCC3D60fF11a268606C6a57bD6Db74b4208f1D30c",
 		"Wealthy Hypio Babies": "0x63eb9d77D083cA10C304E28d5191321977fd0Bfb",
 		Hypers: "0x9Be117D27f8037F6f549903C899e96E5755e96db",
