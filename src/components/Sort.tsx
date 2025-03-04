@@ -59,7 +59,7 @@ export default function Sort() {
 					1,
 					2222,
 				);
-				setHasOldTokens(tokens.length > 0);
+				setHasOldTokens(tokens.length > 0);				
 			};
 			fetchOldTokens();
 		}
@@ -100,7 +100,6 @@ export default function Sort() {
 
 	return (
 		<div className="flex flex-col items-center justify-center w-full gap-4">
-			
 			<div className="flex items-center justify-center w-full gap-2">
 				<Select
 					value={sortBy}
@@ -152,28 +151,24 @@ export default function Sort() {
 			{address && (
 				<Button
 					onClick={handleViewMyFrogs}
-					disabled={processing || (showMigratedFrogs && !hasMigratedTokens) || (!showMigratedFrogs && !hasOldTokens)}
+					disabled={
+						processing ||
+						(showMigratedFrogs && !hasMigratedTokens) ||
+						(!showMigratedFrogs && !hasOldTokens)
+					}
 					className="bg-primary-200 hover:bg-primary-200/70 text-secondary-950 w-full font-bold uppercase text-md py-6"
 				>
 					{processing
 						? "Loading..."
-						: (showMigratedFrogs && hasMigratedTokens) || (!showMigratedFrogs && hasOldTokens)
-						? "View my Frogs"
-						: "No Frogs Owned"}
+						: (showMigratedFrogs && hasMigratedTokens) ||
+								(!showMigratedFrogs && hasOldTokens)
+							? "View my Frogs"
+							: "No Frogs Owned"}
 				</Button>
 			)}
 
 			{!showMigratedFrogs && hasOldTokens && (
-				<>
-					<Button
-						onClick={handleViewMyFrogs}
-						disabled={processing}
-						className="bg-primary-200 hover:bg-primary-200/70 text-secondary-950 w-full font-bold uppercase text-md py-6"
-					>
-						{processing ? "Loading..." : "View my Frogs"}
-					</Button>
-					<MigrateFrogsButton fetchUserTokens />
-				</>
+				<MigrateFrogsButton fetchUserTokens />
 			)}
 
 			<Button

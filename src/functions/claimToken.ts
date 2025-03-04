@@ -71,6 +71,7 @@ export const claimToken = async (tokenIds: number[]): Promise<void> => {
 			functionName: "setApprovalForAll",
 			args: [migrationContractAddress, true],
 		});
+		toast.loading("Waiting for approval transaction to confirm...");
 		await waitForTransactionReceipt(config, { hash: approvalTxHash });
 		toast.success("Approval granted.", { id: approvalToast });
 	} else {
