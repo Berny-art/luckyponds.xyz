@@ -8,7 +8,7 @@ export default function Header() {
 	return (
 		<header className="w-full px-6 py-4">
 			<div className="flex w-full flex-col md:flex-row items-center justify-between gap-8">
-				<div className="flex flex-col md-flex-row items-center gap-4 md:gap-10">
+				<div className="flex w-full flex-col md:flex-row items-center gap-4 md:gap-10">
 					<div className="min-w-[275px]">
 						<Logo />
 					</div>
