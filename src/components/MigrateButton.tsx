@@ -7,6 +7,7 @@ import { claimToken } from "@/functions/claimToken";
 import { fetchTokensByOwner } from "@/functions/owners";
 import { toast } from "sonner";
 import { UserRejectedRequestError } from "viem";
+import { useSortStore } from "@/store/sortStore";
 
 interface MigrateFrogsButtonProps {
 	tokenIds?: number[];
@@ -24,6 +25,10 @@ const MigrateFrogsButton = ({
 	const { address, isConnected, chainId } = useAccount();
 	const { switchChainAsync } = useSwitchChain();
 	const contractAddress = process.env.NEXT_PUBLIC_CONTRACT_ADDRESS;
+	const {
+		reset,
+		setShowMigratedFrogs,
+	} = useSortStore();
 
 	const handleMigrate = async () => {
 		if (!walletClient) {
@@ -81,6 +86,8 @@ const MigrateFrogsButton = ({
 					migrationTokenIds.length > 1 ? "s" : ""
 				} successfully migrated.`,
 			});
+			reset();
+			setShowMigratedFrogs(true);
 		} catch (error) {
 			console.error("Migration error:", error);
 
