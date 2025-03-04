@@ -2,36 +2,46 @@ import { ConnectButton } from "@rainbow-me/rainbowkit";
 import Logo from "./ui/logo";
 import XIcon from "./ui/icons/xIcon";
 import DiscordIcon from "./ui/icons/discordIcon";
+import Link from "next/link";
 
 export default function Header() {
 	return (
-		<div className="flex items-center md:flex-row w-full px-6 py-4 gap-8">
-			<div className="flex flex-col md:flex-row items-start md:items-center gap-2 md:gap-4 w-1/2 md:1/4 xl:w-1/5">
-				<Logo />
-				<div className="flex gap-4 items-center">
-					<a
-						href="https://x.com/HyperFrogsNFT"
-						target="_blank"
-						rel="noreferrer"
-					>
-						<XIcon className="fill-drip-300 hover:fill-primary-200 size-5 md:size-6" />
-					</a>
-					<a
-						href="https://discord.gg/pXHSuqCvbm"
-						target="_blank"
-						rel="noreferrer"
-					>
-						<DiscordIcon className="fill-drip-300 hover:fill-primary-200 size-5 md:size-6" />
-					</a>
+		<header className="w-full px-6 py-4">
+			<div className="flex w-full items-center justify-between gap-8">
+				<div className="flex items-center gap-10">
+					<div className="min-w-[275px]">
+						<Logo />
+					</div>
+					<nav className="hidden md:flex gap-6 text-primary-200 hover:text-drip-300 font-mono">
+						<Link href="/">Home</Link>
+						<span className="text-drip-300">/</span>
+						<Link href="/snapshot">Snapshot Tool</Link>
+					</nav>
+				</div>
+				<div className="flex items-center gap-8">
+					<nav className="flex gap-6">
+						<a
+							href="https://discord.gg/pXHSuqCvbm"
+							target="_blank"
+							rel="noreferrer"
+						>
+							<DiscordIcon className="fill-drip-300 hover:fill-primary-200 size-5 md:size-6" />
+						</a>
+						<a
+							href="https://x.com/HyperFrogsNFT"
+							target="_blank"
+							rel="noreferrer"
+						>
+							<XIcon className="fill-drip-300 hover:fill-primary-200 size-5 md:size-6" />
+						</a>
+					</nav>
+					<ConnectButton
+						showBalance={false}
+						chainStatus="name"
+						accountStatus="address"
+					/>
 				</div>
 			</div>
-			<div className="flex w-1/2 justify-end md:3/4 xl:w-4/5">
-				<ConnectButton
-					showBalance={false}
-					chainStatus="name"
-					accountStatus="address"
-				/>
-			</div>
-		</div>
+		</header>
 	);
 }
