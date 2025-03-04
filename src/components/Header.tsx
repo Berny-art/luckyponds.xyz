@@ -17,7 +17,7 @@ export default function Header() {
 						<span className="text-drip-300">/</span>
 						<Link href="/snapshot">Snapshot Tool</Link>
 						<span className="text-drip-300">/</span>
-						<Link href="/snapshot">Adopt a frog</Link>
+						<Link target="_blank" href="https://app.drip.trade/collections/hyper-frogs">Adopt a frog</Link>
 					</nav>
 				</div>
 				<div className="flex w-full md:w-1/4 items-center justify-between md:justify-end md:gap-8">

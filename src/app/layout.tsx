@@ -50,11 +50,11 @@ export default function RootLayout({
 			>
 				<div className="flex items-center justify-center w-full h-8 bg-drip-300 text-secondary-950 text-xs underline">
 					<a
-						href="https://www.netprotocol.app/app/bazaar/hyperliquid/0x4Adb7665C72ccdad25eD5B0BD87c34e4Ee9Da3c4?tab=listings"
+						href="https://discord.gg/pXHSuqCvbm"
 						target="_blank"
 						rel="noreferrer"
 					>
-						Buy a Hyper Frog on Hyper Liquid (community marketplace)
+						Join the Discord, you are just one leap away.
 					</a>
 				</div>
 				<Providers>
