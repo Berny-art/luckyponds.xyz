@@ -20,10 +20,10 @@ export default function Page() {
 	const [processing, setProcessing] = useState(false);
 	const [downloadUrl, setDownloadUrl] = useState<string | null>(null);
 	const [downloadFilename, setDownloadFilename] = useState<string>("");
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const [snapshotResults, setSnapshotResults] = useState<
-	{ tokenId: number | null; owner: string }[]
->([]);
+	// eslint-disable-next-line @typescript-eslint/no-unused-vars
+	const [snapshotResults, setSnapshotResults] = useState<
+		{ tokenId: number | null; owner: string }[]
+	>([]);
 
 	const predefinedAddresses: { [key: string]: string } = {
 		"Hyper Frogs": "0xd9a3CFC4c5C9Bdf0b9500B8dB03321463f81Ef55",
@@ -86,7 +86,7 @@ export default function Page() {
 
 	return (
 		<div className="flex flex-col md:flex-row w-full px-6 gap-8">
-			<div className="flex flex-col items-center justify-start w-full bg-primary-200/10 p-4 rounded gap-6">
+			<div className="flex flex-col items-center justify-start w-full bg-primary-200/10 px-8 py-16 md:py-36 rounded gap-6">
 				<svg
 					xmlns="http://www.w3.org/2000/svg"
 					width="290"
@@ -111,8 +111,8 @@ export default function Page() {
 					<h1 className="text-xl text-drip-300 font-bold">
 						Hyper Frogs Snapshot Tool
 					</h1>
-					<p>Take a snapshot of any NFT collection on Hyper EVM.</p>
-					<p>Free for Frog Holders, Non-holders gets charged 0.25 HYPE.</p>
+					<p>Take an on-chain snapshot of any NFT collection on Hyper EVM.</p>
+					<p>Free for Frog Holders, Non-holders get charged 0.25 HYPE.</p>
 				</div>
 
 				<div className="flex flex-col gap-4 w-full max-w-[450px]">
@@ -146,21 +146,21 @@ export default function Page() {
 						/>
 					)}
 
-					<div className="flex w-full items-center gap-2">
+					<div className="flex w-full justify-center items-center gap-2">
 						<Switch
 							checked={returnIds}
 							onCheckedChange={setReturnIds}
 							className="data-[state=checked]:bg-drip-300 data-[state=unchecked]:bg-primary-200/50 [&>span]:bg-secondary-950"
 						/>
 						<span className="text-primary-200 font-bold uppercase">
-							Return Token IDs
+							With Token IDs. (Not duplicated)
 						</span>
 					</div>
 
 					<Button
 						onClick={handleSnapshot}
 						disabled={!isFormValid || processing}
-						className="bg-primary-200 hover:bg-primary-200/70 text-secondary-950 w-full font-bold uppercase text-md py-6"
+						className="bg-primary-200 hover:bg-primary-200/70 text-secondary-950 w-full font-bold uppercase text-md py-6 mt-8"
 					>
 						{processing ? "Processing..." : "Take Snapshot"}
 					</Button>
@@ -186,15 +186,17 @@ export default function Page() {
 						</>
 					)}
 				</div>
-
-				<a
-					className="text-drip-300 underline font-normal uppercase"
-					href="https://discord.gg/pXHSuqCvbm"
-					target="_blank"
-					rel="noreferrer"
-				>
-					Support
-				</a>
+				<p className="text-primary-200 font-normal">
+					Need{" "}
+					<a
+						className="text-drip-300 underline font-normal"
+						href="https://discord.gg/pXHSuqCvbm"
+						target="_blank"
+						rel="noreferrer"
+					>
+						Support?
+					</a>
+				</p>
 			</div>
 		</div>
 	);

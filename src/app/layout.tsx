@@ -17,7 +17,7 @@ export const metadata: Metadata = {
 	openGraph: {
 		title: "Hyper Frogs Rarity",
 		description: "Check your Hyper Frogs Rarity with the official checker.",
-		url: "https://rarity.hyperfrogs.xyz", // Replace with your actual URL
+		url: "https://hyperfrogs.xyz", // Replace with your actual URL
 		type: "website",
 		images: [
 			{
