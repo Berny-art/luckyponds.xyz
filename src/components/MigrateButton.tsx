@@ -71,7 +71,8 @@ const MigrateFrogsButton = ({
 				migrationTokenIds = tokens
 					.split(",")
 					.filter(Boolean)
-					.map(Number);
+					.map(Number)
+					.slice(0, 20);
 
 				if (migrationTokenIds.length === 0) {
 					toast.error("No tokens found to migrate.");

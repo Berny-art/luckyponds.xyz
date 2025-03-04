@@ -59,7 +59,10 @@ export default function Sort() {
 					1,
 					2222,
 				);
-				setHasOldTokens(tokens.length > 0);
+				if (tokens) {
+					setHasOldTokens(tokens.length > 0);
+				}
+				
 			};
 			fetchOldTokens();
 		}
