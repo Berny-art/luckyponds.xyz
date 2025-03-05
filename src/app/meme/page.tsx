@@ -7,6 +7,7 @@ import Image from "next/image";
 import MemeFilters from "@/components/MemeFilters";
 import { useMemeStore } from "@/store/memeStore";
 import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
 
 export default function MemeGenerator() {
 	const memeContainerRef = useRef<HTMLDivElement>(null);
@@ -20,6 +21,27 @@ export default function MemeGenerator() {
 		link.download = "hyperfrog-meme.png";
 		link.href = dataUrl;
 		link.click();
+	};
+
+	const copyMemeToClipboard = async () => {
+		if (!memeContainerRef.current) return;
+	
+		try {
+			const dataUrl = await toPng(memeContainerRef.current);
+			const res = await fetch(dataUrl);
+			const blob = await res.blob();
+	
+			await navigator.clipboard.write([
+				new ClipboardItem({
+					[blob.type]: blob,
+				}),
+			]);
+	
+			toast.success("Image copied to clipboard!");
+		} catch (error) {
+			console.error("Failed to copy meme to clipboard:", error);
+			toast.error("Failed to copy meme. Please try again!");
+		}
 	};
 
 	useEffect(() => {
@@ -65,12 +87,20 @@ export default function MemeGenerator() {
 						)}
 						
 					</div>
+					<div className="flex gap-4">
 					<Button
 						onClick={handleDownload}
 						className="bg-primary-200 hover:bg-primary-200/70 text-secondary-950 rounded font-bold uppercase text-md py-6"
 					>
-						Download Meme
+						Download
 					</Button>
+					<Button
+						onClick={copyMemeToClipboard}
+						className="bg-drip-300 hover:bg-drip-300/70 text-secondary-950 font-bold uppercase text-md py-6"
+					>
+						Copy
+					</Button>
+					</div>
 					</div>
 				) : (
 					<p className="text-primary-200">Search for a frog to get started!</p>
