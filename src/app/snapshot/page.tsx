@@ -95,8 +95,8 @@ export default function Page() {
 	};
 
 	return (
-		<div className="flex flex-col md:flex-row w-full px-6 gap-8">
-			<div className="flex flex-col items-center justify-start w-full bg-primary-200/10 px-8 py-16 md:py-36 rounded gap-6">
+		<div className="flex flex-col md:flex-row w-full p-6 gap-8">
+			<div className="flex flex-col items-center justify-start w-full bg-primary-200/10 px-8 py-16 md:py-32 rounded gap-6">
 				<svg
 					xmlns="http://www.w3.org/2000/svg"
 					width="290"

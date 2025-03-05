@@ -16,7 +16,7 @@ export default function Home() {
 	const [isDrawerOpen, setIsDrawerOpen] = useState(false);
 
 	return (
-		<div className="flex flex-col md:flex-row w-full px-6 gap-8">
+		<div className="flex flex-col md:flex-row w-full p-6 gap-8">
 			{/* Mobile Filter Button */}
 			<div className="fixed bottom-6 md:hidden flex flex-col gap-4 justify-end">
 				<Drawer open={isDrawerOpen} onOpenChange={setIsDrawerOpen}>

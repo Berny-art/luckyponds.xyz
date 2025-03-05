@@ -6,7 +6,7 @@ import Link from "next/link";
 
 export default function Header() {
 	return (
-		<header className="w-full px-6 py-4">
+		<header className="w-full px-6 py-4 border-b-2 border-drip-300">
 			<div className="flex w-full flex-col md:flex-row items-center justify-between gap-8">
 				<div className="flex w-full flex-col md:flex-row items-center gap-4 md:gap-10">
 					<div className="min-w-[200px] lg:min-w-[275px]">
@@ -17,7 +17,7 @@ export default function Header() {
 						<span className="text-drip-300">/</span>
 						<Link href="/snapshot">Snapshot Tool</Link>
 						<span className="text-drip-300">/</span>
-						<Link target="_blank" href="https://app.drip.trade/collections/hyper-frogs">Adopt a frog</Link>
+						<Link href="/meme">Meme Tool</Link>
 					</nav>
 				</div>
 				<div className="flex w-full md:w-1/4 items-center justify-between md:justify-end md:gap-8">
