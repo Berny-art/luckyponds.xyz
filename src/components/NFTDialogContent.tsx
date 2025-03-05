@@ -1,4 +1,3 @@
-import type { NFTMetadata } from "./NFTGallery";
 import Image from "next/image";
 import { Button } from "./ui/button";
 import { useQuery } from "@tanstack/react-query";
@@ -7,6 +6,7 @@ import { truncateAddress } from "@/functions/trunacteAddress";
 import { ExternalLink } from "lucide-react";
 import MigrateFrogsButton from "./MigrateButton";
 import { useAccount } from "wagmi";
+import type { NFTMetadata } from "@/functions/nfts";
 
 const NFTDialogContent = ({ nft }: { nft: NFTMetadata }) => {
 
