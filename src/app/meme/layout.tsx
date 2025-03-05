@@ -6,11 +6,11 @@ export const metadata: Metadata = {
   openGraph: {
     title: "Hyper Frogs Meme Generator",
     description: "Generate Memes with your Hyper Frog.",
-    url: "https://hyperfrogs.xyz/snapshot",
+    url: "https://hyperfrogs.xyz/meme",
     type: "website",
     images: [
       {
-        url: "/snapshotog-min.jpg",
+        url: "/memeog-min.jpg",
         width: 1200,
         height: 630,
         alt: "Hyper EVM Snapshot Tool",
@@ -23,7 +23,7 @@ export const metadata: Metadata = {
     description: "Generate Memes with your Hyper Frog.",
     creator: "@HyperFrogsNFT",
     site: "@HyperFrogsNFT",
-    images: ["/snapshotog-min.jpg"],
+    images: ["/memeog-min.jpg"],
   },
 };
 
