@@ -6,7 +6,7 @@ import { useMemeStore } from "@/store/memeStore";
 
 const memeLayerCategories = {
 	backdrops: ["flies.svg", "higherhigher.svg"],
-	chatBubbles: ["alright-buddy.svg", "fcfs.svg", "gribbit.svg", "jump-higher.svg", "hype.svg"],
+	chatBubbles: ["alright-buddy.svg", "fcfs.svg", "gribbit.svg", "jump-higher.svg", "hype.svg", "under-the-water.svg"],
 	misc: ["breaking-news.svg"],
 } as const;
 
