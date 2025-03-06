@@ -44,7 +44,7 @@ export async function GET(req: Request) {
     const nftsCollection = db.collection("metadata");
     const attributesCollection = db.collection("attributes");
 
-    const pageSize = 100;
+    const pageSize = 50;
     const skip = (page - 1) * pageSize;
 
     const query: Record<string, string | number | { $in: number[] }> = {};
