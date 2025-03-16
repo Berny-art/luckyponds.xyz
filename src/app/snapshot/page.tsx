@@ -31,6 +31,11 @@ export default function Page() {
 		"Tiny Hyper Cats": "0xCC3D60fF11a268606C6a57bD6Db74b4208f1D30c",
 		"Wealthy Hypio Babies": "0x63eb9d77D083cA10C304E28d5191321977fd0Bfb",
 		Hypers: "0x9Be117D27f8037F6f549903C899e96E5755e96db",
+		Gems: "0xDD59aC38cb15F688c18909bA1Ca708A76cC351F5",
+		LQnians: "0xfD43e36a9D4002C54a84DAB089a2EdE92ffB5C60",
+		PurrPaws: "0xaf1b25c254fD518Fce28284e8A4E3017Ef4b2CBd",
+		Hypericardo: "0x290e6bD2BA56DA9ab14b5bA4737dba4BAE3ed5c5",
+		Katza: "0x54d53876f81D1148642A58E923E4524029465820",
 	};
 
 	const contractAddress =
@@ -41,47 +46,47 @@ export default function Page() {
 	const isFormValid = contractAddress;
 
 	const handleSnapshot = async () => {
-			setProcessing(true);
-			try {
-				const { tokenIds, owners } = await takeSnapshot({
-					nftAddress: contractAddress as `0x${string}`,
-				  });
-				  
-				  let formattedResults: { tokenId: number | null; owner: string }[] = [];
-				  
-				  if (returnIds) {
-					// Keep full list of tokenIds and owners
-					formattedResults = tokenIds.map((tokenId: string, index: number) => ({
-					  tokenId: Number(tokenId),
-					  owner: owners[index],
-					}));
-				  } else {
-					// Deduplicate owners
-					const uniqueOwners = Array.from(new Set(owners));
-					formattedResults = uniqueOwners.map((owner) => ({
-					  tokenId: null,
-					  owner,
-					}));
-				  }
-				  
-				  setSnapshotResults(formattedResults);
-				  
-				  const textContent = formattedResults
-					.map(({ tokenId, owner }) =>
-					  returnIds && tokenId !== null ? `${tokenId},${owner}` : `${owner}`
-					)
-					.join("\n");
-				  
-				  const blob = new Blob([textContent], { type: "text/plain" });
-				  const url = URL.createObjectURL(blob);
-				  
-				  setDownloadUrl(url);
-				  setDownloadFilename(`snapshot_${contractAddress}_${Date.now()}.txt`);			  
-			} catch (error) {
-				console.error("Snapshot failed:", error);
+		setProcessing(true);
+		try {
+			const { tokenIds, owners } = await takeSnapshot({
+				nftAddress: contractAddress as `0x${string}`,
+			});
+
+			let formattedResults: { tokenId: number | null; owner: string }[] = [];
+
+			if (returnIds) {
+				// Keep full list of tokenIds and owners
+				formattedResults = tokenIds.map((tokenId: string, index: number) => ({
+					tokenId: Number(tokenId),
+					owner: owners[index],
+				}));
+			} else {
+				// Deduplicate owners
+				const uniqueOwners = Array.from(new Set(owners));
+				formattedResults = uniqueOwners.map((owner) => ({
+					tokenId: null,
+					owner,
+				}));
 			}
-			setProcessing(false);
-		};
+
+			setSnapshotResults(formattedResults);
+
+			const textContent = formattedResults
+				.map(({ tokenId, owner }) =>
+					returnIds && tokenId !== null ? `${tokenId},${owner}` : `${owner}`,
+				)
+				.join("\n");
+
+			const blob = new Blob([textContent], { type: "text/plain" });
+			const url = URL.createObjectURL(blob);
+
+			setDownloadUrl(url);
+			setDownloadFilename(`snapshot_${contractAddress}_${Date.now()}.txt`);
+		} catch (error) {
+			console.error("Snapshot failed:", error);
+		}
+		setProcessing(false);
+	};
 
 	const resetForm = () => {
 		setNftAddress("");
