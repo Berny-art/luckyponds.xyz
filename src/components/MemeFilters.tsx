@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { useMemeStore } from "@/store/memeStore";
 
 const memeLayerCategories = {
-	backdrops: ["flies.svg", "higherhigher.svg", "purrtardio.jpg"],
+	backdrops: ["flies.svg", "higherhigher.svg", "Purrtardio.jpg"],
 	chatBubbles: [
 		"alright-buddy.svg",
 		"fcfs.svg",
