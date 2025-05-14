@@ -12,7 +12,6 @@ import PondWinnerDialog from '@/components/PondWinnerDialog';
 import PondTimer from '@/components/PondTimer';
 import { Clock } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
-import EventWatcher from '@/components/EventWatcher';
 import FloatingEvents from '@/components/FloatingEvents';
 import ShakeNotification from '@/components/ShakeNotification';
 import { useEventsStore, type ContractEvent } from '@/stores/eventsStore';
