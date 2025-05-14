@@ -1,4 +1,5 @@
 'use client';
+/* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { useState, useEffect } from 'react';
 import { useWriteContract, useWaitForTransactionReceipt } from 'wagmi';
@@ -162,7 +163,6 @@ export function useTossCoin() {
 					id: 'toss-loading',
 				});
 			}
-			// biome-ignore lint/suspicious/noExplicitAny: <explanation>
 		} catch (error: any) {
 			setIsLoading(false);
 			toast.dismiss('toss-loading');

@@ -13,7 +13,7 @@ export default function PondTimer({
 	const [endTimeMs, setEndTimeMs] = useState<number | null>(null);
 
 	// State to know if time has ended
-	const [isCompleted, setIsCompleted] = useState(false);
+	const [isCompleted, setIsCompleted] = useState(false); // eslint-disable-line @typescript-eslint/no-unused-vars
 
 	// Update end time when pond info changes
 	useEffect(() => {

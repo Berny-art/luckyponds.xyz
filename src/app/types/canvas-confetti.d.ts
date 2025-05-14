@@ -34,15 +34,13 @@ declare module 'canvas-confetti' {
 			options?: CreateConfettiOptions,
 		): ConfettiFunction;
 		Promise: PromiseConstructor;
-		// biome-ignore lint/suspicious/noExplicitAny: <explanation>
-		shapeFromPath(options: { path: string; matrix?: number[] }): any;
+		shapeFromPath(options: { path: string; matrix?: number[] }): object;
 		shapeFromText(options: {
 			text: string;
 			scalar?: number;
 			color?: string;
 			fontFamily?: string;
-			// biome-ignore lint/suspicious/noExplicitAny: <explanation>
-		}): any;
+		}): object;
 	}
 
 	const confetti: ConfettiFunction;

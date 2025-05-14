@@ -2,19 +2,17 @@
 
 import { useReadContract } from 'wagmi';
 import { luckyPondsContractConfig } from '@/contracts/LuckyPonds';
-import { formatEther } from 'viem';
 import { cn, formatAddress, formatValue } from '@/lib/utils';
 import { Trophy } from 'lucide-react';
 import {
 	Dialog,
 	DialogContent,
-	DialogDescription,
 	DialogHeader,
 	DialogTitle,
 	DialogTrigger,
 } from './ui/dialog';
 import { Button } from './ui/button';
-import getPondInfo from '@/functions/getPondInfo';
+import getPondInfo from '@/functions/usePondInfo';
 
 /**
  * Mobile-friendly component for displaying pond winners
@@ -52,16 +50,16 @@ export default function PondWinnerDialog({
 	};
 
 	// Handle sharing on Twitter/X
-	const shareOnX = (title: string, amount: string, winner: string) => {
-		const tweetText = encodeURIComponent(
-			`Winner of ${amount} HYPE in the ${title.split(' ')[0]} Lucky Pond is ${winner}!`,
-		);
-		const tweetUrl = encodeURIComponent('https://luckyponds.xyz');
-		window.open(
-			`https://x.com/intent/tweet?text=${tweetText}&url=${tweetUrl}`,
-			'_blank',
-		);
-	};
+	// const shareOnX = (title: string, amount: string, winner: string) => {
+	// 	const tweetText = encodeURIComponent(
+	// 		`Winner of ${amount} HYPE in the ${title.split(' ')[0]} Lucky Pond is ${winner}!`,
+	// 	);
+	// 	const tweetUrl = encodeURIComponent('https://luckyponds.xyz');
+	// 	window.open(
+	// 		`https://x.com/intent/tweet?text=${tweetText}&url=${tweetUrl}`,
+	// 		'_blank',
+	// 	);
+	// };
 
 	const isLoading = !dailyPondType || !weeklyPondType || !monthlyPondType;
 

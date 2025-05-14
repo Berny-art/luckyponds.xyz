@@ -5,7 +5,7 @@ import CoinTossInput from '@/components/CoinTossInput';
 import PondInfo from '@/components/PondInfo';
 import StandardPonds from '@/components/StandardPonds';
 import { usePondStore } from '@/stores/pondStore';
-import usePondInfo from '@/functions/getPondInfo';
+import usePondInfo from '@/functions/usePondInfo';
 import { formatValue } from '@/lib/utils';
 import PondWinners from '@/components/PondWinners';
 import PondWinnerDialog from '@/components/PondWinnerDialog';
@@ -16,6 +16,7 @@ import EventWatcher from '@/components/EventWatcher';
 import FloatingEvents from '@/components/FloatingEvents';
 import ShakeNotification from '@/components/ShakeNotification';
 import { useEventsStore, type ContractEvent } from '@/stores/eventsStore';
+import type { ParticipantInfo } from '@/lib/types';
 
 export default function Home() {
 	const { selectedPond } = usePondStore();
@@ -24,7 +25,7 @@ export default function Home() {
 	const isLoading = !pondInfo;
 
 	const [displayAmount, setDisplayAmount] = useState('0');
-	const [pondType, setPondType] = useState('daily'); // Default to daily for initial load
+	const [pondType, setPondType] = useState('daily'); // eslint-disable-line @typescript-eslint/no-unused-vars
 	const initialEventsAddedRef = useRef(false);
 	const timeoutRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -65,8 +66,10 @@ export default function Home() {
 		initialEventsAddedRef.current = true;
 
 		// Function to create an event from a participant
-		// biome-ignore lint/suspicious/noExplicitAny: <explanation>
-		const createEventFromParticipant = (participant: any, index: number) => {
+		const createEventFromParticipant = (
+			participant: ParticipantInfo,
+			index: number,
+		) => {
 			return {
 				id: `${participant.tossAmount}-${participant.participant}-${Date.now()}-${index}`,
 				address: participant.participant,

@@ -55,8 +55,8 @@ export default function CoinTossButton({
 
 			console.log('Silent winner selection transaction:', hash);
 			return hash;
-			// biome-ignore lint/suspicious/noExplicitAny: <explanation>
-		} catch (error: any) {
+			// Handle error in a type-safe way
+		} catch (error: unknown) {
 			console.error('Silent winner selection error:', error);
 			// Rethrow to handle in the calling function
 			throw error;
@@ -110,8 +110,7 @@ export default function CoinTossButton({
 					await selectWinner();
 					// Small delay to ensure transactions are processed in order
 					await new Promise((resolve) => setTimeout(resolve, 500));
-					// biome-ignore lint/suspicious/noExplicitAny: <explanation>
-				} catch (error: any) {
+				} catch (error: unknown) {
 					// If winner selection fails, show a generic error
 					toast.error('Transaction failed', {
 						id: 'toss-loading',

@@ -39,7 +39,7 @@ export default function PondWinnerCard({
 		if (open && hasWinner) {
 			triggerEmojiConfetti();
 		}
-	}, [open, hasWinner]);
+	}, [open, hasWinner]); // eslint-disable-line react-hooks/exhaustive-deps
 
 	// Simplified emoji confetti effect with a single high-intensity burst
 	const triggerEmojiConfetti = () => {

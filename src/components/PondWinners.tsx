@@ -4,7 +4,7 @@ import { useReadContract } from 'wagmi';
 import { luckyPondsContractConfig } from '@/contracts/LuckyPonds';
 import { formatEther } from 'viem';
 import { cn, formatAddress } from '@/lib/utils';
-import getPondInfo from '@/functions/getPondInfo';
+import getPondInfo from '@/functions/usePondInfo';
 import PondWinnerCard from './PondWinnerCard';
 
 export default function PondWinners({ classNames }: { classNames?: string }) {

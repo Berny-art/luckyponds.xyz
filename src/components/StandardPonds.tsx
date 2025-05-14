@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect } from 'react';
-import getStandardPondTypes from '@/functions/getStandardPondTypes';
+import getStandardPondTypes from '@/functions/useStandardPondTypes';
 import { usePondStore } from '@/stores/pondStore';
 import { cn } from '@/lib/utils';
 import { Button } from './ui/button';

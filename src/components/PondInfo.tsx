@@ -8,10 +8,10 @@ export default function PondInfo({
 	pondInfo,
 }: { pondInfo: PondComprehensiveInfo }) {
 	// Use the hook to get pond info
+	const { address } = useAccount();
 
 	if (!pondInfo) return null;
 
-	const { address } = useAccount();
 	const isConnected = !!address;
 
 	// Calculate time remaining in a human-readable format

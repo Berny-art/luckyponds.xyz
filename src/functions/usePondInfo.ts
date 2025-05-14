@@ -1,4 +1,5 @@
 'use client';
+/* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { useState, useEffect } from 'react';
 import { useReadContract, useAccount } from 'wagmi';
@@ -58,7 +59,6 @@ const getDefaultPondInfo = (pondType: string): PondComprehensiveInfo => {
 };
 
 // Helper function to map the array returned by the contract to our type
-// biome-ignore lint/suspicious/noExplicitAny: <explanation>
 function mapArrayToPondInfo(data: any[]): PondComprehensiveInfo | null {
 	if (!data || !Array.isArray(data)) return null;
 
@@ -89,7 +89,7 @@ const getCacheKey = (pondType: string, userAddress: string) => {
 };
 
 // Hook version of getPondInfo with optimizations
-export default function getPondInfo(
+export default function usePondInfo(
 	pondType: string,
 ): PondComprehensiveInfo | null {
 	const { address } = useAccount();
@@ -145,7 +145,6 @@ export default function getPondInfo(
 
 		// When data is loaded from contract, update state and cache
 		if (rawPondInfo && !isLoading && !isError) {
-			// biome-ignore lint/suspicious/noExplicitAny: <explanation>
 			const mappedData = mapArrayToPondInfo(rawPondInfo as any[]);
 
 			if (mappedData) {

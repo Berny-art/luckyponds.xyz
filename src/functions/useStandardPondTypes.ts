@@ -6,7 +6,7 @@ export type EnrichedPond = {
 	name: 'Daily' | 'Weekly' | 'Monthly' | 'Custom';
 };
 
-export default function getStandardPondTypes(): EnrichedPond[] {
+export default function useStandardPondTypes(): EnrichedPond[] {
 	const { data } = useReadContract({
 		...luckyPondsContractConfig,
 		functionName: 'getStandardPondTypes',
