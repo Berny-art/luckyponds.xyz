@@ -1,5 +1,5 @@
 export const pondCoreConfig = {
-	address: process.env.NEXT_PUBLIC_PONDS_CORE_ADDRESS,
+	address: process.env.NEXT_PUBLIC_CONTRACT_ADDRESS,
 	abi: [
 		{
 			inputs: [
