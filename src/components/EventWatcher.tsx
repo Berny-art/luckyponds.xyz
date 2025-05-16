@@ -40,7 +40,6 @@ export default function EventWatcher() {
 			for (const log of logs) {
 				// Type assertion to let TypeScript know that our log includes args property
 				const typedLog = log as unknown as CoinTossedLog;
-				console.log('CoinTossed event log:', typedLog);
 
 				// Skip if args doesn't exist or required properties are missing
 				if (

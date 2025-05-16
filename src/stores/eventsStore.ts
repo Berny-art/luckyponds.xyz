@@ -39,7 +39,6 @@ export const useEventsStore = create<EventsState>((set) => ({
 
 			if (eventExists) {
 				// If the event already exists, don't add it again
-				console.log('Skipping duplicate event in store:', event.id);
 				return state; // Return the current state unchanged
 			}
 

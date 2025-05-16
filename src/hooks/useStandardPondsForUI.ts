@@ -34,19 +34,6 @@ export function useStandardPondsForUI(
 		args: [formattedAddress],
 	});
 
-	// Enhanced error handling with console warnings
-	useEffect(() => {
-		if (pondCoreConfig.address) {
-			console.log('PondCore contract address:', pondCoreConfig.address);
-		} else {
-			console.warn('Warning: PondCore contract address is undefined in config');
-		}
-
-		if (isError && error) {
-			console.error('Error fetching standard ponds:', error);
-		}
-	}, [isError, error]);
-
 	// Process data and update store in one effect
 	useEffect(() => {
 		// Always update loading state
@@ -74,8 +61,6 @@ export function useStandardPondsForUI(
 					if (!selectedPond) {
 						setSelectedPond(enhancedPonds[2].type);
 					}
-
-					console.log('Pond types updated in store:', enhancedPonds);
 				} else {
 					console.warn('No valid pond types found after filtering');
 				}
