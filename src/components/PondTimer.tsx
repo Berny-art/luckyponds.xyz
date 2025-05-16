@@ -1,4 +1,5 @@
 'use client';
+/* eslint-disable react-hooks/exhaustive-deps */
 
 import { useState, useEffect, useRef, type JSX } from 'react';
 import Countdown from 'react-countdown';
@@ -15,7 +16,7 @@ export default function PondTimer({
 	const [endTimeMs, setEndTimeMs] = useState<number | null>(null);
 
 	// State to know if time has ended
-	const [isCompleted, setIsCompleted] = useState(false);
+	const [isCompleted, setIsCompleted] = useState(false); // eslint-disable-line @typescript-eslint/no-unused-vars
 
 	// State for progress bar (0-100)
 	const [progressValue, setProgressValue] = useState(100);
@@ -29,30 +30,6 @@ export default function PondTimer({
 	// Duration reference for progress calculation
 	const durationRef = useRef<number>(0);
 	const startTimeRef = useRef<number>(0);
-
-	// Update end time when pond info changes
-	useEffect(() => {
-		if (pondInfo) {
-			// Always use the contract's end time, even if it's 0
-			updateEndTime();
-
-			// For 5-minute ponds, set up the progress bar calculation
-			if (pondInfo.period === PondPeriod.FIVE_MIN) {
-				setupProgressBar();
-			}
-
-			// Set up update interval based on pond period
-			setupInterval();
-		}
-
-		// Cleanup
-		return () => {
-			if (intervalRef.current) {
-				clearInterval(intervalRef.current);
-				intervalRef.current = null;
-			}
-		};
-	}, [pondInfo]);
 
 	// Set up progress bar for 5-minute ponds
 	const setupProgressBar = () => {
@@ -120,6 +97,31 @@ export default function PondTimer({
 
 		setProgressValue(progress);
 	};
+
+	// Update end time when pond info changes
+	// biome-ignore lint/correctness/useExhaustiveDependencies: <explanation>
+	useEffect(() => {
+		if (pondInfo) {
+			// Always use the contract's end time, even if it's 0
+			updateEndTime();
+
+			// For 5-minute ponds, set up the progress bar calculation
+			if (pondInfo.period === PondPeriod.FIVE_MIN) {
+				setupProgressBar();
+			}
+
+			// Set up update interval based on pond period
+			setupInterval();
+		}
+
+		// Cleanup
+		return () => {
+			if (intervalRef.current) {
+				clearInterval(intervalRef.current);
+				intervalRef.current = null;
+			}
+		};
+	}, [pondInfo]);
 
 	// Function to update the end time - always use contract's value
 	const updateEndTime = () => {

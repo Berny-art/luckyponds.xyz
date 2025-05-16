@@ -1,7 +1,7 @@
 // src/app/page.tsx
 'use client';
 
-import { useState, useEffect, useRef, useMemo } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import CoinTossInput from '@/components/CoinTossInput';
 import PondInfo from '@/components/PondInfo';
 import StandardPonds from '@/components/StandardPonds';
@@ -17,12 +17,10 @@ import ShakeNotification from '@/components/ShakeNotification';
 import { useEventsStore } from '@/stores/eventsStore';
 import { useStandardPondsForUI } from '@/hooks/useStandardPondsForUI';
 import usePondInfo from '@/hooks/usePondInfo';
-import { useAccount } from 'wagmi';
 import { PondPeriod, type PondComprehensiveInfo } from '@/lib/types';
 import { useResponsiveBreakpoints } from '@/hooks/useBreakpoints';
 
 export default function Home() {
-	const { address } = useAccount();
 	const {
 		selectedPond,
 		setSelectedPond,

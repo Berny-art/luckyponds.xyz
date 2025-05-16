@@ -1,7 +1,7 @@
 // src/hooks/useStandardPondsForUI.ts
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useEffect } from 'react';
 import { useReadContract } from 'wagmi';
 import { pondCoreConfig } from '@/contracts/PondCore';
 import { PondPeriod, type PondDisplayInfo } from '@/lib/types';
@@ -26,7 +26,6 @@ export function useStandardPondsForUI(
 		isLoading,
 		isError,
 		error,
-		status,
 		refetch,
 	} = useReadContract({
 		...pondCoreConfig,

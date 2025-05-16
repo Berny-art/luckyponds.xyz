@@ -4,13 +4,9 @@ import { PondPeriod } from '@/lib/types';
 /**
  * Calculates the time remaining for a pond based on its period and end time
  * @param endTime The end time in seconds (blockchain format)
- * @param period The pond period (FIVE_MIN, HOURLY, etc.)
  * @returns Time remaining in seconds
  */
-export function calculateTimeRemaining(
-	endTime: bigint,
-	period: PondPeriod,
-): number {
+export function calculateTimeRemaining(endTime: bigint): number {
 	// Current time in seconds
 	const now = Math.floor(Date.now() / 1000);
 

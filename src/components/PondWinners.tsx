@@ -96,7 +96,7 @@ export default function PondWinners({ classNames }: { classNames?: string }) {
 					.map((_, index) => (
 						<Skeleton
 							// biome-ignore lint/suspicious/noArrayIndexKey: <explanation>
-							key={index} //eslint-disable-line react/no-array-index-key
+							key={index}
 							className="h-20 w-full rounded-lg bg-primary-200/5"
 						/>
 					))}

@@ -31,13 +31,6 @@ export default function ShakeNotification({
 		}
 	}, [latestEvent, eventKey]);
 
-	// Map animation speed to duration
-	const animationDuration = {
-		slow: '8s',
-		medium: '5s',
-		fast: '3s',
-	};
-
 	return (
 		<div
 			key={eventKey} // Add key here to force remount and restart animation

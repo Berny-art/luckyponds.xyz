@@ -13,7 +13,6 @@ import { toast } from 'sonner';
 import { PondStatus } from '@/functions/getPondStatus';
 import { usePondStatus } from '@/hooks/usePondStatus';
 import { useAnimationStore } from '@/stores/animationStore';
-import { useSelectionTimelock } from '@/hooks/useSelectionTimelock';
 
 interface CoinTossButtonProps {
 	amount: string;
@@ -37,16 +36,11 @@ export default function CoinTossButton({
 	const { writeContractAsync, isPending: isWritePending } = useWriteContract();
 	const { showLFG } = useAnimationStore();
 
-	// Get timelock value from contract
-	const { data: timelockSeconds, isLoading: isTimelockLoading } =
-		useSelectionTimelock();
-
 	// Get pond status with accurate timelock information
-	const { status: pondStatus, timeRemaining } = usePondStatus(pondInfo);
+	const { status: pondStatus } = usePondStatus(pondInfo);
 
 	// Check if the component is in a loading state
-	const isLoading =
-		tossLoading || isProcessing || isWritePending || isTimelockLoading;
+	const isLoading = tossLoading || isProcessing || isWritePending;
 
 	// Function to select a winner for the pond (hidden from user)
 	const selectWinner = async () => {
