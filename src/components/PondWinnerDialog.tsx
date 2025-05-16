@@ -10,9 +10,9 @@ import {
 	DialogTrigger,
 } from './ui/dialog';
 import { Button } from './ui/button';
-import useStandardPondsForUi from '@/hooks/useStandardPondsForUI'; // Fixed casing
 import usePondInfo from '@/hooks/usePondInfo';
 import { PondPeriod } from '@/lib/types';
+import { usePondStore } from '@/stores/pondStore';
 
 /**
  * Mobile-friendly component for displaying pond winners
@@ -21,24 +21,27 @@ import { PondPeriod } from '@/lib/types';
 export default function PondWinnerDialog({
 	classNames,
 }: { classNames?: string }) {
-	// Get standard pond types using our hook
-	const { data: pondsData, isLoading: isLoadingPonds } =
-		useStandardPondsForUi();
+	// Get pond types directly from the store
+	const { pondTypes, isLoadingPondTypes } = usePondStore();
 
 	// Extract pond types if available
-	const fiveMinPondType = pondsData?.find(
+	const fiveMinPondType = pondTypes.find(
 		(p) => p.period === PondPeriod.FIVE_MIN,
 	)?.type;
-	const hourlyPondType = pondsData?.find(
+
+	const hourlyPondType = pondTypes.find(
 		(p) => p.period === PondPeriod.HOURLY,
 	)?.type;
-	const dailyPondType = pondsData?.find(
+
+	const dailyPondType = pondTypes.find(
 		(p) => p.period === PondPeriod.DAILY,
 	)?.type;
-	const weeklyPondType = pondsData?.find(
+
+	const weeklyPondType = pondTypes.find(
 		(p) => p.period === PondPeriod.WEEKLY,
 	)?.type;
-	const monthlyPondType = pondsData?.find(
+
+	const monthlyPondType = pondTypes.find(
 		(p) => p.period === PondPeriod.MONTHLY,
 	)?.type;
 
@@ -63,7 +66,7 @@ export default function PondWinnerDialog({
 	};
 
 	const isLoading =
-		isLoadingPonds || !dailyPondType || !weeklyPondType || !monthlyPondType;
+		isLoadingPondTypes || !dailyPondType || !weeklyPondType || !monthlyPondType;
 
 	// Define display configuration for all pond types
 	const pondsConfig = [

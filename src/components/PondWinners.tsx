@@ -1,31 +1,35 @@
+// src/components/PondWinners.tsx
 'use client';
 
 import { cn, formatAddress, formatValue } from '@/lib/utils';
 import PondWinnerCard from './PondWinnerCard';
 import { Skeleton } from './ui/skeleton';
-import useStandardPondsForUI from '@/hooks/useStandardPondsForUI';
-import usePondInfo from '@/hooks/usePondInfo';
 import { PondPeriod } from '@/lib/types';
+import usePondInfo from '@/hooks/usePondInfo';
+import { usePondStore } from '@/stores/pondStore';
 
 export default function PondWinners({ classNames }: { classNames?: string }) {
-	// Get standard pond types using our hook
-	const { data: pondsData, isLoading: isLoadingPonds } =
-		useStandardPondsForUI();
+	// Get pond types directly from the store
+	const { pondTypes, isLoadingPondTypes } = usePondStore();
 
 	// Extract pond types if available
-	const fiveMinPondType = pondsData?.find(
+	const fiveMinPondType = pondTypes.find(
 		(p) => p.period === PondPeriod.FIVE_MIN,
 	)?.type;
-	const hourlyPondType = pondsData?.find(
+
+	const hourlyPondType = pondTypes.find(
 		(p) => p.period === PondPeriod.HOURLY,
 	)?.type;
-	const dailyPondType = pondsData?.find(
+
+	const dailyPondType = pondTypes.find(
 		(p) => p.period === PondPeriod.DAILY,
 	)?.type;
-	const weeklyPondType = pondsData?.find(
+
+	const weeklyPondType = pondTypes.find(
 		(p) => p.period === PondPeriod.WEEKLY,
 	)?.type;
-	const monthlyPondType = pondsData?.find(
+
+	const monthlyPondType = pondTypes.find(
 		(p) => p.period === PondPeriod.MONTHLY,
 	)?.type;
 
@@ -51,7 +55,7 @@ export default function PondWinners({ classNames }: { classNames?: string }) {
 
 	// Check if we're still loading data
 	const isLoading =
-		isLoadingPonds ||
+		isLoadingPondTypes ||
 		!dailyPondType ||
 		!weeklyPondType ||
 		!monthlyPondType ||

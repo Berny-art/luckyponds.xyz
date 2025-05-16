@@ -1,26 +1,35 @@
+// src/components/StandardPonds.tsx
 'use client';
 
 import { useEffect } from 'react';
-import { usePondStore } from '@/stores/pondStore';
 import { cn } from '@/lib/utils';
 import { Button } from './ui/button';
 import { useAnimationStore } from '@/stores/animationStore';
 import { PondPeriod } from '@/lib/types';
 import { Skeleton } from './ui/skeleton';
-import useStandardPondsForUI from '@/hooks/useStandardPondsForUI';
 
-export default function StandardPonds() {
-	// Use our custom hook to get pond types
-	const { data: pondTypes, isLoading } = useStandardPondsForUI();
-	const { selectedPond, setSelectedPond } = usePondStore((state) => state);
+interface EnhancedPond {
+	type: string;
+	name: string;
+	displayName: string;
+	period: PondPeriod;
+	exists: boolean;
+}
+
+interface StandardPondsProps {
+	pondTypes: EnhancedPond[];
+	isLoading: boolean;
+	selectedPond: string | null;
+	onPondSelect: (pondType: string) => void;
+}
+
+export default function StandardPonds({
+	pondTypes,
+	isLoading,
+	selectedPond,
+	onPondSelect,
+}: StandardPondsProps) {
 	const { showRandom } = useAnimationStore();
-
-	// Set first pond as active on load
-	useEffect(() => {
-		if (!selectedPond && pondTypes && pondTypes.length > 0) {
-			setSelectedPond(pondTypes[0].type);
-		}
-	}, [pondTypes, selectedPond, setSelectedPond]);
 
 	// Enhanced pond name mapping with descriptions
 	const getPondDescription = (period: PondPeriod): string => {
@@ -54,7 +63,7 @@ export default function StandardPonds() {
 			}
 
 			// Set the selected pond
-			setSelectedPond(pondType);
+			onPondSelect(pondType);
 		}
 	};
 
@@ -73,7 +82,6 @@ export default function StandardPonds() {
 	}
 
 	// Filter to show only Daily, Weekly, and Monthly ponds on smaller screens
-	// Can be adjusted based on screen size if needed
 	const displayPonds =
 		pondTypes?.filter((pond) =>
 			[PondPeriod.DAILY, PondPeriod.WEEKLY, PondPeriod.MONTHLY].includes(
