@@ -3,7 +3,7 @@
 
 import { useState, useEffect } from 'react';
 import { useWriteContract, useWaitForTransactionReceipt } from 'wagmi';
-import { luckyPondsContractConfig } from '@/contracts/LuckyPonds';
+import { pondCoreConfig } from '@/contracts/PondCore';
 import { parseEther } from 'viem';
 import { toast } from 'sonner';
 import { TokenType } from '@/lib/types';
@@ -51,6 +51,23 @@ const getUserFriendlyErrorMessage = (errorMessage: string): string => {
 		errorMessage.includes('price impact')
 	) {
 		return 'Price changed during transaction. Try again';
+	}
+
+	// PondCore specific errors
+	if (errorMessage.includes('AmountTooLow')) {
+		return 'Toss amount is too low for this pond';
+	}
+
+	if (errorMessage.includes('MaxTossAmountExceeded')) {
+		return 'Maximum toss amount exceeded for this pond';
+	}
+
+	if (errorMessage.includes('PondNotOpen')) {
+		return 'This pond is not currently open for tosses';
+	}
+
+	if (errorMessage.includes('TimelockActive')) {
+		return 'Winner selection is currently time-locked';
 	}
 
 	// Contract execution error
@@ -136,14 +153,19 @@ export function useTossCoin() {
 			setIsLoading(true);
 			toast.loading('Preparing transaction...', { id: 'toss-loading' });
 
+			// Format the pond type for the contract
+			const pondTypeFormatted = pondType as `0x${string}`;
+			const amountFormatted = parseEther(amount);
+
 			// Handle native or ERC20 tokens differently
 			if (tokenType === TokenType.NATIVE) {
-				// Native token (ETH) transaction
+				// Native token (ETH/HYPE) transaction
 				const hash = await writeContractAsync({
-					...luckyPondsContractConfig,
-					functionName: 'tossCoin',
-					args: [pondType as `0x${string}`],
-					value: parseEther(amount),
+					...pondCoreConfig,
+					address: pondCoreConfig.address as `0x${string}`,
+					functionName: 'toss', // PondCore uses 'toss' instead of 'tossCoin'
+					args: [pondTypeFormatted, amountFormatted],
+					value: amountFormatted,
 				});
 
 				setTxHash(hash);
@@ -151,18 +173,15 @@ export function useTossCoin() {
 					id: 'toss-loading',
 				});
 			} else {
-				// ERC20 token transaction (requires approval first)
-				const hash = await writeContractAsync({
-					...luckyPondsContractConfig,
-					functionName: 'tossToken',
-					args: [pondType as `0x${string}`, parseEther(amount)],
+				// For ERC20 token transactions, would need approval first
+				// Note: This might need modification based on PondCore's exact API
+				toast.error('ERC20 token tossing not supported yet', {
+					description: 'Please use native HYPE token for now.',
 				});
-
-				setTxHash(hash);
-				toast.loading('Transaction submitted, waiting for confirmation...', {
-					id: 'toss-loading',
-				});
+				setIsLoading(false);
+				return;
 			}
+			// biome-ignore lint/suspicious/noExplicitAny: Any must be specified in catch
 		} catch (error: any) {
 			setIsLoading(false);
 			toast.dismiss('toss-loading');

@@ -18,7 +18,9 @@ interface PondWinnerCardProps {
 	amount: string;
 	winner: string;
 	colorClass: string;
+	textClass?: string;
 	hasWinner: boolean;
+	pondType?: string;
 }
 
 export default function PondWinnerCard({
@@ -26,6 +28,7 @@ export default function PondWinnerCard({
 	amount,
 	winner,
 	colorClass,
+	textClass,
 	hasWinner,
 }: PondWinnerCardProps) {
 	const [open, setOpen] = useState(false);
@@ -61,6 +64,10 @@ export default function PondWinnerCard({
 			specialEmoji = confetti.shapeFromText({ text: '💧', scalar }); // Water-themed
 		} else if (colorClass.includes('orange')) {
 			specialEmoji = confetti.shapeFromText({ text: '🌟', scalar }); // Star-themed
+		} else if (colorClass.includes('purple')) {
+			specialEmoji = confetti.shapeFromText({ text: '⚡', scalar }); // Lightning for fast 5-min ponds
+		} else if (colorClass.includes('blue')) {
+			specialEmoji = confetti.shapeFromText({ text: '⏱️', scalar }); // Clock for hourly ponds
 		} else {
 			specialEmoji = confetti.shapeFromText({ text: '💜', scalar }); // Heart-themed
 		}
@@ -142,16 +149,8 @@ export default function PondWinnerCard({
 		const baseClasses =
 			'border-2 text-center font-mono text-secondary-200 flex flex-col items-center justify-center gap-4 p-6';
 
-		if (colorClass.includes('primary')) {
-			return cn(baseClasses, 'border-primary-200 bg-primary-200/10');
-		}
-		if (colorClass.includes('orange')) {
-			return cn(baseClasses, 'border-orange-500 bg-orange-500/10');
-		}
-		if (colorClass.includes('drip')) {
-			return cn(baseClasses, 'border-drip-300 bg-drip-300/10');
-		}
-		return cn(baseClasses, 'border-primary-200 bg-primary-200/10');
+		// Use the same color class for consistency
+		return cn(baseClasses, colorClass);
 	};
 
 	// Determine button styling based on colorClass
@@ -161,11 +160,14 @@ export default function PondWinnerCard({
 		if (colorClass.includes('primary-200')) {
 			return cn(baseClasses, 'bg-primary-200 hover:bg-primary-200/80');
 		}
-		if (
-			colorClass.includes('orange-500') ||
-			colorClass.includes('orange-300')
-		) {
-			return cn(baseClasses, 'bg-orange-500 hover:bg-orange-500/80');
+		if (colorClass.includes('orange')) {
+			return cn(baseClasses, 'bg-orange-400 hover:bg-orange-400/80');
+		}
+		if (colorClass.includes('purple')) {
+			return cn(baseClasses, 'bg-purple-400 hover:bg-purple-400/80');
+		}
+		if (colorClass.includes('blue')) {
+			return cn(baseClasses, 'bg-blue-400 hover:bg-blue-400/80');
 		}
 		if (colorClass.includes('drip-300')) {
 			return cn(baseClasses, 'bg-drip-300 hover:bg-drip-300/80');
@@ -173,20 +175,16 @@ export default function PondWinnerCard({
 		return cn(baseClasses, 'bg-primary-200 hover:bg-primary-200/80');
 	};
 
-	// Determine heading text color
+	// Use the textClass if provided, otherwise infer from colorClass
 	const getTextColorClass = () => {
-		if (colorClass.includes('primary-200')) {
-			return 'text-primary-200';
-		}
-		if (
-			colorClass.includes('orange-500') ||
-			colorClass.includes('orange-300')
-		) {
-			return 'text-orange-500';
-		}
-		if (colorClass.includes('drip-300')) {
-			return 'text-drip-300';
-		}
+		if (textClass) return textClass;
+
+		if (colorClass.includes('primary-200')) return 'text-primary-200';
+		if (colorClass.includes('orange')) return 'text-orange-400';
+		if (colorClass.includes('purple')) return 'text-purple-400';
+		if (colorClass.includes('blue')) return 'text-blue-400';
+		if (colorClass.includes('drip-300')) return 'text-drip-300';
+
 		return 'text-primary-200';
 	};
 
@@ -197,7 +195,9 @@ export default function PondWinnerCard({
 					className={`flex w-full flex-col items-start justify-center rounded border ${colorClass} px-4 py-2 text-primary-200`}
 				>
 					<div className="font-mono">{title}</div>
-					<div className="font-bold font-mono text-xl">{amount} HYPE</div>
+					<div className={`font-bold font-mono text-xl ${getTextColorClass()}`}>
+						{amount} HYPE
+					</div>
 					<div className="font-mono text-sm opacity-70">{winner}</div>
 				</div>
 			</DialogTrigger>

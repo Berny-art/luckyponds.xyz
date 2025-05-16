@@ -6,6 +6,16 @@ export enum TokenType {
 	ERC20 = 1,
 }
 
+// Pond period types from the contract
+export enum PondPeriod {
+	FIVE_MIN = 0,
+	HOURLY = 1,
+	DAILY = 2,
+	WEEKLY = 3,
+	MONTHLY = 4,
+	CUSTOM = 5,
+}
+
 // Participant information
 export interface ParticipantInfo {
 	participant: Address;
@@ -18,22 +28,31 @@ export interface ParticipantData {
 	exists: boolean;
 }
 
-// Pond structure from the contract
+// Pond structure from the contract (ponds mapping)
 export interface PondData {
-	startTime: bigint;
-	endTime: bigint;
-	totalTosses: bigint;
-	paddingA: bigint;
-	totalValue: bigint;
-	totalFrogValue: bigint;
-	minTossPrice: bigint;
-	paddingB: bigint;
-	maxTotalTossAmount: bigint;
+	startTime: bigint; // uint64
+	endTime: bigint; // uint64
+	totalTosses: bigint; // uint64
+	paddingA: bigint; // uint64
+	totalValue: bigint; // uint128
+	totalFrogValue: bigint; // uint128
+	minTossPrice: bigint; // uint64
+	paddingB: bigint; // uint64
+	maxTotalTossAmount: bigint; // uint128
 	tokenAddress: Address;
 	tokenType: TokenType;
+	period: PondPeriod;
 	prizeDistributed: boolean;
 	pondType: string; // bytes32 but we'll use string for easier handling
 	pondName: string;
+}
+
+// Pond display info for UI (from getStandardPondsForUI)
+export interface PondDisplayInfo {
+	pondType: string; // bytes32
+	pondName: string;
+	period: PondPeriod;
+	exists: boolean;
 }
 
 // Pond status returned by getPondStatus
@@ -50,9 +69,19 @@ export interface PondStatus {
 	maxTotalTossAmount: bigint;
 	tokenType: TokenType;
 	tokenAddress: Address;
+	period: PondPeriod; // New field in PondCore
 }
 
-// Comprehensive pond info returned by getPondComprehensiveInfo
+// Standard pond types returned by getStandardPondTypes
+export interface StandardPondTypes {
+	fiveMin: string; // bytes32
+	hourly: string; // bytes32
+	daily: string; // bytes32
+	weekly: string; // bytes32
+	monthly: string; // bytes32
+}
+
+// Comprehensive pond info for our application (merged data from multiple calls)
 export interface PondComprehensiveInfo extends PondStatus {
 	userTossAmount: bigint;
 	remainingTossAmount: bigint;
@@ -61,39 +90,11 @@ export interface PondComprehensiveInfo extends PondStatus {
 	recentParticipants: ParticipantInfo[];
 }
 
-// Standard pond types returned by getStandardPondTypes
-export interface StandardPondTypes {
-	daily: string; // bytes32
-	weekly: string; // bytes32
-	monthly: string; // bytes32
-	unknown: string; // bytes32
-}
-
-// Removable ponds returned by getRemovablePonds
-export interface RemovablePonds {
-	removablePonds: string[]; // bytes32[]
-	pondNames: string[];
-}
-
-// Date to timestamp function parameters
-export interface DateToTimestampParams {
-	year: bigint;
-	month: bigint;
-	day: bigint;
-}
-
-// Timestamp to date function result
-export interface TimestampToDateResult {
-	year: bigint;
-	month: bigint;
-	day: bigint;
-}
-
-// Contract roles
+// Contract roles - consistent with PondCore
 export interface ContractRoles {
 	DEFAULT_ADMIN_ROLE: string; // bytes32
 	ADMIN_ROLE: string; // bytes32
-	OPERATOR_ROLE: string; // bytes32
+	FACTORY_ROLE: string; // bytes32 - Changed from OPERATOR_ROLE
 	POND_MANAGER_ROLE: string; // bytes32
 }
 
@@ -107,19 +108,21 @@ export interface CreatePondParams {
 	maxTotalTossAmount: bigint;
 	tokenType: TokenType;
 	tokenAddress: Address;
+	period: PondPeriod; // New parameter in PondCore
 }
 
-// Event types
+// Event types - updated to match PondCore events
 export interface CoinTossedEvent {
 	pondType: string; // bytes32
-	frog: Address;
+	participant: Address; // Changed from frog to participant
 	amount: bigint;
 	timestamp: bigint;
 	totalPondTosses: bigint;
 	totalPondValue: bigint;
 }
 
-export interface ConfigUpdatedEvent {
+export interface ConfigChangedEvent {
+	// Changed from ConfigUpdatedEvent
 	configType: string;
 	pondType: string; // bytes32
 	oldValue: bigint;
@@ -136,11 +139,21 @@ export interface EmergencyActionEvent {
 	pondType: string; // bytes32
 }
 
-export interface LuckyFrogSelectedEvent {
+export interface LuckyWinnerSelectedEvent {
+	// Changed from LuckyFrogSelectedEvent
 	pondType: string; // bytes32
-	luckyFrog: Address;
+	winner: Address; // Changed from luckyFrog
 	prize: bigint;
 	selector: Address;
+}
+
+export interface PondTopUpEvent {
+	// New event type in PondCore
+	pondType: string; // bytes32
+	contributor: Address;
+	amount: bigint;
+	timestamp: bigint;
+	totalPondValue: bigint;
 }
 
 export interface PondActionEvent {
@@ -163,11 +176,12 @@ export interface RoleAdminChangedEvent {
 	newAdminRole: string; // bytes32
 }
 
-export type LuckyPondsEvents = {
+export type PondCoreEvents = {
 	CoinTossed: CoinTossedEvent;
-	ConfigUpdated: ConfigUpdatedEvent;
+	ConfigChanged: ConfigChangedEvent; // Changed from ConfigUpdated
 	EmergencyAction: EmergencyActionEvent;
-	LuckyFrogSelected: LuckyFrogSelectedEvent;
+	LuckyWinnerSelected: LuckyWinnerSelectedEvent; // Changed from LuckyFrogSelected
+	PondTopUp: PondTopUpEvent; // New event
 	PondAction: PondActionEvent;
 	RoleGranted: RoleEvent;
 	RoleRevoked: RoleEvent;
@@ -176,16 +190,16 @@ export type LuckyPondsEvents = {
 	Unpaused: { account: Address };
 };
 
-// Error types
-export type LuckyPondsErrors =
+// Error types - updated based on PondCore error list
+export type PondCoreErrors =
 	| 'AccessControlBadConfirmation'
 	| 'AccessControlUnauthorizedAccount'
 	| 'AmountTooLow'
 	| 'CannotRemovePondWithActivity'
 	| 'EnforcedPause'
 	| 'ExpectedPause'
-	| 'IncorrectTossAmount'
-	| 'InsufficientAllowance'
+	| 'FeeToHigh' // New error
+	| 'InvalidParameters' // New error
 	| 'InvalidPondType'
 	| 'MaxTossAmountExceeded'
 	| 'NoPondParticipants'
@@ -202,23 +216,23 @@ export type LuckyPondsErrors =
 	| 'ZeroAddress';
 
 // Define utility type for wagmi contract-write hooks
-export type TossCoinParams = {
+export type TossParams = {
+	// Changed from TossCoinParams
 	pondType: string; // bytes32
-	value: bigint; // amount of native token to send
-};
-
-export type TossTokenParams = {
-	pondType: string; // bytes32
-	amount: bigint;
+	amount: bigint; // amount to toss
 };
 
 // Zustand store type if needed
-export interface LuckyPondsStore {
+export interface PondCoreStore {
+	// Changed from LuckyPondsStore
 	ponds: Record<string, PondStatus>;
 	userParticipation: Record<string, bigint>;
+	lastWinners: Record<string, Address>;
+	lastPrizes: Record<string, bigint>;
 	fetchPondStatus: (pondType: string) => Promise<void>;
 	fetchUserParticipation: (
 		pondType: string,
 		userAddress: Address,
 	) => Promise<void>;
+	fetchLastWinnerInfo: (pondType: string) => Promise<void>;
 }

@@ -1,11 +1,11 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import CoinTossInput from '@/components/CoinTossInput';
 import PondInfo from '@/components/PondInfo';
 import StandardPonds from '@/components/StandardPonds';
 import { usePondStore } from '@/stores/pondStore';
-import usePondInfo from '@/functions/usePondInfo';
 import { formatValue } from '@/lib/utils';
 import PondWinners from '@/components/PondWinners';
 import PondWinnerDialog from '@/components/PondWinnerDialog';
@@ -15,18 +15,79 @@ import { Skeleton } from '@/components/ui/skeleton';
 import FloatingEvents from '@/components/FloatingEvents';
 import ShakeNotification from '@/components/ShakeNotification';
 import { useEventsStore, type ContractEvent } from '@/stores/eventsStore';
-import type { ParticipantInfo } from '@/lib/types';
+import { PondPeriod } from '@/lib/types';
+import usePondInfo from '@/hooks/usePondInfo';
 
 export default function Home() {
 	const { selectedPond } = usePondStore();
-	const { addEvent, events } = useEventsStore();
-	const pondInfo = usePondInfo(selectedPond || '');
-	const isLoading = !pondInfo;
+	const { addEvent, clearEvents } = useEventsStore();
 
+	// Use React Query to handle pond information
+	const {
+		data: pondInfo,
+		isLoading: isPondLoading,
+		isFetching: isPondFetching,
+		refetch: refetchPondInfo,
+	} = usePondInfo(selectedPond || '');
+
+	// Local state
 	const [displayAmount, setDisplayAmount] = useState('0');
-	const [pondType, setPondType] = useState('daily'); // eslint-disable-line @typescript-eslint/no-unused-vars
 	const initialEventsAddedRef = useRef(false);
 	const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+	// Query for generating fake events based on pond type and participants
+	const { data: fakeEvents } = useQuery({
+		queryKey: [
+			'fakeEvents',
+			selectedPond,
+			pondInfo?.recentParticipants?.length,
+		],
+		queryFn: async () => {
+			if (!pondInfo?.recentParticipants?.length) return [];
+
+			// Generate a few fake events based on recent participants
+			return Array.from({ length: 3 }, (_, i) => {
+				const randomIndex = Math.floor(
+					Math.random() * pondInfo.recentParticipants.length,
+				);
+				const participant = pondInfo.recentParticipants[randomIndex];
+
+				return {
+					id: `${participant.tossAmount}-${participant.participant}-${Date.now()}-${i}`,
+					address: participant.participant,
+					amount: formatValue(participant.tossAmount),
+					timestamp: Math.floor(Date.now() / 1000) - i * 60, // Space them out by a minute
+					type: 'CoinTossed' as const,
+					pondType: selectedPond || '',
+				};
+			});
+		},
+		enabled:
+			!!pondInfo?.recentParticipants?.length &&
+			pondInfo.recentParticipants.length > 0,
+		refetchInterval: getPondRefetchInterval(pondInfo?.period),
+		refetchOnWindowFocus: false,
+	});
+
+	// Helper function to determine refetch interval based on pond period
+	function getPondRefetchInterval(period?: PondPeriod): number {
+		if (!period) return 30000; // Default 30s
+
+		switch (period) {
+			case PondPeriod.FIVE_MIN:
+				return 10000; // 10s for 5-min ponds
+			case PondPeriod.HOURLY:
+				return 15000; // 15s for hourly ponds
+			case PondPeriod.DAILY:
+				return 30000; // 30s for daily ponds
+			case PondPeriod.WEEKLY:
+				return 60000; // 1min for weekly ponds
+			case PondPeriod.MONTHLY:
+				return 120000; // 2min for monthly ponds
+			default:
+				return 30000; // Default 30s
+		}
+	}
 
 	// Update display amount when pond info changes
 	useEffect(() => {
@@ -37,90 +98,40 @@ export default function Home() {
 		}
 	}, [pondInfo]);
 
-	// Determine the pond type from the name
+	// Add fake events to the store when they change
 	useEffect(() => {
-		if (pondInfo?.name) {
-			const name = pondInfo.name.toLowerCase();
-			if (name.includes('daily')) {
-				setPondType('daily');
-			} else if (name.includes('weekly')) {
-				setPondType('weekly');
-			} else if (name.includes('monthly')) {
-				setPondType('monthly');
-			}
-		}
-	}, [pondInfo?.name]);
+		if (fakeEvents && fakeEvents.length > 0 && !initialEventsAddedRef.current) {
+			// Mark as initialized to prevent flooding
+			initialEventsAddedRef.current = true;
 
-	// Show participant events
-	useEffect(() => {
-		// Only run this once per pond and when we have participants to show
-		if (
-			initialEventsAddedRef.current ||
-			!pondInfo?.recentParticipants?.length
-		) {
-			return;
-		}
+			// Add first event immediately
+			addEvent(fakeEvents[0]);
 
-		// Mark as initialized to prevent re-adding events
-		initialEventsAddedRef.current = true;
+			// Schedule the rest with delays
+			fakeEvents.slice(1).forEach((event, index) => {
+				setTimeout(
+					() => {
+						addEvent(event);
+					},
+					(index + 1) * 5000,
+				); // Add one every 5 seconds
+			});
 
-		// Function to create an event from a participant
-		const createEventFromParticipant = (
-			participant: ParticipantInfo,
-			index: number,
-		) => {
-			return {
-				id: `${participant.tossAmount}-${participant.participant}-${Date.now()}-${index}`,
-				address: participant.participant,
-				amount: formatValue(participant.tossAmount),
-				timestamp: Math.floor(Date.now() / 1000) - index * 60, // Space them out by a minute
-				type: 'CoinTossed',
-				pondType: selectedPond || '',
-			} as ContractEvent;
-		};
-
-		// Add one event immediately
-		if (pondInfo.recentParticipants.length > 0) {
-			const randomIndex = Math.floor(
-				Math.random() * pondInfo.recentParticipants.length,
+			// Reset after all events are added
+			const resetTimeout = setTimeout(
+				() => {
+					initialEventsAddedRef.current = false;
+				},
+				(fakeEvents.length + 1) * 5000,
 			);
-			const participant = pondInfo.recentParticipants[randomIndex];
-			const immediateEvent = createEventFromParticipant(participant, 0);
-			addEvent(immediateEvent);
+
+			return () => clearTimeout(resetTimeout);
 		}
+	}, [fakeEvents, addEvent]);
 
-		// Set up a periodic check for adding more participants if needed
-		const checkAndAddParticipant = () => {
-			// Only add if there are no events in the store
-			if (events.length === 0 && pondInfo.recentParticipants?.length > 0) {
-				const randomIndex = Math.floor(
-					Math.random() * pondInfo.recentParticipants.length,
-				);
-				const participant = pondInfo.recentParticipants[randomIndex];
-				const event = createEventFromParticipant(participant, 0);
-				addEvent(event);
-			}
-
-			// Schedule next check
-			timeoutRef.current = setTimeout(
-				checkAndAddParticipant,
-				Math.random() * 5000 + 10000,
-			); // 10-15 seconds
-		};
-
-		// Start checking after 15 seconds
-		timeoutRef.current = setTimeout(checkAndAddParticipant, 15000);
-
-		// Clean up on unmount
-		return () => {
-			if (timeoutRef.current) {
-				clearTimeout(timeoutRef.current);
-			}
-		};
-	}, [pondInfo, addEvent, events.length, selectedPond]);
-
-	// Reset the initialEventsAdded flag when pond changes
+	// Clear events when pond changes
 	useEffect(() => {
+		clearEvents();
 		initialEventsAddedRef.current = false;
 
 		// Clear any pending timeouts
@@ -128,7 +139,36 @@ export default function Home() {
 			clearTimeout(timeoutRef.current);
 			timeoutRef.current = null;
 		}
-	}, []);
+
+		// Refetch pond info when pond changes
+		if (selectedPond) {
+			refetchPondInfo();
+		}
+	}, [selectedPond, clearEvents, refetchPondInfo]);
+
+	// Get the pond display name based on period
+	const getPondDisplayName = () => {
+		if (!pondInfo?.period) return 'Lucky Pond';
+
+		switch (pondInfo.period) {
+			case PondPeriod.FIVE_MIN:
+				return '5 Minute Pond';
+			case PondPeriod.HOURLY:
+				return 'Hourly Pond';
+			case PondPeriod.DAILY:
+				return 'Daily Pond';
+			case PondPeriod.WEEKLY:
+				return 'Weekly Pond';
+			case PondPeriod.MONTHLY:
+				return 'Monthly Pond';
+			default:
+				return pondInfo.name || 'Lucky Pond';
+		}
+	};
+
+	// Determine if we're in a loading state
+	const isLoading = isPondLoading || !pondInfo;
+	const isRefetching = isPondFetching && !isPondLoading;
 
 	return (
 		<div className="flex w-full flex-col justify-center gap-8 overflow-x-hidden p-4 pb-12 md:flex-row md:pb-0">
@@ -139,10 +179,20 @@ export default function Home() {
 						{isLoading ? (
 							<Skeleton className="inline-block h-10 w-28 bg-secondary-900" />
 						) : (
-							<span className="text-drip-300">{displayAmount}</span>
+							<span className="relative text-drip-300">
+								{displayAmount}
+								{isRefetching && (
+									<span className="-top-1 -right-3 absolute h-2 w-2 animate-ping rounded-full bg-drip-300" />
+								)}
+							</span>
 						)}{' '}
 						HYPE
 					</h1>
+
+					{/* Pond Name (Optional) */}
+					<div className="-mt-4 -mb-2 font-mono text-primary-200/80">
+						{!isLoading && <span>{getPondDisplayName()}</span>}
+					</div>
 
 					{/* Countdown Timer */}
 					<div className="-mt-2 mb-2">

@@ -7,11 +7,14 @@ import type { PondComprehensiveInfo } from '@/lib/types';
 // Define event types based on the contract events
 export interface ContractEvent {
 	id: string;
-	address: string;
+	address: string; // Now represents 'participant' instead of 'frog'
 	amount: string;
 	timestamp: number;
-	type: 'CoinTossed' | 'LuckyFrogSelected'; // Add other event types as needed
+	type: 'CoinTossed' | 'LuckyWinnerSelected'; // Updated name from 'LuckyFrogSelected'
 	pondType: string;
+	position?: {
+		left: string;
+	};
 }
 
 interface EventsState {
@@ -40,12 +43,20 @@ export const useEventsStore = create<EventsState>((set) => ({
 				return state; // Return the current state unchanged
 			}
 
+			// Add position property for floating events if not already present
+			const eventWithPosition = {
+				...event,
+				position: event.position || {
+					left: `${Math.floor(Math.random() * 80) + 10}%`, // Random position between 10-90%
+				},
+			};
+
 			// Create a new array with the new event at the beginning
-			const updatedEvents = [event, ...state.events].slice(0, 10); // Keep only the 10 most recent events
+			const updatedEvents = [eventWithPosition, ...state.events].slice(0, 10); // Keep only the 10 most recent events
 
 			return {
 				events: updatedEvents,
-				latestEvent: event,
+				latestEvent: eventWithPosition,
 			};
 		});
 	},

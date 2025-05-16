@@ -4,13 +4,14 @@ import { useState } from 'react';
 import { Button } from './ui/button';
 import { useTossCoin } from '@/hooks/useTossCoin';
 import { usePondStore } from '@/stores/pondStore';
-import { Loader2, Wallet } from 'lucide-react';
+import { Loader2, Wallet, Lock } from 'lucide-react';
 import type { PondComprehensiveInfo } from '@/lib/types';
 import { useAccount, useWriteContract } from 'wagmi';
 import { useConnectModal } from '@rainbow-me/rainbowkit';
-import { luckyPondsContractConfig } from '@/contracts/LuckyPonds';
+import { pondCoreConfig } from '@/contracts/PondCore';
 import { toast } from 'sonner';
-import { getPondStatus, PondStatus } from '@/functions/getPondStatus';
+import { PondStatus } from '@/functions/getPondStatus';
+import { usePondStatus } from '@/hooks/usePondStatus';
 import { useAnimationStore } from '@/stores/animationStore';
 
 interface CoinTossButtonProps {
@@ -35,11 +36,11 @@ export default function CoinTossButton({
 	const { writeContractAsync, isPending: isWritePending } = useWriteContract();
 	const { showLFG } = useAnimationStore();
 
+	// Get pond status with timelock information
+	const { status, timeRemaining } = usePondStatus(pondInfo);
+
 	// Check if the component is in a loading state
 	const isLoading = tossLoading || isProcessing || isWritePending;
-
-	// Get the current pond status using our utility function with enum
-	const pondStatus = getPondStatus(pondInfo);
 
 	// Function to select a winner for the pond (hidden from user)
 	const selectWinner = async () => {
@@ -48,32 +49,28 @@ export default function CoinTossButton({
 		try {
 			// No toast notification for this step - we keep it hidden
 			const hash = await writeContractAsync({
-				...luckyPondsContractConfig,
-				functionName: 'selectLuckyFrog',
+				...pondCoreConfig,
+				address: pondCoreConfig.address as `0x${string}`,
+				functionName: 'selectLuckyWinner',
 				args: [selectedPond as `0x${string}`],
 			});
 
 			console.log('Silent winner selection transaction:', hash);
 			return hash;
-			// Handle error in a type-safe way
 		} catch (error: unknown) {
 			console.error('Silent winner selection error:', error);
-			// Rethrow to handle in the calling function
 			throw error;
 		}
 	};
 
 	// Handle the connect wallet action with RainbowKit
 	const handleConnect = (e: React.MouseEvent) => {
-		// Trigger animation at click position
 		const x = e.clientX;
 		const y = e.clientY;
-
 		if (x && y) {
 			showLFG({ x, y });
 		}
 
-		// Open the RainbowKit connect modal
 		if (openConnectModal) {
 			openConnectModal();
 		} else {
@@ -89,10 +86,8 @@ export default function CoinTossButton({
 			return;
 		}
 
-		// Trigger the LFG animation at the button click position
 		const x = e.clientX;
 		const y = e.clientY;
-
 		if (x && y) {
 			showLFG({ x, y });
 		}
@@ -101,17 +96,14 @@ export default function CoinTossButton({
 
 		try {
 			// If pond is ready for winner selection, do it silently
-			if (pondStatus === PondStatus.SelectWinner) {
-				// Show generic loading message
+			if (status === PondStatus.SelectWinner) {
 				toast.loading('Processing transaction...', { id: 'toss-loading' });
-
 				try {
 					// Silently trigger winner selection
 					await selectWinner();
 					// Small delay to ensure transactions are processed in order
 					await new Promise((resolve) => setTimeout(resolve, 500));
 				} catch (error: unknown) {
-					// If winner selection fails, show a generic error
 					toast.error('Transaction failed', {
 						id: 'toss-loading',
 						description: 'There was an error processing your transaction.',
@@ -126,7 +118,6 @@ export default function CoinTossButton({
 			await tossCoin(selectedPond, amount, pondInfo.tokenType);
 		} catch (error) {
 			console.error('Toss process error:', error);
-			// Error handling already in tossCoin function
 		} finally {
 			setIsProcessing(false);
 		}
@@ -157,6 +148,18 @@ export default function CoinTossButton({
 			);
 		}
 
+		// If pond is time-locked, show the remaining time
+		if (status === PondStatus.TimeLocked && timeRemaining !== undefined) {
+			const minutes = Math.floor(timeRemaining / 60);
+			const seconds = timeRemaining % 60;
+			return (
+				<>
+					<Lock className="mr-2 h-5 w-5" /> Time-locked: {minutes}m{' '}
+					{seconds.toString().padStart(2, '0')}s
+				</>
+			);
+		}
+
 		// Connected - show standard toss message
 		return numberOfTosses === 1
 			? `Toss ${numberOfTosses} coin in ${displayPondName} pond`
@@ -180,8 +183,9 @@ export default function CoinTossButton({
 			(!selectedPond ||
 				amount === '0' ||
 				numberOfTosses < 1 ||
-				pondStatus === PondStatus.NotStarted ||
-				pondStatus === PondStatus.Completed));
+				status === PondStatus.NotStarted ||
+				status === PondStatus.TimeLocked ||
+				status === PondStatus.Completed));
 
 	return (
 		<Button

@@ -3,16 +3,16 @@
 
 import { useWatchContractEvent } from 'wagmi';
 import { type ContractEvent, useEventsStore } from '@/stores/eventsStore';
-import { luckyPondsContractConfig } from '@/contracts/LuckyPonds';
+import { pondCoreConfig } from '@/contracts/PondCore';
 import { formatEther } from 'viem';
 
-// Define a more specific type for contract event logs that includes args
+// Define specific types for contract event logs
 interface CoinTossedLog {
 	args: {
 		pondType: string | bigint;
-		frog: string;
+		participant: string; // Changed from 'frog' to 'participant'
 		amount: bigint;
-		timestamp?: bigint;
+		timestamp: bigint;
 		totalPondTosses?: bigint;
 		totalPondValue?: bigint;
 	};
@@ -29,33 +29,35 @@ export default function EventWatcher() {
 
 	// Watch for CoinTossed events
 	useWatchContractEvent({
-		...luckyPondsContractConfig,
+		...pondCoreConfig,
+		address: pondCoreConfig.address as `0x${string}`,
 		eventName: 'CoinTossed',
 		enabled: true,
 		onError(error) {
-			console.log('Error', error);
+			console.log('Error watching CoinTossed events:', error);
 		},
 		onLogs(logs) {
 			for (const log of logs) {
 				// Type assertion to let TypeScript know that our log includes args property
 				const typedLog = log as unknown as CoinTossedLog;
 				console.log('CoinTossed event log:', typedLog);
+
 				// Skip if args doesn't exist or required properties are missing
 				if (
 					!typedLog.args ||
 					!typedLog.args.pondType ||
-					!typedLog.args.frog ||
+					!typedLog.args.participant ||
 					!typedLog.args.amount
 				) {
 					continue;
 				}
 
 				// Extract args from the event log
-				const { pondType, frog, amount, timestamp } = typedLog.args;
+				const { pondType, participant, amount, timestamp } = typedLog.args;
 
 				const event: Omit<ContractEvent, 'position'> = {
 					id: `${typedLog.transactionHash}-${typedLog.logIndex}`,
-					address: frog.toString(),
+					address: participant.toString(),
 					amount: formatEther(amount), // Format from wei to ether
 					timestamp: Number(timestamp || BigInt(Math.floor(Date.now() / 1000))),
 					type: 'CoinTossed',
@@ -66,7 +68,7 @@ export default function EventWatcher() {
 			}
 		},
 		poll: true,
-		pollingInterval: 3000, // Poll every 10 seconds
+		pollingInterval: 5000, // Poll every 3 seconds
 	});
 
 	return null; // This component doesn't render anything
