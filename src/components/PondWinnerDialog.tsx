@@ -114,31 +114,31 @@ export default function PondWinnerDialog({
 					variant="outline"
 					size="icon"
 					className={cn(
-						'!bg-drip-300/10 flex w-24 justify-start border-2 border-drip-300 px-4 py-[18px] hover:bg-drip-300/40',
+						'!bg-drip-300/10 flex w-24 justify-start border-2 border-drip-300 px-4 py-[21px] hover:bg-primary-200/10',
 						classNames,
 					)}
 				>
 					<Trophy className="h-5 w-5 text-primary-200" />
 				</Button>
 			</DialogTrigger>
-			<DialogContent className="max-w-md border-none bg-primary-950/90 px-8 text-primary-200 backdrop-blur-sm">
+			<DialogContent className="max-h-screen max-w-md overflow-y-scroll border-none bg-primary-950/90 px-8 text-primary-200 backdrop-blur-sm">
 				<DialogHeader>
 					<DialogTitle className="pt-8 text-center font-bold font-mono text-3xl">
 						<span className="flex items-center justify-center gap-2">
-							Recent Pond Winners
+							Recent Winners
 						</span>
 					</DialogTitle>
 				</DialogHeader>
 
 				{isLoading ? (
-					<div className="py-4 text-center">Loading winners...</div>
+					<div className="py-2 text-center">Loading winners...</div>
 				) : (
-					<div className="flex flex-col gap-4">
+					<div className="flex flex-col gap-2">
 						{pondsConfig.map((pond) => (
 							<div
 								key={pond.title}
 								className={cn(
-									'flex flex-col items-center justify-center rounded-lg border-2 p-4 text-center',
+									'flex flex-col items-center justify-center rounded-lg border-2 p-2 text-center',
 									pond.bgClass,
 									pond.borderClass,
 								)}

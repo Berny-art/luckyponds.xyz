@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { Button } from './ui/button';
 import { useTossCoin } from '@/hooks/useTossCoin';
 import { usePondStore } from '@/stores/pondStore';
-import { Loader2, Wallet, Lock } from 'lucide-react';
+import { Loader2, Wallet } from 'lucide-react';
 import type { PondComprehensiveInfo } from '@/lib/types';
 import { useAccount, useWriteContract } from 'wagmi';
 import { useConnectModal } from '@rainbow-me/rainbowkit';
@@ -13,6 +13,7 @@ import { toast } from 'sonner';
 import { PondStatus } from '@/functions/getPondStatus';
 import { usePondStatus } from '@/hooks/usePondStatus';
 import { useAnimationStore } from '@/stores/animationStore';
+import { useSelectionTimelock } from '@/hooks/useSelectionTimelock';
 
 interface CoinTossButtonProps {
 	amount: string;
@@ -36,11 +37,16 @@ export default function CoinTossButton({
 	const { writeContractAsync, isPending: isWritePending } = useWriteContract();
 	const { showLFG } = useAnimationStore();
 
-	// Get pond status with timelock information
-	const { status, timeRemaining } = usePondStatus(pondInfo);
+	// Get timelock value from contract
+	const { data: timelockSeconds, isLoading: isTimelockLoading } =
+		useSelectionTimelock();
+
+	// Get pond status with accurate timelock information
+	const { status: pondStatus, timeRemaining } = usePondStatus(pondInfo);
 
 	// Check if the component is in a loading state
-	const isLoading = tossLoading || isProcessing || isWritePending;
+	const isLoading =
+		tossLoading || isProcessing || isWritePending || isTimelockLoading;
 
 	// Function to select a winner for the pond (hidden from user)
 	const selectWinner = async () => {
@@ -96,7 +102,7 @@ export default function CoinTossButton({
 
 		try {
 			// If pond is ready for winner selection, do it silently
-			if (status === PondStatus.SelectWinner) {
+			if (pondStatus === PondStatus.SelectWinner) {
 				toast.loading('Processing transaction...', { id: 'toss-loading' });
 				try {
 					// Silently trigger winner selection
@@ -148,18 +154,6 @@ export default function CoinTossButton({
 			);
 		}
 
-		// If pond is time-locked, show the remaining time
-		if (status === PondStatus.TimeLocked && timeRemaining !== undefined) {
-			const minutes = Math.floor(timeRemaining / 60);
-			const seconds = timeRemaining % 60;
-			return (
-				<>
-					<Lock className="mr-2 h-5 w-5" /> Time-locked: {minutes}m{' '}
-					{seconds.toString().padStart(2, '0')}s
-				</>
-			);
-		}
-
 		// Connected - show standard toss message
 		return numberOfTosses === 1
 			? `Toss ${numberOfTosses} coin in ${displayPondName} pond`
@@ -175,6 +169,9 @@ export default function CoinTossButton({
 		}
 	};
 
+	// Apply correct timelock duration based on pond period (shorter for 5-min ponds)
+	const isTimeLocked = pondStatus === PondStatus.TimeLocked;
+
 	// Determine if button should be disabled
 	const isButtonDisabled =
 		disabled ||
@@ -183,9 +180,9 @@ export default function CoinTossButton({
 			(!selectedPond ||
 				amount === '0' ||
 				numberOfTosses < 1 ||
-				status === PondStatus.NotStarted ||
-				status === PondStatus.TimeLocked ||
-				status === PondStatus.Completed));
+				pondStatus === PondStatus.NotStarted ||
+				isTimeLocked ||
+				pondStatus === PondStatus.Completed));
 
 	return (
 		<Button

@@ -179,3 +179,20 @@
 		animation: shake 1s ease-in-out;
 	}
 }
+
+@keyframes shiftGradient {
+	0% {
+		background-position: 0% 50%;
+	}
+	50% {
+		background-position: 100% 50%;
+	}
+	100% {
+		background-position: 0% 50%;
+	}
+}
+
+.animate-gradient {
+	background-size: 300% 300%;
+	animation: shiftGradient var(--animation-duration, 5s) ease infinite;
+}

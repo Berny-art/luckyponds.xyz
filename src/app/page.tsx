@@ -1,25 +1,25 @@
 // src/app/page.tsx
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import CoinTossInput from '@/components/CoinTossInput';
 import PondInfo from '@/components/PondInfo';
 import StandardPonds from '@/components/StandardPonds';
 import { usePondStore } from '@/stores/pondStore';
-import { formatValue } from '@/lib/utils';
+import { cn, formatValue } from '@/lib/utils';
 import PondWinners from '@/components/PondWinners';
 import PondWinnerDialog from '@/components/PondWinnerDialog';
 import PondTimer from '@/components/PondTimer';
-import { Clock } from 'lucide-react';
+import { Clock, Zap } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import FloatingEvents from '@/components/FloatingEvents';
 import ShakeNotification from '@/components/ShakeNotification';
 import { useEventsStore } from '@/stores/eventsStore';
-import { PondPeriod } from '@/lib/types';
+import { useStandardPondsForUI } from '@/hooks/useStandardPondsForUI';
 import usePondInfo from '@/hooks/usePondInfo';
-import { useAccount, useReadContract } from 'wagmi';
-import { pondCoreConfig } from '@/contracts/PondCore';
+import { useAccount } from 'wagmi';
+import { PondPeriod, type PondComprehensiveInfo } from '@/lib/types';
+import { useResponsiveBreakpoints } from '@/hooks/useBreakpoints';
 
 export default function Home() {
 	const { address } = useAccount();
@@ -27,266 +27,85 @@ export default function Home() {
 		selectedPond,
 		setSelectedPond,
 		pondTypes,
-		setPondTypes,
 		isLoadingPondTypes,
-		setIsLoadingPondTypes,
+		lightningMode,
+		setLightningMode,
 	} = usePondStore();
+	const { addEvent } = useEventsStore();
 
-	const { addEvent, clearEvents } = useEventsStore();
+	const { isLg } = useResponsiveBreakpoints();
 
-	// Fetch standard pond types with error handling
-	const {
-		data: rawPondTypes,
-		isLoading: isRawPondTypesLoading,
-		isError: isPondTypesError,
-		error: pondTypesError,
-	} = useReadContract({
-		...pondCoreConfig,
-		address: pondCoreConfig.address as `0x${string}`,
-		functionName: 'getStandardPondsForUI',
-		args: ['0x0000000000000000000000000000000000000000' as `0x${string}`],
-	});
+	// Use simplified hook to fetch pond types - updates store
+	useStandardPondsForUI();
 
-	// Log important debugging information
-	useEffect(() => {
-		if (pondCoreConfig.address) {
-			console.log('Contract address:', pondCoreConfig.address);
-		} else {
-			console.warn('Contract address is undefined in config');
-		}
-
-		if (isPondTypesError && pondTypesError) {
-			console.error('Error fetching pond types:', pondTypesError);
-		}
-	}, [isPondTypesError, pondTypesError]);
-
-	// Process and store pond types in Zustand when data is available
-	useEffect(() => {
-		// Set loading state right away
-		setIsLoadingPondTypes(isRawPondTypesLoading);
-
-		if (
-			rawPondTypes &&
-			Array.isArray(rawPondTypes) &&
-			rawPondTypes.length > 0
-		) {
-			try {
-				// Transform the raw pond types into a more usable format
-				const processedPondTypes = rawPondTypes
-					.map((pond: any) => ({
-						type: pond.pondType,
-						name: pond.pondName,
-						displayName: getPondDisplayName(pond.period, pond.pondName),
-						period: pond.period,
-						exists: pond.exists,
-					}))
-					.filter((pond: any) => pond.exists);
-
-				if (processedPondTypes.length > 0) {
-					// Store pond types in Zustand
-					setPondTypes(processedPondTypes);
-					console.log(
-						'Processed pond types saved to store:',
-						processedPondTypes,
-					);
-				} else {
-					console.warn('No valid pond types found after filtering');
-				}
-			} catch (error) {
-				console.error('Error processing pond types:', error);
-			} finally {
-				setIsLoadingPondTypes(false);
-			}
-		}
-	}, [
-		rawPondTypes,
-		isRawPondTypesLoading,
-		setPondTypes,
-		setIsLoadingPondTypes,
-	]);
-
-	// Function to get display name from period
-	function getPondDisplayName(period: number, name: string): string {
-		switch (period) {
-			case 0:
-				return '5 Min';
-			case 1:
-				return 'Hourly';
-			case 2:
-				return 'Daily';
-			case 3:
-				return 'Weekly';
-			case 4:
-				return 'Monthly';
-			default:
-				return name.split(' ')[0];
-		}
-	}
-
-	// Set first valid pond as selected when pond types are loaded
-	useEffect(() => {
-		if (!selectedPond && pondTypes && pondTypes.length > 0) {
-			console.log('Setting initial selected pond to:', pondTypes[0].type);
-			setSelectedPond(pondTypes[0].type);
-		}
-	}, [pondTypes, selectedPond, setSelectedPond]);
-
-	// Determine if we should fetch pond info
-	const showPondInfo =
-		!!selectedPond &&
-		pondTypes.length > 0 &&
-		pondTypes.some((p) => p.type === selectedPond);
-
-	// Fetch pond info only when we have a valid selection
+	// Fetch pond info - optimized version
 	const {
 		data: pondInfo,
-		isLoading: isPondLoading,
-		isFetching: isPondFetching,
-		refetch: refetchPondInfo,
-	} = usePondInfo(showPondInfo ? selectedPond : '');
+		isLoading: isPondInfoLoading,
+		isFetching: isPondInfoFetching,
+	} = usePondInfo(selectedPond);
 
-	// Local state
+	// Display amount with efficient updates
 	const [displayAmount, setDisplayAmount] = useState('0');
+
+	// Refs for event management
 	const initialEventsAddedRef = useRef(false);
-	const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+	const eventsTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-	// Query for generating fake events
-	const { data: fakeEvents } = useQuery({
-		queryKey: [
-			'fakeEvents',
-			selectedPond,
-			pondInfo?.recentParticipants?.length,
-		],
-		queryFn: async () => {
-			if (!pondInfo?.recentParticipants?.length) return [];
+	// Update display amount efficiently
+	useEffect(() => {
+		if (pondInfo?.totalValue) {
+			const formatted = formatValue(pondInfo.totalValue);
+			setDisplayAmount(formatted);
+		}
+	}, [pondInfo?.totalValue]);
 
-			// Generate fake events for demo purposes
-			return Array.from({ length: 3 }, (_, i) => {
+	// Add sample events only if needed - with reduced frequency
+	useEffect(() => {
+		if (
+			pondInfo?.recentParticipants?.length &&
+			!initialEventsAddedRef.current &&
+			!isPondInfoFetching
+		) {
+			initialEventsAddedRef.current = true;
+
+			// Just add one event for demonstration
+			if (pondInfo.recentParticipants.length > 0) {
 				const randomIndex = Math.floor(
 					Math.random() * pondInfo.recentParticipants.length,
 				);
 				const participant = pondInfo.recentParticipants[randomIndex];
 
-				return {
-					id: `${participant.tossAmount}-${participant.participant}-${Date.now()}-${i}`,
+				const sampleEvent = {
+					id: `${participant.tossAmount}-${participant.participant}-${Date.now()}`,
 					address: participant.participant,
 					amount: formatValue(participant.tossAmount),
-					timestamp: Math.floor(Date.now() / 1000) - i * 60,
+					timestamp: Math.floor(Date.now() / 1000),
 					type: 'CoinTossed' as const,
 					pondType: selectedPond || '',
 				};
-			});
-		},
-		enabled: !!(
-			pondInfo?.recentParticipants?.length &&
-			pondInfo.recentParticipants.length > 0
-		),
-		refetchInterval: getPondRefetchInterval(pondInfo?.period),
-		refetchOnWindowFocus: false,
-	});
 
-	// Helper function to determine refetch interval
-	function getPondRefetchInterval(period?: PondPeriod): number {
-		if (!period) return 30000; // Default 30s
-
-		switch (period) {
-			case PondPeriod.FIVE_MIN:
-				return 10000;
-			case PondPeriod.HOURLY:
-				return 15000;
-			case PondPeriod.DAILY:
-				return 30000;
-			case PondPeriod.WEEKLY:
-				return 60000;
-			case PondPeriod.MONTHLY:
-				return 120000;
-			default:
-				return 30000;
-		}
-	}
-
-	// Update display amount when pond info changes
-	useEffect(() => {
-		if (pondInfo) {
-			setDisplayAmount(formatValue(pondInfo.totalValue));
-		} else {
-			setDisplayAmount('0');
-		}
-	}, [pondInfo]);
-
-	// Add fake events to the store when they change
-	useEffect(() => {
-		if (fakeEvents && fakeEvents.length > 0 && !initialEventsAddedRef.current) {
-			initialEventsAddedRef.current = true;
-
-			// Add first event immediately
-			addEvent(fakeEvents[0]);
-
-			// Schedule the rest with delays
-			fakeEvents.slice(1).forEach((event, index) => {
-				setTimeout(
-					() => {
-						addEvent(event);
-					},
-					(index + 1) * 5000,
-				);
-			});
-
-			// Reset after all events are added
-			const resetTimeout = setTimeout(
-				() => {
+				// Add with delay to ensure smooth loading
+				eventsTimeoutRef.current = setTimeout(() => {
+					addEvent(sampleEvent);
 					initialEventsAddedRef.current = false;
-				},
-				(fakeEvents.length + 1) * 5000,
-			);
-
-			return () => clearTimeout(resetTimeout);
+				}, 2000);
+			}
 		}
-	}, [fakeEvents, addEvent]);
+	}, [
+		pondInfo?.recentParticipants,
+		selectedPond,
+		addEvent,
+		isPondInfoFetching,
+	]);
 
-	// Clear events when pond changes
-	useEffect(() => {
-		clearEvents();
-		initialEventsAddedRef.current = false;
-
-		if (timeoutRef.current) {
-			clearTimeout(timeoutRef.current);
-			timeoutRef.current = null;
-		}
-
-		if (selectedPond && showPondInfo) {
-			refetchPondInfo();
-		}
-	}, [selectedPond, clearEvents, refetchPondInfo, showPondInfo]);
-
-	// Get the pond display name
-	const getCurrentPondDisplayName = () => {
-		if (!pondInfo?.period) return 'Lucky Pond';
-
-		switch (pondInfo.period) {
-			case PondPeriod.FIVE_MIN:
-				return '5 Minute Pond';
-			case PondPeriod.HOURLY:
-				return 'Hourly Pond';
-			case PondPeriod.DAILY:
-				return 'Daily Pond';
-			case PondPeriod.WEEKLY:
-				return 'Weekly Pond';
-			case PondPeriod.MONTHLY:
-				return 'Monthly Pond';
-			default:
-				return pondInfo.name || 'Lucky Pond';
-		}
-	};
-
-	// Determine loading states
-	const isLoading = isLoadingPondTypes || (showPondInfo && isPondLoading);
-	const isRefetching = isPondFetching && !isPondLoading;
+	// Simplified loading states
+	const isLoading = isLoadingPondTypes || (isPondInfoLoading && !pondInfo);
 
 	return (
 		<div className="flex w-full flex-col justify-center gap-8 overflow-x-hidden p-4 pb-12 md:flex-row md:pb-0">
 			<div className="relative flex w-full items-center justify-center gap-2 pt-12 lg:pt-0">
-				<div className="relative flex flex-col items-center justify-center gap-4">
+				<div className="relative w-full md:max-w-[500px] flex flex-col items-center justify-center gap-4">
 					<h1 className="py-4 font-bold font-mono text-4xl text-primary-200 uppercase md:text-5xl">
 						WIN{' '}
 						{isLoading ? (
@@ -294,7 +113,7 @@ export default function Home() {
 						) : (
 							<span className="relative text-drip-300">
 								{displayAmount}
-								{isRefetching && (
+								{isPondInfoFetching && (
 									<span className="-top-1 -right-3 absolute h-2 w-2 animate-ping rounded-full bg-drip-300" />
 								)}
 							</span>
@@ -302,26 +121,24 @@ export default function Home() {
 						HYPE
 					</h1>
 
-					{/* Pond Name */}
-					<div className="-mt-4 -mb-2 font-mono text-primary-200/80">
-						{!isLoading && pondInfo && (
-							<span>{getCurrentPondDisplayName()}</span>
-						)}
-					</div>
-
 					{/* Countdown Timer */}
-					<div className="-mt-2 mb-2">
+					<div className="-mt-2 mb-2 w-full justify-center">
 						{isLoading ? (
 							<div className="flex items-center gap-1.5 text-primary-200">
 								<Clock className="h-4 w-4" />
 								<Skeleton className="h-4 w-32 bg-secondary-900" />
 							</div>
 						) : (
-							pondInfo && <PondTimer pondInfo={pondInfo} />
+							pondInfo && (
+								<PondTimer
+									pondInfo={pondInfo}
+									key={`timer-${selectedPond}-${pondInfo.endTime}`} // Force refresh when pond changes
+								/>
+							)
 						)}
 					</div>
 
-					{/* StandardPonds - Pass loading state and data */}
+					{/* Standard Ponds */}
 					<StandardPonds
 						pondTypes={pondTypes}
 						isLoading={isLoadingPondTypes}
@@ -330,19 +147,10 @@ export default function Home() {
 					/>
 
 					{/* Pond Info */}
-					{isLoading ? (
-						<div className="w-full space-y-2 rounded border border-primary-200/20 bg-primary-200/5 p-4">
-							<Skeleton className="h-6 w-3/4 bg-secondary-900" />
-							<Skeleton className="h-4 w-full bg-secondary-900" />
-							<Skeleton className="h-4 w-2/3 bg-secondary-900" />
-							<div className="flex justify-between pt-2">
-								<Skeleton className="h-5 w-24 bg-secondary-900" />
-								<Skeleton className="h-5 w-24 bg-secondary-900" />
-							</div>
-						</div>
-					) : (
-						selectedPond && pondInfo && <PondInfo pondInfo={pondInfo} />
-					)}
+					<PondInfo
+						pondInfo={pondInfo as PondComprehensiveInfo}
+						isLoading={isLoading}
+					/>
 
 					{/* Coin Toss Input */}
 					{isLoading ? (
@@ -358,12 +166,53 @@ export default function Home() {
 					)}
 				</div>
 
-				{/* Supplementary components */}
-				<PondWinners classNames="hidden lg:flex absolute w-64 -right-12 top-[30%] -translate-y-1/2" />
+				{/* Supplementary components - only show when data is ready */}
+				<PondWinners classNames="hidden lg:flex absolute w-64 -right-12 top-[50%] -translate-y-1/2" />
 				<PondWinnerDialog classNames="flex lg:hidden absolute top-0 -right-12 z-50" />
 
-				{pondInfo && <FloatingEvents pondInfo={pondInfo} />}
-				{pondInfo && <ShakeNotification pondInfo={pondInfo} />}
+				{pondInfo && !isLoading && <FloatingEvents pondInfo={pondInfo} />}
+				<div className="-left-16 absolute top-0 z-40 flex gap-4 lg:flex-col">
+					{pondInfo && !isLoading && (
+						<>
+							<ShakeNotification pondInfo={pondInfo} />
+							<div
+								className={cn(
+									'flex cursor-pointer items-center justify-end gap-2 rounded-md border-2 border-drip-300',
+									lightningMode
+										? 'bg-drip-300 text-secondary-950'
+										: 'bg-primary-200/10 text-primary-200',
+									'p-3 text-xs lg:pl-12',
+								)}
+								onClick={() => {
+									const newLightningMode = !lightningMode;
+									setLightningMode(newLightningMode);
+
+									// Find the 5 min and daily pond types by their period property
+									const fiveMinPond = pondTypes.find(
+										(pond) => pond.period === PondPeriod.FIVE_MIN,
+									);
+									const dailyPond = pondTypes.find(
+										(pond) => pond.period === PondPeriod.DAILY,
+									);
+
+									// Set appropriate pond type based on new lightning mode
+									if (newLightningMode && fiveMinPond) {
+										setSelectedPond(fiveMinPond.type);
+									} else if (!newLightningMode && dailyPond) {
+										setSelectedPond(dailyPond.type);
+									}
+								}}
+								onKeyDown={(e) =>
+									e.key === 'f' && setLightningMode(!lightningMode)
+								}
+								aria-label="Toggle fast mode"
+							>
+								{isLg ? `Turn Fast Mode ${lightningMode ? 'OFF' : 'ON'}` : ''}
+								<Zap size={18} />
+							</div>
+						</>
+					)}
+				</div>
 			</div>
 		</div>
 	);

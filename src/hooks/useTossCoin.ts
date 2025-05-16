@@ -94,6 +94,11 @@ const getUserFriendlyErrorMessage = (errorMessage: string): string => {
 export function useTossCoin() {
 	const [isLoading, setIsLoading] = useState(false);
 	const [txHash, setTxHash] = useState<`0x${string}` | null>(null);
+	const [lastTxResult, setLastTxResult] = useState<{
+		success: boolean;
+		hash?: `0x${string}`;
+		error?: Error;
+	} | null>(null);
 
 	const { writeContractAsync } = useWriteContract();
 
@@ -113,6 +118,13 @@ export function useTossCoin() {
 			toast.success('Coin toss successful!', {
 				description: 'Your transaction has been confirmed.',
 			});
+
+			// Set successful result
+			setLastTxResult({
+				success: true,
+				hash: txHash,
+			});
+
 			setTxHash(null);
 			setIsLoading(false);
 		}
@@ -131,6 +143,13 @@ export function useTossCoin() {
 						: 'Something went wrong with your transaction',
 			});
 
+			// Set error result
+			setLastTxResult({
+				success: false,
+				hash: txHash,
+				error,
+			});
+
 			setTxHash(null);
 			setIsLoading(false);
 		}
@@ -146,11 +165,14 @@ export function useTossCoin() {
 			toast.error('Invalid toss parameters', {
 				description: 'Please select a pond and enter a valid amount.',
 			});
-			return;
+			return { success: false, error: new Error('Invalid parameters') };
 		}
 
 		try {
 			setIsLoading(true);
+			// Reset previous transaction result
+			setLastTxResult(null);
+
 			toast.loading('Preparing transaction...', { id: 'toss-loading' });
 
 			// Format the pond type for the contract
@@ -172,16 +194,17 @@ export function useTossCoin() {
 				toast.loading('Transaction submitted, waiting for confirmation...', {
 					id: 'toss-loading',
 				});
-			} else {
-				// For ERC20 token transactions, would need approval first
-				// Note: This might need modification based on PondCore's exact API
-				toast.error('ERC20 token tossing not supported yet', {
-					description: 'Please use native HYPE token for now.',
-				});
-				setIsLoading(false);
-				return;
+
+				// Return the transaction hash immediately
+				return { success: true, hash, pending: true };
 			}
-			// biome-ignore lint/suspicious/noExplicitAny: Any must be specified in catch
+			// For ERC20 token transactions, would need approval first
+			toast.error('ERC20 token tossing not supported yet', {
+				description: 'Please use native HYPE token for now.',
+			});
+			setIsLoading(false);
+			return { success: false, error: new Error('ERC20 not supported') };
+			// biome-ignore lint/suspicious/noExplicitAny: <explanation>
 		} catch (error: any) {
 			setIsLoading(false);
 			toast.dismiss('toss-loading');
@@ -203,8 +226,9 @@ export function useTossCoin() {
 			}
 
 			console.error('Toss coin error:', error);
+			return { success: false, error };
 		}
 	};
 
-	return { tossCoin, isLoading, txHash };
+	return { tossCoin, isLoading, txHash, lastTxResult };
 }

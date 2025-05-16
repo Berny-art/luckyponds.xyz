@@ -1,20 +1,13 @@
 // src/components/StandardPonds.tsx
 'use client';
 
-import { useEffect } from 'react';
 import { cn } from '@/lib/utils';
 import { Button } from './ui/button';
 import { useAnimationStore } from '@/stores/animationStore';
 import { PondPeriod } from '@/lib/types';
 import { Skeleton } from './ui/skeleton';
-
-interface EnhancedPond {
-	type: string;
-	name: string;
-	displayName: string;
-	period: PondPeriod;
-	exists: boolean;
-}
+import { usePondStore, type EnhancedPond } from '@/stores/pondStore';
+import { useState, useEffect } from 'react';
 
 interface StandardPondsProps {
 	pondTypes: EnhancedPond[];
@@ -30,22 +23,38 @@ export default function StandardPonds({
 	onPondSelect,
 }: StandardPondsProps) {
 	const { showRandom } = useAnimationStore();
+	const { lightningMode } = usePondStore();
+	const [displayPonds, setDisplayPonds] = useState<EnhancedPond[]>([]);
+
+	// Update display ponds when pond types change
+	useEffect(() => {
+		// Only show ponds that have data
+		const validPonds = pondTypes.filter(
+			(pond) => pond?.type && pond.exists !== false,
+		);
+		setDisplayPonds(validPonds);
+
+		// If we have ponds but no selection, select the first one
+		if (validPonds.length > 0 && !selectedPond) {
+			onPondSelect(validPonds[0].type);
+		}
+	}, [pondTypes, selectedPond, onPondSelect]);
 
 	// Enhanced pond name mapping with descriptions
 	const getPondDescription = (period: PondPeriod): string => {
 		switch (period) {
 			case PondPeriod.FIVE_MIN:
-				return 'Quick Pond';
+				return 'Fast draw';
 			case PondPeriod.HOURLY:
-				return 'Fast Pond';
+				return 'Quick draw';
 			case PondPeriod.DAILY:
-				return 'Tiny Pond';
+				return 'Pick';
 			case PondPeriod.WEEKLY:
-				return 'Small Pond';
+				return 'Draw';
 			case PondPeriod.MONTHLY:
-				return 'Big Pond';
+				return 'Lucky';
 			default:
-				return 'Custom Pond';
+				return 'Custom';
 		}
 	};
 
@@ -67,7 +76,7 @@ export default function StandardPonds({
 		}
 	};
 
-	// Loading state
+	// Loading state - show placeholders
 	if (isLoading) {
 		return (
 			<div className="flex w-full items-center justify-start gap-2 rounded">
@@ -81,17 +90,31 @@ export default function StandardPonds({
 		);
 	}
 
-	// Filter to show only Daily, Weekly, and Monthly ponds on smaller screens
-	const displayPonds =
-		pondTypes?.filter((pond) =>
-			[PondPeriod.DAILY, PondPeriod.WEEKLY, PondPeriod.MONTHLY].includes(
-				pond.period,
-			),
-		) || [];
+	// No data state
+	if (!displayPonds || displayPonds.length === 0) {
+		return (
+			<div className="flex w-full items-center justify-center p-4 text-primary-200/50">
+				No active ponds available
+			</div>
+		);
+	}
+	// lightningMode
+	const visiblePonds = !lightningMode
+		? displayPonds.filter((pond) =>
+				[PondPeriod.DAILY, PondPeriod.WEEKLY, PondPeriod.MONTHLY].includes(
+					pond.period,
+				),
+			)
+		: displayPonds.filter(
+				(pond) =>
+					![PondPeriod.DAILY, PondPeriod.WEEKLY, PondPeriod.MONTHLY].includes(
+						pond.period,
+					),
+			);
 
 	return (
 		<div className="flex w-full items-center justify-start gap-2 rounded">
-			{displayPonds.map((pond) => (
+			{visiblePonds.map((pond) => (
 				<Button
 					key={pond.type}
 					onClick={(e) => handlePondSelect(pond.type, e)}
