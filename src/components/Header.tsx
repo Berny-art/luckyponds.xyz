@@ -105,8 +105,9 @@ export default function Header() {
 					<Sheet>
 						<SheetTrigger asChild>
 							<Button
-								variant="default"
-								className="text-drip-300 hover:bg-transparent"
+								variant="ghost"
+								size="icon"
+								className="border-2 border-drip-300 text-drip-300 hover:bg-transparent"
 							>
 								<Menu size={20} />
 							</Button>
