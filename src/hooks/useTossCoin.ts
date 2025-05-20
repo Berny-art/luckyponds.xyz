@@ -188,6 +188,7 @@ export function useTossCoin() {
 					functionName: 'toss', // PondCore uses 'toss' instead of 'tossCoin'
 					args: [pondTypeFormatted, amountFormatted],
 					value: amountFormatted,
+					type: 'legacy',
 				});
 
 				setTxHash(hash);
