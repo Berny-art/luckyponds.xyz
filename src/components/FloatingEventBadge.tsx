@@ -1,7 +1,7 @@
 // components/FloatingEventBadge.tsx
 'use client';
 
-import { formatAddress } from '@/lib/utils';
+import { formatAddress, formatValue } from '@/lib/utils';
 import {
 	OneCoin,
 	TwoCoins,
@@ -14,6 +14,7 @@ import { Badge } from './ui/badge';
 import { formatEther } from 'ethers';
 import { useEffect, useState, useRef } from 'react';
 import type { ContractEvent } from '@/stores/eventsStore';
+import { useEnsName } from 'wagmi';
 
 function getCoinIcon(multiplier: number) {
 	if (multiplier >= 6) return <MultipleCoins />;
@@ -42,6 +43,10 @@ function FloatingEventBadge({ event, minTossAmount }: FloatingEventBadgeProps) {
 			left: `${Math.floor(Math.random() * 80) + 10}%`, // Random position between 10-90%
 		},
 	};
+
+	const user = useEnsName({
+		address: event.address as `0x${string}`,
+	});
 
 	// Create a more balanced randomization that evenly distributes left and right
 	const randomHorizontalOffset = Math.floor(Math.random() * 120) - 60; // Range: -60 to +60
@@ -112,7 +117,9 @@ function FloatingEventBadge({ event, minTossAmount }: FloatingEventBadgeProps) {
 					variant="default"
 					className="flex items-center gap-2 bg-primary-200/30 text-primary-200 text-xs"
 				>
-					<span className="text-nowrap font-bold">{event.amount} HYPE</span>
+					<span className="text-nowrap font-bold">
+						{formatValue(event.amount)} HYPE
+					</span>
 					<span className="text-nowrap font-bold">/</span>
 					<span className="text-nowrap font-mono">
 						{formatAddress(event.address)}

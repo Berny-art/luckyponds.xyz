@@ -49,7 +49,7 @@ export default function ShakeNotification({
 						{latestEvent ? 'tossed' : ''}
 					</span>
 					<span className="font-bold font-mono text-primary-200 text-xs">
-						{latestEvent ? `${latestEvent.amount}HYPE` : '...'}
+						{latestEvent ? `${latestEvent.amount} HYPE` : '...'}
 					</span>
 				</div>
 			</div>
