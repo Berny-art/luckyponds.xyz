@@ -14,7 +14,6 @@ import { Badge } from './ui/badge';
 import { formatEther } from 'ethers';
 import { useEffect, useState, useRef } from 'react';
 import type { ContractEvent } from '@/stores/eventsStore';
-import { useEnsName } from 'wagmi';
 
 function getCoinIcon(multiplier: number) {
 	if (multiplier >= 6) return <MultipleCoins />;
@@ -43,10 +42,6 @@ function FloatingEventBadge({ event, minTossAmount }: FloatingEventBadgeProps) {
 			left: `${Math.floor(Math.random() * 80) + 10}%`, // Random position between 10-90%
 		},
 	};
-
-	const user = useEnsName({
-		address: event.address as `0x${string}`,
-	});
 
 	// Create a more balanced randomization that evenly distributes left and right
 	const randomHorizontalOffset = Math.floor(Math.random() * 120) - 60; // Range: -60 to +60
