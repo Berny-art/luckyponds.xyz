@@ -35,7 +35,7 @@ export default function Providers({ children }: { children: React.ReactNode }) {
 	return (
 		<WagmiProvider config={config}>
 			<QueryClientProvider client={queryClient}>
-				<RainbowKitProvider modalSize="compact" theme={frogTheme} coolMode>
+				<RainbowKitProvider modalSize="compact" theme={frogTheme}>
 					<EventWatcher />
 					{children}
 					<FloatingAnimationRenderer />

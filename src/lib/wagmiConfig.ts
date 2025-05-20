@@ -1,6 +1,7 @@
 // lib/wagmiConfig.ts
 import { getDefaultConfig, type Chain } from '@rainbow-me/rainbowkit';
 import { http } from 'wagmi';
+import { rabbyWallet } from '@rainbow-me/rainbowkit/wallets';
 
 export const hyperliquid = {
 	id: Number(process.env.NEXT_PUBLIC_CHAIN_ID) || 999,
@@ -31,4 +32,10 @@ export const config = getDefaultConfig({
 	transports: {
 		[hyperliquid.id]: http(),
 	},
+	wallets: [
+		{
+			groupName: 'Recommended',
+			wallets: [rabbyWallet],
+		},
+	],
 });
