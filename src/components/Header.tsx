@@ -65,13 +65,7 @@ export default function Header() {
 						<nav className="ml-10 flex justify-center gap-6 font-mono text-primary-200 hover:[&>a]:text-drip-300">
 							<Link href="/">Home</Link>
 							<span className="text-drip-300">/</span>
-							<Link href="#" className="pointer-events-none opacity-50">
-								Leaderboard <Badge>SOON</Badge>
-							</Link>
-							<span className="text-drip-300">/</span>
-							<Link href="#" className="pointer-events-none opacity-50">
-								Stats <Badge>SOON</Badge>
-							</Link>
+							<Link href="/leaderboard">Leaderboard</Link>
 						</nav>
 
 						<div className="flex items-center justify-end gap-8">
@@ -130,18 +124,10 @@ export default function Header() {
 									</SheetClose>
 									<SheetClose asChild>
 										<Link
-											href="#"
-											className="flex items-center py-2 opacity-50 transition-colors hover:text-drip-300"
+											href="/leaderboard"
+											className="flex items-center py-2 transition-colors hover:text-drip-300"
 										>
 											Leaderboard
-										</Link>
-									</SheetClose>
-									<SheetClose asChild>
-										<Link
-											href="#"
-											className="flex items-center py-2 opacity-50 transition-colors hover:text-drip-300"
-										>
-											Stats <Badge className="ml-2">SOON</Badge>
 										</Link>
 									</SheetClose>
 								</nav>

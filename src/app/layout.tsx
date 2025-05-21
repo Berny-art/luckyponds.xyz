@@ -50,7 +50,7 @@ export default function RootLayout({
 				<meta name="apple-mobile-web-app-title" content="Lucky Ponds" />
 			</head>
 			<body
-				className={`${RobotoMono.variable} relative w-full overflow-x-hidden bg-secondary-950 bg-top font-bold text-roboto-mono text-secondary-950 antialiased lg:overflow-y-hidden `}
+				className={`${RobotoMono.variable} relative h-screen w-full overflow-x-hidden bg-secondary-950 bg-top font-bold text-roboto-mono text-secondary-950 antialiased lg:overflow-y-hidden `}
 			>
 				{/* <div className="flex h-8 w-full items-center justify-center bg-drip-300 text-secondary-950 text-xs underline">
 					<a
@@ -76,7 +76,7 @@ export default function RootLayout({
 						},
 					}}
 				/>
-				<div className="lg:-translate-y-16 pointer-events-none absolute z-0 w-full overflow-y-hidden">
+				<div className="lg:-translate-y-16 -bottom-[25%] pointer-events-none absolute w-full overflow-y-hidden">
 					<Image
 						src="/decor.svg"
 						alt="decoration"

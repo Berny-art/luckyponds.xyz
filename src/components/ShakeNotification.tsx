@@ -1,7 +1,7 @@
 // components/ShakeNotification.tsx
 'use client';
 
-import { formatAddress } from '@/lib/utils';
+import { formatAddress, formatValue } from '@/lib/utils';
 import { useEventsStore } from '@/stores/eventsStore';
 import { useEffect, useState } from 'react';
 import type { PondComprehensiveInfo } from '@/lib/types';
@@ -49,7 +49,7 @@ export default function ShakeNotification({
 						{latestEvent ? 'tossed' : ''}
 					</span>
 					<span className="font-bold font-mono text-primary-200 text-xs">
-						{latestEvent ? `${latestEvent.amount} HYPE` : '...'}
+						{latestEvent ? `${formatValue(latestEvent.amount)} HYPE` : '...'}
 					</span>
 				</div>
 			</div>

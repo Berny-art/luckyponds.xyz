@@ -32,7 +32,7 @@ export const hyperliquid = {
 
 export const config = getDefaultConfig({
 	appName: 'Lucky',
-	projectId: process.env.WC_PROJECT_ID ?? 'ID',
+	projectId: process.env.NEXT_PUBLIC_WC_PROJECT_ID ?? 'ID',
 	chains: [hyperliquid],
 	ssr: true,
 	transports: {
