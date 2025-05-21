@@ -24,7 +24,7 @@ const rateLimit: Record<string, number[]> = {};
  */
 export async function GET(
 	request: NextRequest,
-	{ params }: { params: { address: string } },
+	context: { params: { address: string } },
 ) {
 	try {
 		// Get client IP for rate limiting
@@ -42,7 +42,7 @@ export async function GET(
 		}
 
 		// Validate the address parameter
-		const address = params.address;
+		const address = context.params.address;
 		if (!address || !isValidAddress(address)) {
 			return NextResponse.json(
 				{ error: 'Invalid Ethereum address' },
