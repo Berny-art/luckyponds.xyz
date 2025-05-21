@@ -10,8 +10,8 @@ import {
 	TableRow,
 } from '@/components/ui/table';
 import { Skeleton } from '@/components/ui/skeleton';
-import { formatAddress, formatValue } from '@/lib/utils';
-import { Crown, Medal, Search, Users, X } from 'lucide-react';
+import { formatAddress } from '@/lib/utils';
+import { Crown, Medal, Search, Users } from 'lucide-react';
 import type {
 	LeaderboardEntry,
 	LeaderboardData,
@@ -22,7 +22,6 @@ import type { UserData } from '@/types/user';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { useAccount } from 'wagmi';
-import { formatEther } from 'viem';
 
 // Fetch leaderboard data
 const fetchLeaderboard = async (

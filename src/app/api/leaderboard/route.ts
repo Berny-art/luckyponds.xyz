@@ -81,7 +81,7 @@ export async function GET(request: NextRequest) {
 				const errorData = await response.json();
 				errorMessage = errorData.message || errorData.error || errorMessage;
 				console.error('API error details:', errorData);
-			} catch (e) {
+			} catch {
 				// If we can't parse the error JSON, just use the status text
 				errorMessage = `API error: ${response.statusText}`;
 			}

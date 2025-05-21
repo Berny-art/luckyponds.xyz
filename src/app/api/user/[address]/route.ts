@@ -86,7 +86,7 @@ export async function GET(
 				errorDetails = await response.json();
 				errorMessage =
 					errorDetails.message || errorDetails.error || errorMessage;
-			} catch (e) {
+			} catch {
 				// If we can't parse the error JSON, just use the status text
 				errorMessage = `API error: ${response.statusText}`;
 			}
