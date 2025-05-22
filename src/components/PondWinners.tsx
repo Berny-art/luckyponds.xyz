@@ -2,18 +2,16 @@
 
 import { cn, formatAddress, formatValue } from '@/lib/utils';
 import PondWinnerCard from './PondWinnerCard';
-import { Skeleton } from './ui/skeleton';
 import { PondPeriod } from '@/lib/types';
 import usePondInfo from '@/hooks/usePondInfo';
 import { usePondStore } from '@/stores/pondStore';
+import useLocalStorage from 'use-local-storage';
 
 export default function PondWinners({ classNames }: { classNames?: string }) {
 	// Get pond types and lightning mode directly from the store
-	const {
-		pondTypes,
-		isLoadingPondTypes,
-		lightningMode = false,
-	} = usePondStore();
+	const { pondTypes, isLoadingPondTypes } = usePondStore();
+
+	const [lightningMode] = useLocalStorage('lightningMode', false);
 
 	// Extract pond types if available
 	const fiveMinPondType = pondTypes.find(
@@ -87,21 +85,7 @@ export default function PondWinners({ classNames }: { classNames?: string }) {
 				isMonthlyLoading);
 
 	if (isLoading) {
-		// Show appropriate number of skeletons based on mode
-		const skeletonCount = lightningMode ? 2 : 3;
-		return (
-			<div className={cn('flex w-full flex-col gap-3', classNames)}>
-				{Array(skeletonCount)
-					.fill(0)
-					.map((_, index) => (
-						<Skeleton
-							// biome-ignore lint/suspicious/noArrayIndexKey: <explanation>
-							key={index}
-							className="h-20 w-full rounded-lg bg-primary-200/5"
-						/>
-					))}
-			</div>
-		);
+		return null;
 	}
 
 	// Define all pond configurations

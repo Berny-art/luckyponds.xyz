@@ -8,18 +8,27 @@ import { cn } from '@/lib/utils';
 import type { PondComprehensiveInfo } from '@/lib/types';
 import { PondPeriod } from '@/lib/types';
 import { Progress } from './ui/progress';
+import usePondInfo from '@/hooks/usePondInfo';
+import { usePondStore } from '@/stores/pondStore';
 
 export default function PondTimer({
 	pondInfo,
 }: { pondInfo: PondComprehensiveInfo }) {
+	// Get selected pond and refetch function
+	const { selectedPond } = usePondStore();
+	const { refetch: refetchPondInfo } = usePondInfo(selectedPond);
+
 	// State to track end time in milliseconds
 	const [endTimeMs, setEndTimeMs] = useState<number | null>(null);
 
 	// State to know if time has ended
-	const [isCompleted, setIsCompleted] = useState(false); // eslint-disable-line @typescript-eslint/no-unused-vars
+	const [isCompleted, setIsCompleted] = useState(false); //eslint-disable-line @typescript-eslint/no-unused-vars
 
 	// State for progress bar (0-100)
 	const [progressValue, setProgressValue] = useState(100);
+
+	// State to track if we should show progress bar
+	const [showProgressBar, setShowProgressBar] = useState(false);
 
 	// Reference to the countdown component for manual updates
 	const countdownRef = useRef<Countdown>(null);
@@ -31,24 +40,57 @@ export default function PondTimer({
 	const durationRef = useRef<number>(0);
 	const startTimeRef = useRef<number>(0);
 
-	// Set up progress bar for 5-minute ponds
+	// Reference to track if we've already triggered refetch on completion
+	const hasTriggeredRefetchRef = useRef(false);
+
+	// Constants
+	const FIVE_MINUTES_MS = 5 * 60 * 1000;
+
+	// Function to trigger data refresh
+	const triggerDataRefresh = async () => {
+		try {
+			// Access the refetchAll function from the hook's meta if available
+			// biome-ignore lint/suspicious/noExplicitAny: <explanation>
+			const refetchAll = (refetchPondInfo as any)?.meta?.refetchAll; //eslint-disable-line @typescript-eslint/no-explicit-any
+			if (refetchAll) {
+				await refetchAll();
+			} else {
+				await refetchPondInfo();
+			}
+			console.log('Timer triggered data refresh');
+		} catch (error) {
+			console.error('Failed to refresh pond data from timer:', error);
+		}
+	};
+
+	// Set up progress bar calculation
 	const setupProgressBar = () => {
-		// For 5-minute ponds, we'll calculate progress based on total duration (5 minutes)
-		const fiveMinutesMs = 5 * 60 * 1000;
+		if (!pondInfo.endTime || Number(pondInfo.endTime) === 0) {
+			setProgressValue(0);
+			setShowProgressBar(false);
+			return;
+		}
 
-		// If we have a valid end time, use it to calculate start time
-		if (pondInfo.endTime && Number(pondInfo.endTime) > 0) {
-			const endTimeSeconds = Number(pondInfo.endTime);
-			const endTimeMilliseconds = endTimeSeconds * 1000;
+		const endTimeSeconds = Number(pondInfo.endTime);
+		const endTimeMilliseconds = endTimeSeconds * 1000;
+		const now = Date.now();
+		const timeRemaining = endTimeMilliseconds - now;
 
-			// Start time is 5 minutes before end time
-			startTimeRef.current = endTimeMilliseconds - fiveMinutesMs;
-			durationRef.current = fiveMinutesMs;
+		// For 5-minute ponds, always show progress bar
+		if (pondInfo.period === PondPeriod.FIVE_MIN) {
+			// Calculate start time (5 minutes before end)
+			startTimeRef.current = endTimeMilliseconds - FIVE_MINUTES_MS;
+			durationRef.current = FIVE_MINUTES_MS;
+			setShowProgressBar(true);
+		}
+		// For other ponds, only show progress bar if 5 minutes or less remaining
+		else if (timeRemaining <= FIVE_MINUTES_MS && timeRemaining > 0) {
+			// Start time is 5 minutes before end time, duration is always 5 minutes
+			startTimeRef.current = endTimeMilliseconds - FIVE_MINUTES_MS;
+			durationRef.current = FIVE_MINUTES_MS;
+			setShowProgressBar(true);
 		} else {
-			// If end time is 0, progress is 100% (full)
-			startTimeRef.current = Date.now();
-			durationRef.current = fiveMinutesMs;
-			setProgressValue(100);
+			setShowProgressBar(false);
 		}
 
 		// Initial progress update
@@ -62,15 +104,20 @@ export default function PondTimer({
 			clearInterval(intervalRef.current);
 		}
 
-		// More frequent updates for short-duration ponds
+		// More frequent updates for short-duration ponds or when showing progress
 		const updateFrequency =
-			pondInfo.period === PondPeriod.FIVE_MIN ? 250 : 1000;
+			pondInfo.period === PondPeriod.FIVE_MIN || showProgressBar ? 250 : 1000;
 
 		// Set interval for updates
 		intervalRef.current = setInterval(() => {
-			// Update progress for 5-minute ponds
-			if (pondInfo.period === PondPeriod.FIVE_MIN) {
+			// Update progress if we're showing the progress bar
+			if (showProgressBar) {
 				updateProgress();
+			}
+
+			// Check if we need to start showing progress bar for non-5min ponds
+			if (pondInfo.period !== PondPeriod.FIVE_MIN && !showProgressBar) {
+				checkIfShouldShowProgress();
 			}
 
 			// Force countdown to update
@@ -78,6 +125,24 @@ export default function PondTimer({
 				countdownRef.current.forceUpdate();
 			}
 		}, updateFrequency);
+	};
+
+	// Function to check if we should start showing progress for non-5min ponds
+	const checkIfShouldShowProgress = () => {
+		if (!pondInfo.endTime || Number(pondInfo.endTime) === 0) return;
+
+		const endTimeSeconds = Number(pondInfo.endTime);
+		const endTimeMilliseconds = endTimeSeconds * 1000;
+		const now = Date.now();
+		const timeRemaining = endTimeMilliseconds - now;
+
+		// Start showing progress bar when 5 minutes or less remaining
+		if (timeRemaining <= FIVE_MINUTES_MS && timeRemaining > 0) {
+			// Start time is 5 minutes before end time, duration is always 5 minutes
+			startTimeRef.current = endTimeMilliseconds - FIVE_MINUTES_MS;
+			durationRef.current = FIVE_MINUTES_MS;
+			setShowProgressBar(true);
+		}
 	};
 
 	// Function to update progress based on elapsed time
@@ -91,26 +156,29 @@ export default function PondTimer({
 		}
 
 		const now = Date.now();
+
+		// For both 5-minute ponds and other ponds showing progress:
+		// Calculate progress from 5 minutes before end time to end time
 		const elapsed = now - startTimeRef.current;
 		const remaining = Math.max(0, durationRef.current - elapsed);
 		const progress = (remaining / durationRef.current) * 100;
-
-		setProgressValue(progress);
+		setProgressValue(Math.max(0, Math.min(100, progress)));
 	};
 
 	// Update end time when pond info changes
 	// biome-ignore lint/correctness/useExhaustiveDependencies: <explanation>
 	useEffect(() => {
 		if (pondInfo) {
+			// Reset refetch trigger when pond changes
+			hasTriggeredRefetchRef.current = false;
+
 			// Always use the contract's end time, even if it's 0
 			updateEndTime();
 
-			// For 5-minute ponds, set up the progress bar calculation
-			if (pondInfo.period === PondPeriod.FIVE_MIN) {
-				setupProgressBar();
-			}
+			// Set up the progress bar calculation
+			setupProgressBar();
 
-			// Set up update interval based on pond period
+			// Set up update interval
 			setupInterval();
 		}
 
@@ -143,6 +211,16 @@ export default function PondTimer({
 	const handleComplete = () => {
 		setIsCompleted(true);
 		setProgressValue(0);
+		setShowProgressBar(false);
+
+		// Trigger data refresh only once when timer completes
+		if (!hasTriggeredRefetchRef.current) {
+			hasTriggeredRefetchRef.current = true;
+			// Small delay to ensure completion state is set
+			setTimeout(() => {
+				triggerDataRefresh();
+			}, 500);
+		}
 	};
 
 	// Renderer for the countdown
@@ -234,11 +312,10 @@ export default function PondTimer({
 			);
 		}
 
-		// For 5-minute ponds, include the progress bar next to the timer
+		// Show progress bar for 5-minute ponds or when any pond has 5 minutes or less
 		return (
 			<div
 				className={cn(
-					pondInfo.period === PondPeriod.FIVE_MIN ? '' : '-ml-4',
 					'flex w-full items-center justify-center gap-1.5 text-primary-200',
 				)}
 			>
@@ -247,11 +324,13 @@ export default function PondTimer({
 					{timeDisplay}
 				</div>
 
-				{pondInfo.period === PondPeriod.FIVE_MIN && (
-					<Progress
-						value={progressValue}
-						className="ml-4 h-3 w-full animate-gradient bg-[linear-gradient(90deg,#F2E718_0%,#80E8A9_20%,#9353ED_50%,#ED5353_75%,#EDA553_100%)]"
-					/>
+				{showProgressBar && (
+					<div className="ml-4 flex w-full flex-col gap-1">
+						<Progress
+							value={progressValue}
+							className="h-3 w-full animate-gradient bg-[linear-gradient(90deg,#F2E718_0%,#80E8A9_20%,#9353ED_50%,#ED5353_75%,#EDA553_100%)]"
+						/>
+					</div>
 				)}
 			</div>
 		);
@@ -261,7 +340,7 @@ export default function PondTimer({
 	if (!pondInfo) {
 		return (
 			<div className={cn('flex items-center gap-1.5 opacity-70')}>
-				<Clock className="h-4 w-4" />
+				<Clock className="size-8" />
 				<span className="font-mono">Loading time...</span>
 			</div>
 		);

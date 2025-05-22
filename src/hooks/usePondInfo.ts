@@ -12,7 +12,7 @@ import type {
 } from '@/lib/types';
 
 /**
- * Simplified hook to fetch pond information efficiently
+ * Optimized hook to fetch pond information with adaptive refresh rates
  */
 export default function usePondInfo(pondType: string | null) {
 	// Get user address for user-specific data
@@ -25,12 +25,23 @@ export default function usePondInfo(pondType: string | null) {
 		: undefined;
 	const userAddress = address as `0x${string}` | undefined;
 
+	// Determine refresh intervals based on pond type
+	const getRefreshInterval = (baseInterval: number) => {
+		// For 5-minute ponds, use much more aggressive refresh rates
+		if (pondType?.includes('FIVE_MIN') || pondType?.includes('5min')) {
+			return Math.max(baseInterval / 4, 2000); // 4x faster, min 2 seconds
+		}
+		// For daily ponds, use standard rates
+		return baseInterval;
+	};
+
 	// Get basic pond status - the most important data
 	const {
 		data: pondStatusData,
 		isError: isStatusError,
 		error: statusError,
 		isLoading: isStatusLoading,
+		refetch: refetchStatus,
 	} = useReadContract({
 		...pondCoreConfig,
 		address: pondCoreConfig.address as `0x${string}`,
@@ -38,58 +49,70 @@ export default function usePondInfo(pondType: string | null) {
 		args: pondTypeFormatted ? [pondTypeFormatted] : undefined,
 		query: {
 			enabled: isValidPondType,
-			refetchInterval: 15000,
+			refetchInterval: getRefreshInterval(8000), // 2s for 5min, 8s for daily
+			refetchIntervalInBackground: true,
+			refetchOnWindowFocus: true,
+			staleTime: getRefreshInterval(4000), // 1s for 5min, 4s for daily
 		},
 	});
 
 	// Get user's toss amount (only for logged-in users)
-	const { data: userTossAmount, isLoading: isUserAmountLoading } =
-		useReadContract({
-			...pondCoreConfig,
-			address: pondCoreConfig.address as `0x${string}`,
-			functionName: 'getUserTossAmount',
-			args:
-				pondTypeFormatted && userAddress
-					? [pondTypeFormatted, userAddress]
-					: undefined,
-			query: {
-				enabled: isValidPondType && !!userAddress,
-				refetchInterval: 30000, // Less frequent updates
-			},
-		});
+	const {
+		data: userTossAmount,
+		isLoading: isUserAmountLoading,
+		refetch: refetchUserAmount,
+	} = useReadContract({
+		...pondCoreConfig,
+		address: pondCoreConfig.address as `0x${string}`,
+		functionName: 'getUserTossAmount',
+		args:
+			pondTypeFormatted && userAddress
+				? [pondTypeFormatted, userAddress]
+				: undefined,
+		query: {
+			enabled: isValidPondType && !!userAddress,
+			refetchInterval: getRefreshInterval(15000), // 3.75s for 5min, 15s for daily
+			refetchIntervalInBackground: true,
+			staleTime: getRefreshInterval(8000),
+		},
+	});
 
 	// Get last winner and prize - these don't change as frequently
-	const { data: lastWinner } = useReadContract({
+	const { data: lastWinner, refetch: refetchWinner } = useReadContract({
 		...pondCoreConfig,
 		address: pondCoreConfig.address as `0x${string}`,
 		functionName: 'lastWinner',
 		args: pondTypeFormatted ? [pondTypeFormatted] : undefined,
 		query: {
 			enabled: isValidPondType,
-			refetchInterval: 60000, // Less frequent updates
+			refetchInterval: getRefreshInterval(30000), // 7.5s for 5min, 30s for daily
+			staleTime: getRefreshInterval(20000),
 		},
 	});
 
-	const { data: lastPrize } = useReadContract({
+	const { data: lastPrize, refetch: refetchPrize } = useReadContract({
 		...pondCoreConfig,
 		address: pondCoreConfig.address as `0x${string}`,
 		functionName: 'lastPrize',
 		args: pondTypeFormatted ? [pondTypeFormatted] : undefined,
 		query: {
 			enabled: isValidPondType,
-			refetchInterval: 60000, // Less frequent updates
+			refetchInterval: getRefreshInterval(30000), // 7.5s for 5min, 30s for daily
+			staleTime: getRefreshInterval(20000),
 		},
 	});
 
-	// Get participants - fetch this with lower priority
-	const { data: participants } = useReadContract({
+	// Get participants - fetch this with medium priority
+	const { data: participants, refetch: refetchParticipants } = useReadContract({
 		...pondCoreConfig,
 		address: pondCoreConfig.address as `0x${string}`,
 		functionName: 'getPondParticipants',
 		args: pondTypeFormatted ? [pondTypeFormatted] : undefined,
 		query: {
 			enabled: isValidPondType,
-			refetchInterval: 45000, // Less frequent updates
+			refetchInterval: getRefreshInterval(20000), // 5s for 5min, 20s for daily
+			refetchIntervalInBackground: true,
+			staleTime: getRefreshInterval(10000),
 		},
 	});
 
@@ -163,13 +186,22 @@ export default function usePondInfo(pondType: string | null) {
 			}
 		},
 
-		enabled: isValidPondType && !!pondStatusData, // Only run when we have the basic data
-		staleTime: 5000, // Small stale time to avoid excessive re-renders
-		refetchInterval: false, // Don't auto-refetch - we'll rely on the individual queries
+		enabled: isValidPondType && !!pondStatusData,
+		staleTime: getRefreshInterval(2000), // 500ms for 5min, 2s for daily
+		refetchInterval: getRefreshInterval(10000), // 2.5s for 5min, 10s for daily
+		refetchIntervalInBackground: true,
+		refetchOnWindowFocus: true,
 
-		// Don't fail the query on error
+		// Expose refetch functions for manual refresh
 		meta: {
 			isLoading: isStatusLoading || isUserAmountLoading,
+			refetchAll: () => {
+				refetchStatus();
+				refetchUserAmount();
+				refetchWinner();
+				refetchPrize();
+				refetchParticipants();
+			},
 		},
 	});
 }

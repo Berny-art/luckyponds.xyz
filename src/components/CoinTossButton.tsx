@@ -1,5 +1,5 @@
 'use client';
-
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState } from 'react';
 import { Button } from './ui/button';
 import { useTossCoin } from '@/hooks/useTossCoin';
@@ -13,6 +13,7 @@ import { toast } from 'sonner';
 import { PondStatus } from '@/functions/getPondStatus';
 import { usePondStatus } from '@/hooks/usePondStatus';
 import { useAnimationStore } from '@/stores/animationStore';
+import usePondInfo from '@/hooks/usePondInfo';
 
 interface CoinTossButtonProps {
 	amount: string;
@@ -36,11 +37,30 @@ export default function CoinTossButton({
 	const { writeContractAsync, isPending: isWritePending } = useWriteContract();
 	const { showLFG } = useAnimationStore();
 
+	// Get the refetch function from the pond info hook
+	const { refetch: refetchPondInfo } = usePondInfo(selectedPond);
+
 	// Get pond status with accurate timelock information
 	const { status: pondStatus } = usePondStatus(pondInfo);
 
 	// Check if the component is in a loading state
 	const isLoading = tossLoading || isProcessing || isWritePending;
+
+	// Function to trigger data refresh after successful operations
+	const triggerDataRefresh = async () => {
+		try {
+			// Access the refetchAll function from the hook's meta if available
+			// biome-ignore lint/suspicious/noExplicitAny: <explanation>
+			const refetchAll = (refetchPondInfo as any)?.meta?.refetchAll;
+			if (refetchAll) {
+				await refetchAll();
+			} else {
+				await refetchPondInfo();
+			}
+		} catch (error) {
+			console.error('Failed to refresh pond data:', error);
+		}
+	};
 
 	// Function to select a winner for the pond (hidden from user)
 	const selectWinner = async () => {
@@ -56,6 +76,12 @@ export default function CoinTossButton({
 			});
 
 			console.log('Silent winner selection transaction:', hash);
+
+			// Trigger data refresh after winner selection
+			setTimeout(() => {
+				triggerDataRefresh();
+			}, 2000); // Small delay to allow blockchain to update
+
 			return hash;
 		} catch (error: unknown) {
 			console.error('Silent winner selection error:', error);
@@ -116,6 +142,11 @@ export default function CoinTossButton({
 
 			// Proceed with the toss (standard or after selection)
 			await tossCoin(selectedPond, amount, pondInfo.tokenType);
+
+			// Trigger immediate data refresh after successful toss
+			setTimeout(() => {
+				triggerDataRefresh();
+			}, 1500); // Slightly shorter delay for toss refresh
 		} catch (error) {
 			console.error('Toss process error:', error);
 		} finally {
@@ -124,10 +155,14 @@ export default function CoinTossButton({
 	};
 
 	// Get pond name for display
-	const pondName = pondInfo?.name || 'pond';
+	const pondName = pondInfo?.name.replace('ETH', '') || 'pond';
 	const displayPondName = pondName.includes('Pond')
 		? pondName.replace('Pond', '').trim()
 		: pondName;
+
+	// Apply correct timelock duration based on pond period (shorter for 5-min ponds)
+	const isTimeLocked = pondStatus === PondStatus.TimeLocked;
+	const isSelectingWinner = pondStatus === PondStatus.SelectWinner;
 
 	// Get the button text based on connection, loading, and pond status
 	const getButtonText = () => {
@@ -148,6 +183,14 @@ export default function CoinTossButton({
 			);
 		}
 
+		if (isSelectingWinner || isTimeLocked) {
+			return (
+				<>
+					<Loader2 className="mr-2 h-5 w-5 animate-spin" /> Selecting winner...
+				</>
+			);
+		}
+
 		// Connected - show standard toss message
 		return numberOfTosses === 1
 			? `Toss ${numberOfTosses} coin in ${displayPondName} pond`
@@ -162,9 +205,6 @@ export default function CoinTossButton({
 			handleToss(e);
 		}
 	};
-
-	// Apply correct timelock duration based on pond period (shorter for 5-min ponds)
-	const isTimeLocked = pondStatus === PondStatus.TimeLocked;
 
 	// Determine if button should be disabled
 	const isButtonDisabled =

@@ -29,7 +29,37 @@ const frogTheme = merge(darkTheme(), {
 	},
 } as Theme);
 
-const queryClient = new QueryClient();
+// Optimized QueryClient configuration for better performance
+const queryClient = new QueryClient({
+	defaultOptions: {
+		queries: {
+			// Enable background refetching for real-time data
+			refetchOnWindowFocus: true,
+			refetchOnReconnect: true,
+			refetchIntervalInBackground: true,
+
+			// Reduce stale time for more responsive updates
+			staleTime: 5000, // 5 seconds default
+
+			// Keep data fresh but don't over-fetch
+			gcTime: 1000 * 60 * 5, // 5 minutes garbage collection
+
+			// Retry configuration for failed requests
+			retry: (failureCount, error) => {
+				// Don't retry for 4xx errors, but retry for network issues
+				if (error instanceof Error && error.message.includes('4')) {
+					return false;
+				}
+				return failureCount < 3;
+			},
+			retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
+		},
+		mutations: {
+			// Keep mutations in cache briefly for optimistic updates
+			gcTime: 1000 * 30, // 30 seconds
+		},
+	},
+});
 
 export default function Providers({ children }: { children: React.ReactNode }) {
 	return (

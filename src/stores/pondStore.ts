@@ -21,10 +21,6 @@ interface PondStore {
 	// Loading state
 	isLoadingPondTypes: boolean;
 	setIsLoadingPondTypes: (isLoading: boolean) => void;
-
-	// Lightning Mode
-	lightningMode: boolean;
-	setLightningMode: (lightningMode: boolean) => void;
 }
 
 export const usePondStore = create<PondStore>((set) => ({
@@ -39,8 +35,4 @@ export const usePondStore = create<PondStore>((set) => ({
 	// Loading state
 	isLoadingPondTypes: true,
 	setIsLoadingPondTypes: (isLoading) => set({ isLoadingPondTypes: isLoading }),
-
-	// Lightning Mode
-	lightningMode: false,
-	setLightningMode: (lightningMode) => set({ lightningMode }),
 }));

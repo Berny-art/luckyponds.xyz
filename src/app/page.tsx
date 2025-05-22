@@ -45,6 +45,7 @@ export default function Home() {
 
 	// Display amount with efficient updates
 	const [displayAmount, setDisplayAmount] = useState('0');
+	const [isManualRefreshing] = useState(false);
 
 	// Refs for event management
 	const initialEventsAddedRef = useRef(false);
@@ -97,6 +98,14 @@ export default function Home() {
 		isPondInfoFetching,
 	]);
 
+	// Reset events when pond changes
+	useEffect(() => {
+		initialEventsAddedRef.current = false;
+		if (eventsTimeoutRef.current) {
+			clearTimeout(eventsTimeoutRef.current);
+		}
+	}, []);
+
 	// Simplified loading states
 	const isLoading = isLoadingPondTypes || (isPondInfoLoading && !pondInfo);
 
@@ -104,20 +113,23 @@ export default function Home() {
 		<div className="flex w-full flex-col justify-center gap-8 overflow-x-hidden p-4 pb-12 md:flex-row md:pb-0">
 			<div className="relative flex w-full items-center justify-center gap-2 pt-12 lg:pt-0">
 				<div className="relative flex w-full flex-col items-center justify-center gap-4 md:max-w-[500px]">
-					<h1 className="py-4 font-bold font-mono text-4xl text-primary-200 uppercase md:text-5xl">
-						WIN{' '}
-						{isLoading ? (
-							<Skeleton className="inline-block h-10 w-28 bg-secondary-900" />
-						) : (
-							<span className="relative text-drip-300">
-								{displayAmount}
-								{isPondInfoFetching && (
-									<span className="-top-1 -right-3 absolute h-2 w-2 animate-ping rounded-full bg-drip-300" />
-								)}
-							</span>
-						)}{' '}
-						HYPE
-					</h1>
+					{/* Title with manual refresh button for fast ponds */}
+					<div className="flex items-center gap-4">
+						<h1 className="py-4 font-bold font-mono text-4xl text-primary-200 uppercase md:text-5xl">
+							WIN{' '}
+							{isLoading ? (
+								<Skeleton className="inline-block h-10 w-28 bg-secondary-900" />
+							) : (
+								<span className="relative text-drip-300">
+									{displayAmount}
+									{(isPondInfoFetching || isManualRefreshing) && (
+										<span className="-top-1 -right-3 absolute h-2 w-2 animate-ping rounded-full bg-drip-300" />
+									)}
+								</span>
+							)}{' '}
+							HYPE
+						</h1>
+					</div>
 
 					{/* Countdown Timer */}
 					<div className="-mt-2 mb-2 w-full justify-center">
