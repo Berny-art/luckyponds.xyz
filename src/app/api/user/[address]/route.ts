@@ -20,13 +20,16 @@ const rateLimit: Record<string, number[]> = {};
  * This keeps the API key secure on the server
  *
  * @param request The incoming request
- * @param params Object containing route parameters, including the address
+ * @param context Object containing route parameters
  */
 export async function GET(
 	request: NextRequest,
-	{ params }: { params: { address: string } },
+	context: { params: Promise<{ address: string }> },
 ) {
 	try {
+		// Await the params to get the address
+		const { address } = await context.params;
+
 		// Get client IP for rate limiting
 		const ip =
 			request.headers.get('x-forwarded-for') ||
@@ -42,7 +45,6 @@ export async function GET(
 		}
 
 		// Validate the address parameter
-		const { address } = params;
 		if (!address || !isValidAddress(address)) {
 			return NextResponse.json(
 				{ error: 'Invalid Ethereum address' },
