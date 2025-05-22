@@ -6,6 +6,7 @@ import { useReadContract } from 'wagmi';
 import { pondCoreConfig } from '@/contracts/PondCore';
 import { PondPeriod, type PondDisplayInfo } from '@/lib/types';
 import { usePondStore, type EnhancedPond } from '@/stores/pondStore';
+import useLocalStorage from 'use-local-storage';
 
 /**
  * Enhanced hook for fetching standard pond types with better error handling,
@@ -16,6 +17,7 @@ export function useStandardPondsForUI(
 ) {
 	const { setPondTypes, setIsLoadingPondTypes, setSelectedPond, selectedPond } =
 		usePondStore();
+	const [lightningMode] = useLocalStorage('lightningMode', false);
 
 	// Convert to 0x-prefixed address for wagmi
 	const formattedAddress = tokenAddress as `0x${string}`;
@@ -59,7 +61,7 @@ export function useStandardPondsForUI(
 
 					// Set first pond as selected if none is selected
 					if (!selectedPond) {
-						setSelectedPond(enhancedPonds[2].type);
+						setSelectedPond(enhancedPonds[lightningMode ? 0 : 2].type);
 					}
 				} else {
 					console.warn('No valid pond types found after filtering');
@@ -78,6 +80,7 @@ export function useStandardPondsForUI(
 		setIsLoadingPondTypes,
 		setSelectedPond,
 		selectedPond,
+		lightningMode,
 	]);
 
 	// Return the processed data along with loading/error states

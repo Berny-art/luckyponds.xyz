@@ -19,17 +19,17 @@ import { useStandardPondsForUI } from '@/hooks/useStandardPondsForUI';
 import usePondInfo from '@/hooks/usePondInfo';
 import { PondPeriod, type PondComprehensiveInfo } from '@/lib/types';
 import { useResponsiveBreakpoints } from '@/hooks/useBreakpoints';
+import useLocalStorage from 'use-local-storage';
 
 export default function Home() {
-	const {
-		selectedPond,
-		setSelectedPond,
-		pondTypes,
-		isLoadingPondTypes,
-		lightningMode,
-		setLightningMode,
-	} = usePondStore();
+	const { selectedPond, setSelectedPond, pondTypes, isLoadingPondTypes } =
+		usePondStore();
 	const { addEvent } = useEventsStore();
+
+	const [lightningMode, setLightningMode] = useLocalStorage(
+		'lightningMode',
+		false,
+	);
 
 	const { isLg } = useResponsiveBreakpoints();
 

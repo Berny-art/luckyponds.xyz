@@ -6,8 +6,9 @@ import { Button } from './ui/button';
 import { useAnimationStore } from '@/stores/animationStore';
 import { PondPeriod } from '@/lib/types';
 import { Skeleton } from './ui/skeleton';
-import { usePondStore, type EnhancedPond } from '@/stores/pondStore';
+import type { EnhancedPond } from '@/stores/pondStore';
 import { useState, useEffect } from 'react';
+import useLocalStorage from 'use-local-storage';
 
 interface StandardPondsProps {
 	pondTypes: EnhancedPond[];
@@ -23,7 +24,7 @@ export default function StandardPonds({
 	onPondSelect,
 }: StandardPondsProps) {
 	const { showRandom } = useAnimationStore();
-	const { lightningMode } = usePondStore();
+	const [lightningMode] = useLocalStorage('lightningMode', false);
 	const [displayPonds, setDisplayPonds] = useState<EnhancedPond[]>([]);
 
 	// Update display ponds when pond types change
