@@ -39,6 +39,30 @@ export function getPondStatus(
 		return PondStatus.Completed;
 	}
 
+	// Special handling for 5-minute ponds
+	if (pondInfo.period === PondPeriod.FIVE_MIN) {
+		// For 5-minute ponds, they are always "Open" except during timelock
+
+		// If the pond has ended but prize hasn't been distributed
+		if (now > pondInfo.endTime && !pondInfo.prizeDistributed) {
+			const timelockDuration =
+				timelockSeconds || getEstimatedTimelock(pondInfo.period);
+			const timelockEndTime = pondInfo.endTime + timelockDuration;
+
+			// Check if we're in the timelock period
+			if (now < timelockEndTime) {
+				return PondStatus.TimeLocked;
+			}
+
+			// After timelock, it can select winner
+			return PondStatus.SelectWinner;
+		}
+
+		// For all other cases (before end time, or any other state), 5-minute ponds are Open
+		return PondStatus.Open;
+	}
+
+	// Standard logic for non-5-minute ponds
 	// Check if pond has ended but prize hasn't been distributed
 	if (now > pondInfo.endTime) {
 		// Use the provided timelock or a period-based estimate
@@ -69,7 +93,7 @@ function getEstimatedTimelock(period: PondPeriod | undefined): bigint {
 	// Determine timelock based on pond period
 	switch (period) {
 		case PondPeriod.FIVE_MIN:
-			return BigInt(20); // 30 seconds for 5-minute ponds
+			return BigInt(20); // 20 seconds for 5-minute ponds
 		case PondPeriod.HOURLY:
 			return BigInt(60); // 1 minute for other ponds
 		case PondPeriod.DAILY:
