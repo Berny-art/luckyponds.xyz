@@ -11,7 +11,8 @@ import { useAnimationStore } from '@/stores/animationStore';
 
 export default function CoinTossInput({
 	pondInfo,
-}: { pondInfo: PondComprehensiveInfo }) {
+	onTransactionSuccess,
+}: { pondInfo: PondComprehensiveInfo; onTransactionSuccess?: () => void }) {
 	const { address } = useAccount();
 	const { data: balance } = useBalance({ address });
 	const { showHigher, showDegen } = useAnimationStore();
@@ -204,6 +205,7 @@ export default function CoinTossInput({
 					amount={formatEther(BigInt(tossAmount))}
 					numberOfTosses={numberOfTosses}
 					pondInfo={pondInfo}
+					onTransactionSuccess={onTransactionSuccess}
 				/>
 			)}
 		</div>

@@ -1,5 +1,6 @@
+// src/components/CoinTossButton.tsx
 'use client';
-/* eslint-disable @typescript-eslint/no-explicit-any */
+
 import { useState } from 'react';
 import { Button } from './ui/button';
 import { useTossCoin } from '@/hooks/useTossCoin';
@@ -13,13 +14,14 @@ import { toast } from 'sonner';
 import { PondStatus } from '@/functions/getPondStatus';
 import { usePondStatus } from '@/hooks/usePondStatus';
 import { useAnimationStore } from '@/stores/animationStore';
-import usePondInfo from '@/hooks/usePondInfo';
+import { PondPeriod } from '@/lib/types';
 
 interface CoinTossButtonProps {
 	amount: string;
 	numberOfTosses: number;
 	pondInfo: PondComprehensiveInfo;
 	disabled?: boolean;
+	onTransactionSuccess?: () => void; // New callback prop
 }
 
 export default function CoinTossButton({
@@ -27,6 +29,7 @@ export default function CoinTossButton({
 	numberOfTosses,
 	pondInfo,
 	disabled = false,
+	onTransactionSuccess, // Add the new prop
 }: CoinTossButtonProps) {
 	const { address } = useAccount();
 	const isConnected = !!address;
@@ -37,30 +40,33 @@ export default function CoinTossButton({
 	const { writeContractAsync, isPending: isWritePending } = useWriteContract();
 	const { showLFG } = useAnimationStore();
 
-	// Get the refetch function from the pond info hook
-	const { refetch: refetchPondInfo } = usePondInfo(selectedPond);
-
 	// Get pond status with accurate timelock information
 	const { status: pondStatus } = usePondStatus(pondInfo);
 
+	// Check if pond is about to end (5 seconds before end time)
+	const isPondAboutToEnd = () => {
+		if (!pondInfo?.endTime) return false;
+
+		const now = Math.floor(Date.now() / 1000);
+		const endTime = Number(pondInfo.endTime);
+		const timeUntilEnd = endTime - now;
+
+		// Disable 5 seconds before end
+		return timeUntilEnd <= 5 && timeUntilEnd > 0;
+	};
+
+	console.log('Pond status:', pondStatus);
+
+	// Check if this is a 5-minute pond in select winner status (should be enabled)
+	const isFiveMinPondSelectWinner = () => {
+		return (
+			pondInfo?.period === PondPeriod.FIVE_MIN &&
+			pondStatus === PondStatus.SelectWinner
+		);
+	};
+
 	// Check if the component is in a loading state
 	const isLoading = tossLoading || isProcessing || isWritePending;
-
-	// Function to trigger data refresh after successful operations
-	const triggerDataRefresh = async () => {
-		try {
-			// Access the refetchAll function from the hook's meta if available
-			// biome-ignore lint/suspicious/noExplicitAny: <explanation>
-			const refetchAll = (refetchPondInfo as any)?.meta?.refetchAll;
-			if (refetchAll) {
-				await refetchAll();
-			} else {
-				await refetchPondInfo();
-			}
-		} catch (error) {
-			console.error('Failed to refresh pond data:', error);
-		}
-	};
 
 	// Function to select a winner for the pond (hidden from user)
 	const selectWinner = async () => {
@@ -76,12 +82,6 @@ export default function CoinTossButton({
 			});
 
 			console.log('Silent winner selection transaction:', hash);
-
-			// Trigger data refresh after winner selection
-			setTimeout(() => {
-				triggerDataRefresh();
-			}, 2000); // Small delay to allow blockchain to update
-
 			return hash;
 		} catch (error: unknown) {
 			console.error('Silent winner selection error:', error);
@@ -141,12 +141,15 @@ export default function CoinTossButton({
 			}
 
 			// Proceed with the toss (standard or after selection)
-			await tossCoin(selectedPond, amount, pondInfo.tokenType);
+			const result = await tossCoin(selectedPond, amount, pondInfo.tokenType);
 
-			// Trigger immediate data refresh after successful toss
-			setTimeout(() => {
-				triggerDataRefresh();
-			}, 1500); // Slightly shorter delay for toss refresh
+			// Call the callback on successful transaction
+			if (result.success && onTransactionSuccess) {
+				// Wait a bit for the transaction to be mined, then refresh user data
+				setTimeout(() => {
+					onTransactionSuccess();
+				}, 2000); // 2 seconds should be enough for most transactions
+			}
 		} catch (error) {
 			console.error('Toss process error:', error);
 		} finally {
@@ -155,14 +158,10 @@ export default function CoinTossButton({
 	};
 
 	// Get pond name for display
-	const pondName = pondInfo?.name.replace('ETH', '') || 'pond';
+	const pondName = pondInfo?.name || 'pond';
 	const displayPondName = pondName.includes('Pond')
 		? pondName.replace('Pond', '').trim()
 		: pondName;
-
-	// Apply correct timelock duration based on pond period (shorter for 5-min ponds)
-	const isTimeLocked = pondStatus === PondStatus.TimeLocked;
-	const isSelectingWinner = pondStatus === PondStatus.SelectWinner;
 
 	// Get the button text based on connection, loading, and pond status
 	const getButtonText = () => {
@@ -183,15 +182,12 @@ export default function CoinTossButton({
 			);
 		}
 
-		if (isSelectingWinner || isTimeLocked) {
-			return (
-				<>
-					<Loader2 className="mr-2 h-5 w-5 animate-spin" /> Selecting winner...
-				</>
-			);
+		// Pond about to end warning
+		if (isPondAboutToEnd()) {
+			return 'Pond ending soon - Tosses disabled';
 		}
 
-		// Connected - show standard toss message
+		// Connected - show standard toss message (same for all cases)
 		return numberOfTosses === 1
 			? `Toss ${numberOfTosses} coin in ${displayPondName} pond`
 			: `Toss ${numberOfTosses} coins in ${displayPondName} pond`;
@@ -206,6 +202,9 @@ export default function CoinTossButton({
 		}
 	};
 
+	// Apply correct timelock duration based on pond period (shorter for 5-min ponds)
+	const isTimeLocked = pondStatus === PondStatus.TimeLocked;
+
 	// Determine if button should be disabled
 	const isButtonDisabled =
 		disabled ||
@@ -215,14 +214,19 @@ export default function CoinTossButton({
 				amount === '0' ||
 				numberOfTosses < 1 ||
 				pondStatus === PondStatus.NotStarted ||
-				isTimeLocked ||
-				pondStatus === PondStatus.Completed));
+				pondStatus === PondStatus.Completed ||
+				isPondAboutToEnd() || // Disable 5 seconds before end
+				(isTimeLocked && !isFiveMinPondSelectWinner()))); // Allow 5-min ponds in select winner status
 
 	return (
 		<Button
 			onClick={handleClick}
 			disabled={isButtonDisabled}
-			className="w-full bg-drip-300 py-6 font-bold text-secondary-950 text-xl hover:bg-drip-300/90"
+			className={`w-full py-6 font-bold text-xl ${
+				isPondAboutToEnd()
+					? 'bg-red-500 text-white hover:bg-red-600' // Warning styling for ending soon
+					: 'bg-drip-300 text-secondary-950 hover:bg-drip-300/90' // Default styling for all other cases
+			}`}
 		>
 			{getButtonText()}
 		</Button>

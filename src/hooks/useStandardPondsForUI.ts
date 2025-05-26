@@ -1,4 +1,6 @@
 // src/hooks/useStandardPondsForUI.ts
+// REPLACE your existing useStandardPondsForUI hook with this updated version:
+
 'use client';
 
 import { useEffect } from 'react';
@@ -9,11 +11,10 @@ import { usePondStore, type EnhancedPond } from '@/stores/pondStore';
 import useLocalStorage from 'use-local-storage';
 
 /**
- * Enhanced hook for fetching standard pond types with better error handling,
- * automatic store updates, and no placeholder data
+ * Enhanced hook for fetching standard pond types with token address parameter
  */
 export function useStandardPondsForUI(
-	tokenAddress = '0x0000000000000000000000000000000000000000',
+	tokenAddress = '0x0000000000000000000000000000000000000000', // Default to native
 ) {
 	const { setPondTypes, setIsLoadingPondTypes, setSelectedPond, selectedPond } =
 		usePondStore();
@@ -37,6 +38,7 @@ export function useStandardPondsForUI(
 	});
 
 	// Process data and update store in one effect
+	// biome-ignore lint/correctness/useExhaustiveDependencies: <explanation>
 	useEffect(() => {
 		// Always update loading state
 		setIsLoadingPondTypes(isLoading);
@@ -59,9 +61,11 @@ export function useStandardPondsForUI(
 				if (enhancedPonds.length > 0) {
 					setPondTypes(enhancedPonds);
 
-					// Set first pond as selected if none is selected
+					// Set first pond as selected if none is selected OR if token changed
 					if (!selectedPond) {
-						setSelectedPond(enhancedPonds[lightningMode ? 0 : 2].type);
+						setSelectedPond(
+							lightningMode ? enhancedPonds[0]?.type : enhancedPonds[2]?.type,
+						);
 					}
 				} else {
 					console.warn('No valid pond types found after filtering');
@@ -80,8 +84,14 @@ export function useStandardPondsForUI(
 		setIsLoadingPondTypes,
 		setSelectedPond,
 		selectedPond,
-		lightningMode,
+		tokenAddress, // Add tokenAddress as dependency
 	]);
+
+	// Reset selected pond when token changes
+	// biome-ignore lint/correctness/useExhaustiveDependencies: <explanation>
+	useEffect(() => {
+		setSelectedPond('');
+	}, [tokenAddress, setSelectedPond]);
 
 	// Return the processed data along with loading/error states
 	return {
