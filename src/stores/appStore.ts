@@ -137,7 +137,8 @@ export const useAppStore = create<AppState>()(
 			pondTypes: [],
 			setPondTypes: (pondTypes) => set({ pondTypes }),
 			isLoadingPondTypes: true,
-			setIsLoadingPondTypes: (isLoading) => set({ isLoadingPondTypes: isLoading }),
+			setIsLoadingPondTypes: (isLoading) =>
+				set({ isLoadingPondTypes: isLoading }),
 
 			// Animation state
 			isAnimationVisible: false,
@@ -149,7 +150,9 @@ export const useAppStore = create<AppState>()(
 				set({
 					isAnimationVisible: true,
 					animationPosition: position,
-					animationText: text || ANIMATION_TEXTS[Math.floor(Math.random() * ANIMATION_TEXTS.length)],
+					animationText:
+						text ||
+						ANIMATION_TEXTS[Math.floor(Math.random() * ANIMATION_TEXTS.length)],
 					animationTimestamp: Date.now(),
 				}),
 
@@ -183,7 +186,10 @@ export const useAppStore = create<AppState>()(
 					};
 
 					// Keep only the 10 most recent events
-					const updatedEvents = [eventWithPosition, ...state.events].slice(0, 10);
+					const updatedEvents = [eventWithPosition, ...state.events].slice(
+						0,
+						10,
+					);
 
 					return {
 						events: updatedEvents,

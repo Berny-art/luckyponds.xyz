@@ -99,15 +99,15 @@ export default function CoinTossInput({
 		// Only update if the max is greater than current value
 		if (maxTosses > oldValue) {
 			setNumberOfTosses(maxTosses);
-		// Ensure we have valid coordinates and delay slightly
-		setTimeout(() => {
-			const x = e.clientX;
-			const y = e.clientY;
+			// Ensure we have valid coordinates and delay slightly
+			setTimeout(() => {
+				const x = e.clientX;
+				const y = e.clientY;
 
-			if (x && y) {
-				showAnimation({ x, y });
-			}
-		}, 10);
+				if (x && y) {
+					showAnimation({ x, y });
+				}
+			}, 10);
 		}
 	};
 

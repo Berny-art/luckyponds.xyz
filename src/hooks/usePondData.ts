@@ -17,7 +17,10 @@ interface UsePondDataOptions {
 }
 
 // Smart refetch intervals based on pond type
-const getRefetchInterval = (period?: PondPeriod, prizeDistributed?: boolean) => {
+const getRefetchInterval = (
+	period?: PondPeriod,
+	prizeDistributed?: boolean,
+) => {
 	if (prizeDistributed && period !== PondPeriod.FIVE_MIN) {
 		return 30000; // 30s for completed non-5min ponds
 	}
@@ -70,20 +73,21 @@ export function usePondData({ pondId, tokenAddress }: UsePondDataOptions) {
 	});
 
 	// User's toss amount
-	const { data: userTossAmount, isLoading: isUserAmountLoading } = useReadContract({
-		...pondCoreConfig,
-		address: pondCoreConfig.address as `0x${string}`,
-		functionName: 'getUserTossAmount',
-		args:
-			pondIdFormatted && userAddress
-				? [pondIdFormatted, userAddress]
-				: undefined,
-		query: {
-			enabled: isValidPondId && !!userAddress,
-			refetchInterval: 12000,
-			staleTime: 8000,
-		},
-	});
+	const { data: userTossAmount, isLoading: isUserAmountLoading } =
+		useReadContract({
+			...pondCoreConfig,
+			address: pondCoreConfig.address as `0x${string}`,
+			functionName: 'getUserTossAmount',
+			args:
+				pondIdFormatted && userAddress
+					? [pondIdFormatted, userAddress]
+					: undefined,
+			query: {
+				enabled: isValidPondId && !!userAddress,
+				refetchInterval: 12000,
+				staleTime: 8000,
+			},
+		});
 
 	// Last winner and prize
 	const { data: lastWinner } = useReadContract({

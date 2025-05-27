@@ -62,14 +62,15 @@ export default function StandardPonds({
 	// Handle pond selection with animation
 	const handlePondSelect = (pondType: string, e: React.MouseEvent) => {
 		// Only trigger animation and selection if it's not already selected
-		if (selectedPond !== pondType) {		// Get click coordinates
-		const x = e.clientX;
-		const y = e.clientY;
+		if (selectedPond !== pondType) {
+			// Get click coordinates
+			const x = e.clientX;
+			const y = e.clientY;
 
-		if (x && y) {
-			// Trigger animation at click position
-			showAnimation({ x, y });
-		}
+			if (x && y) {
+				// Trigger animation at click position
+				showAnimation({ x, y });
+			}
 
 			// Set the selected pond
 			onPondSelect(pondType);
