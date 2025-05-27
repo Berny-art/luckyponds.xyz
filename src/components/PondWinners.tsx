@@ -57,9 +57,8 @@ export default function PondWinners({ classNames }: { classNames?: string }) {
 					title={winner.title}
 					amount={formatValue(winner.lastPrize)}
 					winner={formatWinner(winner.lastWinner)}
-					colorClass={winner.colorClass}
-					textClass={winner.textClass}
 					hasWinner={!!hasWinner(winner.lastWinner)}
+					period={winner.period}
 				/>
 			))}
 		</div>

@@ -12,30 +12,107 @@ import {
 import { Button } from './ui/button';
 import Link from 'next/link';
 import confetti from 'canvas-confetti';
+import { PondPeriod } from '@/lib/types';
 
 interface PondWinnerCardProps {
 	title: string;
 	amount: string;
 	winner: string;
-	colorClass: string;
-	textClass?: string;
 	hasWinner: boolean;
-	pondType?: string;
+	period: PondPeriod;
 }
 
 export default function PondWinnerCard({
 	title,
 	amount,
 	winner,
-	colorClass,
-	textClass,
 	hasWinner,
+	period,
 }: PondWinnerCardProps) {
 	const [open, setOpen] = useState(false);
 	const tweetText = encodeURIComponent(
 		`I Just Won ${amount} HYPE Playing Lucky Ponds on`,
 	);
 	const tweetUrl = encodeURIComponent('https://luckyponds.xyz');
+
+	// Fire confetti when dialog opens
+	useEffect(() => {
+		if (open && hasWinner) {
+			triggerEmojiConfetti();
+		}
+	}, [open, hasWinner]); // eslint-disable-line react-hooks/exhaustive-deps
+
+	// Get themed emoji based on period
+	const getThemedEmoji = () => {
+		switch (period) {
+			case PondPeriod.FIVE_MIN:
+				return '⚡'; // Lightning for fast 5-min ponds
+			case PondPeriod.HOURLY:
+				return '⏱️'; // Clock for hourly ponds
+			case PondPeriod.DAILY:
+				return '🌟'; // Star for daily
+			case PondPeriod.WEEKLY:
+				return '💧'; // Water drop for weekly
+			case PondPeriod.MONTHLY:
+				return '💜'; // Heart for monthly
+			default:
+				return '💎';
+		}
+	};
+
+	// Get button color based on period
+	const getButtonColor = () => {
+		switch (period) {
+			case PondPeriod.FIVE_MIN:
+				return 'bg-primary-200 hover:bg-primary-200/80 border-primary-200';
+			case PondPeriod.HOURLY:
+				return 'bg-blue-400 hover:bg-blue-400/80 border-blue-400';
+			case PondPeriod.DAILY:
+				return 'bg-orange-400 hover:bg-orange-400/80 border-orange-400';
+			case PondPeriod.WEEKLY:
+				return 'bg-drip-300 hover:bg-drip-300/80 border-drip-300';
+			case PondPeriod.MONTHLY:
+				return 'bg-purple-500 hover:bg-purple-500/80 border-purple-500';
+			default:
+				return 'bg-primary-200 hover:bg-primary-200/80 border-primary-200';
+		}
+	};
+
+	// Get card background and border color based on period
+	const getCardColor = () => {
+		switch (period) {
+			case PondPeriod.FIVE_MIN:
+				return 'bg-primary-200/10 border-primary-200';
+			case PondPeriod.HOURLY:
+				return 'bg-blue-400/10 border-blue-400';
+			case PondPeriod.DAILY:
+				return 'bg-orange-400/10 border-orange-400';
+			case PondPeriod.WEEKLY:
+				return 'bg-drip-300/10 border-drip-300';
+			case PondPeriod.MONTHLY:
+				return 'bg-purple-500/10 border-purple-500';
+			default:
+				return 'bg-primary-200/10 border-primary-200';
+		}
+	};
+
+	// Get text color based on period
+	const getTextColor = () => {
+		switch (period) {
+			case PondPeriod.FIVE_MIN:
+				return 'text-primary-200';
+			case PondPeriod.HOURLY:
+				return 'text-blue-400';
+			case PondPeriod.DAILY:
+				return 'text-orange-400';
+			case PondPeriod.WEEKLY:
+				return 'text-drip-300';
+			case PondPeriod.MONTHLY:
+				return 'text-purple-500';
+			default:
+				return 'text-primary-200';
+		}
+	};
 
 	// Fire confetti when dialog opens
 	useEffect(() => {
@@ -56,21 +133,11 @@ export default function PondWinnerCard({
 		const celebration = confetti.shapeFromText({ text: '🎉', scalar });
 		const party = confetti.shapeFromText({ text: '🥳', scalar });
 
-		// Add themed emojis based on pond type
-		// biome-ignore lint/suspicious/noImplicitAnyLet: <explanation>
-		let specialEmoji;
-
-		if (colorClass.includes('primary-200')) {
-			specialEmoji = confetti.shapeFromText({ text: '💧', scalar }); // Water-themed
-		} else if (colorClass.includes('orange')) {
-			specialEmoji = confetti.shapeFromText({ text: '🌟', scalar }); // Star-themed
-		} else if (colorClass.includes('purple')) {
-			specialEmoji = confetti.shapeFromText({ text: '⚡', scalar }); // Lightning for fast 5-min ponds
-		} else if (colorClass.includes('blue')) {
-			specialEmoji = confetti.shapeFromText({ text: '⏱️', scalar }); // Clock for hourly ponds
-		} else {
-			specialEmoji = confetti.shapeFromText({ text: '💜', scalar }); // Heart-themed
-		}
+		// Add themed emoji based on period
+		const specialEmoji = confetti.shapeFromText({
+			text: getThemedEmoji(),
+			scalar,
+		});
 
 		// Common settings for the burst
 		const defaults = {
@@ -143,59 +210,17 @@ export default function PondWinnerCard({
 		}, 200);
 	};
 
-	// Determine dialog styling based on colorClass
-	const getDialogClasses = () => {
-		// Default base classes
-		const baseClasses =
-			'border-2 text-center font-mono text-secondary-200 flex flex-col items-center justify-center gap-4 p-6';
-
-		// Use the same color class for consistency
-		return cn(baseClasses, colorClass);
-	};
-
-	// Determine button styling based on colorClass
-	const getButtonClasses = () => {
-		const baseClasses = 'font-bold font-mono text-secondary-950 shadow-none';
-
-		if (colorClass.includes('primary-200')) {
-			return cn(baseClasses, 'bg-primary-200 hover:bg-primary-200/80');
-		}
-		if (colorClass.includes('orange')) {
-			return cn(baseClasses, 'bg-orange-400 hover:bg-orange-400/80');
-		}
-		if (colorClass.includes('purple')) {
-			return cn(baseClasses, 'bg-purple-400 hover:bg-purple-400/80');
-		}
-		if (colorClass.includes('blue')) {
-			return cn(baseClasses, 'bg-blue-400 hover:bg-blue-400/80');
-		}
-		if (colorClass.includes('drip-300')) {
-			return cn(baseClasses, 'bg-drip-300 hover:bg-drip-300/80');
-		}
-		return cn(baseClasses, 'bg-primary-200 hover:bg-primary-200/80');
-	};
-
-	// Use the textClass if provided, otherwise infer from colorClass
-	const getTextColorClass = () => {
-		if (textClass) return textClass;
-
-		if (colorClass.includes('primary-200')) return 'text-primary-200';
-		if (colorClass.includes('orange')) return 'text-orange-400';
-		if (colorClass.includes('purple')) return 'text-purple-400';
-		if (colorClass.includes('blue')) return 'text-blue-400';
-		if (colorClass.includes('drip-300')) return 'text-drip-300';
-
-		return 'text-primary-200';
-	};
-
 	return (
 		<Dialog open={open} onOpenChange={setOpen}>
 			<DialogTrigger className="w-full">
 				<div
-					className={`flex w-full flex-col items-start justify-center rounded border ${colorClass} px-4 py-2 text-primary-200`}
+					className={cn(
+						'flex w-full flex-col items-start justify-center rounded border px-4 py-2 text-primary-200',
+						getCardColor(),
+					)}
 				>
 					<div className="font-mono">{title}</div>
-					<div className={`font-bold font-mono text-xl ${getTextColorClass()}`}>
+					<div className={cn('font-bold font-mono text-xl', getTextColor())}>
 						{amount} HYPE
 					</div>
 					<div className="font-mono text-sm opacity-70">{winner}</div>
@@ -203,7 +228,12 @@ export default function PondWinnerCard({
 			</DialogTrigger>
 
 			{hasWinner && (
-				<DialogContent className={getDialogClasses()}>
+				<DialogContent
+					className={cn(
+						'flex flex-col items-center justify-center gap-4 border-2 p-6 text-center font-mono text-secondary-200',
+						getCardColor(),
+					)}
+				>
 					<DialogHeader>
 						<DialogTitle className="text-center">
 							{/* biome-ignore lint/nursery/useSortedClasses: <explanation> */}
@@ -211,12 +241,18 @@ export default function PondWinnerCard({
 						</DialogTitle>
 					</DialogHeader>
 					<p className="text">🎉 {formatAddress(winner)} 🎉</p>
-					<p className={`text-5xl ${getTextColorClass()}`}>{amount} HYPE</p>
+					<p className={cn('text-5xl', getTextColor())}>{amount} HYPE</p>
 					<Link
 						href={`https://x.com/intent/tweet?text=${tweetText}&url=${tweetUrl}`}
 						target="_blank"
 					>
-						<Button variant="default" className={getButtonClasses()}>
+						<Button
+							variant="default"
+							className={cn(
+								'border-2 font-bold font-mono text-secondary-950 shadow-none',
+								getButtonColor(),
+							)}
+						>
 							Share on X
 						</Button>
 					</Link>

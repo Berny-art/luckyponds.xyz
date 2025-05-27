@@ -12,6 +12,7 @@ import {
 import { Button } from './ui/button';
 import { useAllPondWinners } from '@/hooks/useAllPondWinners';
 import { useTokenStore } from '@/stores/tokenStore';
+import PondWinnerCard from './PondWinnerCard';
 
 /**
  * Mobile-friendly component for displaying pond winners
@@ -72,27 +73,14 @@ export default function PondWinnerDialog({
 				) : (
 					<div className="flex flex-col gap-2">
 						{winners.map((winner) => (
-							<div
+							<PondWinnerCard
 								key={winner.title}
-								className={cn(
-									'flex flex-col items-center justify-center rounded-lg border-2 p-2 text-center',
-									winner.colorClass,
-								)}
-							>
-								<h3 className="font-bold font-mono text-lg">{winner.title}</h3>
-								<p className={cn('mt-1 font-bold text-2xl', winner.textClass)}>
-									{formatValue(winner.lastPrize)} HYPE
-								</p>
-								<div className="mt-2 font-mono text-primary-200 text-sm">
-									{hasWinner(winner.lastWinner) ? (
-										<div className="flex flex-col items-center gap-1">
-											<p>{formatWinner(winner.lastWinner)}</p>
-										</div>
-									) : (
-										'No winner yet'
-									)}
-								</div>
-							</div>
+								title={winner.title}
+								amount={formatValue(winner.lastPrize)}
+								winner={formatWinner(winner.lastWinner)}
+								hasWinner={!!hasWinner(winner.lastWinner)}
+								period={winner.period}
+							/>
 						))}
 					</div>
 				)}

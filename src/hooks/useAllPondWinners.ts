@@ -12,8 +12,6 @@ export interface PondWinnerData {
 	lastWinner: string;
 	lastPrize: bigint;
 	title: string;
-	colorClass: string;
-	textClass?: string;
 }
 
 /**
@@ -164,45 +162,33 @@ export function useAllPondWinners(tokenAddress: string) {
 }
 
 /**
- * Get pond configuration (colors, titles) based on period
+ * Get pond configuration (title) based on period
  */
 function getPondConfig(period: PondPeriod) {
 	switch (period) {
 		case PondPeriod.FIVE_MIN:
 			return {
 				title: '5 Min Winner',
-				colorClass: 'bg-primary-200/10 border-primary-200',
-				textClass: 'text-primary-200',
 			};
 		case PondPeriod.HOURLY:
 			return {
 				title: 'Hourly Winner',
-				colorClass: 'bg-blue-400/10 border-blue-400',
-				textClass: 'text-blue-400',
 			};
 		case PondPeriod.DAILY:
 			return {
 				title: 'Daily Winner',
-				colorClass: 'bg-orange-400/10 border-orange-400',
-				textClass: 'text-orange-400',
 			};
 		case PondPeriod.WEEKLY:
 			return {
 				title: 'Weekly Winner',
-				colorClass: 'bg-drip-300/10 border-drip-300',
-				textClass: 'text-drip-300',
 			};
 		case PondPeriod.MONTHLY:
 			return {
 				title: 'Monthly Winner',
-				colorClass: 'bg-purple-500/10 border-purple-500',
-				textClass: 'text-purple-500',
 			};
 		default:
 			return {
 				title: 'Winner',
-				colorClass: 'bg-purple-500/10 border-purple-500',
-				textClass: 'text-purple-500',
 			};
 	}
 }
