@@ -5,7 +5,6 @@ import { formatValue } from '@/lib/utils';
 import { useAccount } from 'wagmi';
 import { Skeleton } from './ui/skeleton';
 import type { PondComprehensiveInfo } from '@/lib/types';
-import { usePondStatus } from '@/hooks/usePondStatus';
 import { useAppStore } from '@/stores/appStore';
 
 type PondInfoProps = {
