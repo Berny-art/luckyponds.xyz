@@ -3,7 +3,6 @@
 
 import { useAppStore } from '@/stores/appStore';
 import FloatingEventBadge from './FloatingEventBadge';
-import { useEffect } from 'react';
 import type { PondComprehensiveInfo } from '@/lib/types';
 
 interface FloatingEventsProps {

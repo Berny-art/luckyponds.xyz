@@ -224,7 +224,7 @@ export default function PondInterface({ tokenAddress }: PondInterfaceProps) {
 				<div className="-left-16 absolute top-0 z-40 flex gap-4 lg:flex-col">
 					{pondInfo && !isLoading && (
 						<>
-							<ShakeNotification pondInfo={pondInfo} />
+							<ShakeNotification />
 							<div
 								className={cn(
 									'flex cursor-pointer items-center justify-end gap-2 rounded-md border-2 border-drip-300',

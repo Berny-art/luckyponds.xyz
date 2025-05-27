@@ -21,9 +21,6 @@ export default function PondInfo({
 	const isConnected = !!address;
 	const { selectedToken } = useAppStore();
 
-	// Get pond status with accurate timelock information
-	const { status: pondStatus } = usePondStatus(pondInfo);
-
 	// Loading state
 	if (isLoading) {
 		return (

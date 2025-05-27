@@ -4,14 +4,11 @@
 import { formatAddress, formatValue } from '@/lib/utils';
 import { useAppStore } from '@/stores/appStore';
 import { useEffect, useState } from 'react';
-import type { PondComprehensiveInfo } from '@/lib/types';
 interface ShakeNotificationProps {
-	pondInfo: PondComprehensiveInfo;
 	className?: string;
 }
 
 export default function ShakeNotification({
-	pondInfo,
 	className = '',
 }: ShakeNotificationProps) {
 	// Get latest event from store

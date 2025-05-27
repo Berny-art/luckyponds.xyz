@@ -12,34 +12,6 @@ export enum PondStatus {
 }
 
 /**
- * Calculate when the current 5-minute cycle should end (aligned to UTC)
- * This matches the logic in PondTimer component exactly
- */
-function getCurrentFiveMinuteCycleEndTime(): number {
-	const now = new Date();
-
-	// Get current UTC time components
-	const currentUTCMinutes = now.getUTCMinutes();
-
-	// Calculate the next 5-minute boundary in UTC (00, 05, 10, 15, etc.)
-	const currentFiveMinuteMark = Math.floor(currentUTCMinutes / 5) * 5;
-	let nextFiveMinuteMark = currentFiveMinuteMark + 5;
-
-	// Create target time in UTC
-	const targetTime = new Date(now);
-
-	// Handle hour rollover
-	if (nextFiveMinuteMark >= 60) {
-		targetTime.setUTCHours(targetTime.getUTCHours() + 1);
-		nextFiveMinuteMark = 0;
-	}
-
-	targetTime.setUTCMinutes(nextFiveMinuteMark, 0, 0); // Set to next 5-min boundary
-
-	return targetTime.getTime();
-}
-
-/**
  * Gets the status of a pond based on its configuration and current state
  *
  * @param pondInfo The pond information object
