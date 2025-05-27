@@ -131,8 +131,8 @@ export default function PondInterface({ tokenAddress }: PondInterfaceProps) {
 			<div className="relative flex w-full items-center justify-center gap-2 pt-12 lg:pt-0">
 				<div className="relative flex w-full flex-col items-center justify-center gap-4 md:max-w-[500px]">
 					{/* Header with Token Selector */}
-					<div className="flex w-full items-center justify-center gap-4 py-4">
-						<h1 className="font-bold font-mono text-4xl text-primary-200 uppercase md:text-5xl">
+					<div className="flex w-full items-center justify-center gap-4 py-4 mt-4">
+						<h1 className="font-bold font-mono text-3xl text-primary-200 uppercase md:text-5xl">
 							WIN
 						</h1>
 						<TokenSelector

@@ -56,7 +56,7 @@ export default function TokenSelector({
 		<div className={cn('flex items-center gap-4', className)}>
 			{/* Display total value */}
 			<div className="flex items-center gap-1">
-				<span className="font-bold font-mono text-4xl text-drip-300 md:text-5xl">
+				<span className="font-bold font-mono text-3xl text-drip-300 md:text-5xl">
 					{isLoading ? (
 						<Skeleton className="h-8 w-12 animate-pulse bg-drip-300/30" />
 					) : (
@@ -74,7 +74,7 @@ export default function TokenSelector({
 						aria-expanded={open}
 						className="!py-7 border-2 border-drip-300 bg-primary-200/10 font-mono text-primary-200 hover:bg-primary-200/20 hover:text-primary-200"
 					>
-						<span className="font-bold text-4xl md:text-5xl">
+						<span className="font-bold text-3xl md:text-5xl">
 							{selectedToken.symbol}
 						</span>
 						<ChevronDown className="!size-6 ml-2" />
