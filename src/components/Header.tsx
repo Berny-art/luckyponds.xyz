@@ -106,18 +106,18 @@ export default function Header() {
 								<Menu size={20} />
 							</Button>
 						</SheetTrigger>
-						<SheetContent className="border-drip-300 border-l-2 bg-secondary-950 text-primary-200">
+						<SheetContent className="border-drip-300 border-l-2 bg-secondary-950 px-0 text-primary-200">
 							<SheetHeader className="mb-6">
 								<SheetTitle className="text-drip-300">Menu</SheetTitle>
 							</SheetHeader>
 
 							<div className="flex flex-col gap-8">
 								{/* Mobile Navigation Links */}
-								<nav className="flex flex-col gap-4 font-mono">
+								<nav className="flex flex-col font-mono">
 									<SheetClose asChild>
 										<Link
 											href="/"
-											className="flex items-center py-2 transition-colors hover:text-drip-300"
+											className="flex items-center bg-secondary-900 p-4 transition-colors hover:text-drip-300"
 										>
 											Home
 										</Link>
@@ -125,7 +125,7 @@ export default function Header() {
 									<SheetClose asChild>
 										<Link
 											href="/leaderboard"
-											className="flex items-center py-2 transition-colors hover:text-drip-300"
+											className="flex items-center bg-secondary-900/50 p-4 transition-colors hover:text-drip-300"
 										>
 											Leaderboard
 										</Link>
@@ -133,7 +133,7 @@ export default function Header() {
 								</nav>
 
 								{/* Social Links */}
-								<div className="flex gap-6">
+								<div className="flex gap-6 px-4">
 									<a
 										href="https://discord.gg/pXHSuqCvbm"
 										target="_blank"
@@ -152,7 +152,7 @@ export default function Header() {
 
 								{/* Connect Wallet Button */}
 								<SheetClose asChild>
-									<div className="">
+									<div className="px-4">
 										{isMobile && (
 											<ConnectButton
 												showBalance={true}

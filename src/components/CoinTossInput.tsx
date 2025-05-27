@@ -12,7 +12,14 @@ import { useAppStore } from '@/stores/appStore';
 export default function CoinTossInput({
 	pondInfo,
 	onTransactionSuccess,
-}: { pondInfo: PondComprehensiveInfo; onTransactionSuccess?: () => void }) {
+	timeRemaining,
+	isAboutToEnd,
+}: {
+	pondInfo: PondComprehensiveInfo;
+	onTransactionSuccess?: () => void;
+	timeRemaining?: number;
+	isAboutToEnd?: boolean;
+}) {
 	const { address } = useAccount();
 	const { data: balance } = useBalance({ address });
 	const { selectedToken, showAnimation } = useAppStore();
@@ -202,6 +209,8 @@ export default function CoinTossInput({
 					numberOfTosses={numberOfTosses}
 					pondInfo={pondInfo}
 					onTransactionSuccess={onTransactionSuccess}
+					timeRemaining={timeRemaining}
+					isAboutToEnd={isAboutToEnd}
 				/>
 			)}
 		</div>

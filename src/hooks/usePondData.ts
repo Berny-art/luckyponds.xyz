@@ -68,7 +68,7 @@ export function usePondData({ pondId, tokenAddress }: UsePondDataOptions) {
 				}
 				return 20000;
 			},
-			staleTime: 2000,
+			staleTime: 1000, // Reduced stale time for better pond switching
 		},
 	});
 
@@ -184,7 +184,7 @@ export function usePondData({ pondId, tokenAddress }: UsePondDataOptions) {
 			}
 		},
 		enabled: !!pondStatusData,
-		staleTime: 2000,
+		staleTime: 1000, // Reduced stale time to ensure fresher data on pond switches
 		refetchInterval: false, // Rely on constituent queries
 	});
 

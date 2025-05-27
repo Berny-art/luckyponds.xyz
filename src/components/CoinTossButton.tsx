@@ -6,7 +6,7 @@ import { useState, useEffect, useRef } from 'react';
 import { Button } from './ui/button';
 import { useTossCoin } from '@/hooks/useTossCoin';
 import { useAppStore } from '@/stores/appStore';
-import { Loader2, Wallet } from 'lucide-react';
+import { Loader2, Wallet, Clock } from 'lucide-react';
 import type { PondComprehensiveInfo } from '@/lib/types';
 import { useAccount, useWriteContract } from 'wagmi';
 import { useConnectModal } from '@rainbow-me/rainbowkit';
@@ -14,6 +14,8 @@ import { pondCoreConfig } from '@/contracts/PondCore';
 import { toast } from 'sonner';
 import { PondStatus } from '@/functions/getPondStatus';
 import { usePondStatus } from '@/hooks/usePondStatus';
+import { PondPeriod } from '@/lib/types';
+import PondInfo from './PondInfo';
 
 interface CoinTossButtonProps {
 	amount: string;
@@ -21,6 +23,8 @@ interface CoinTossButtonProps {
 	pondInfo: PondComprehensiveInfo;
 	disabled?: boolean;
 	onTransactionSuccess?: () => void; // New callback prop
+	timeRemaining?: number; // Time remaining in milliseconds
+	isAboutToEnd?: boolean; // Whether timer is about to end (5 seconds)
 }
 
 export default function CoinTossButton({
@@ -29,6 +33,8 @@ export default function CoinTossButton({
 	pondInfo,
 	disabled = false,
 	onTransactionSuccess, // Add the new prop
+	timeRemaining,
+	isAboutToEnd,
 }: CoinTossButtonProps) {
 	const { address } = useAccount();
 	const isConnected = !!address;
@@ -60,8 +66,26 @@ export default function CoinTossButton({
 		}
 	}, [lastTxResult, onTransactionSuccess]);
 
+	// Effect to handle SelectWinner status and trigger data refresh
+	useEffect(() => {
+		if (pondStatus === PondStatus.SelectWinner && onTransactionSuccess) {
+			// Trigger data refresh when SelectWinner status is detected
+			const timer = setTimeout(() => {
+				onTransactionSuccess();
+			}, 1000);
+
+			return () => clearTimeout(timer);
+		}
+	}, [pondStatus, onTransactionSuccess]);
+
 	// Check if pond is about to end (5 seconds before end time)
 	const isPondAboutToEnd = () => {
+		// Use the provided isAboutToEnd prop if available (for 5-minute ponds)
+		if (isAboutToEnd !== undefined) {
+			return isAboutToEnd;
+		}
+
+		// Fallback logic for other ponds
 		if (!pondInfo?.endTime) return false;
 
 		const now = Math.floor(Date.now() / 1000);
@@ -70,6 +94,42 @@ export default function CoinTossButton({
 
 		// Disable 5 seconds before end
 		return timeUntilEnd <= 5 && timeUntilEnd > 0;
+	};
+
+	// Additional check for 5-minute pond timelock status
+	const is5MinutePondInTimelock = () => {
+		if (pondInfo?.period !== PondPeriod.FIVE_MIN) return false;
+
+		const nowMs = Date.now();
+		const now = new Date(nowMs);
+		const currentUTCMinutes = now.getUTCMinutes();
+
+		// Calculate the NEXT 5-minute boundary
+		const currentFiveMinuteMark = Math.floor(currentUTCMinutes / 5) * 5;
+		let nextFiveMinuteMark = currentFiveMinuteMark + 5;
+
+		const nextBoundary = new Date(now);
+
+		// Handle hour rollover
+		if (nextFiveMinuteMark >= 60) {
+			nextBoundary.setUTCHours(nextBoundary.getUTCHours() + 1);
+			nextFiveMinuteMark = 0;
+		}
+
+		nextBoundary.setUTCMinutes(nextFiveMinuteMark, 0, 0);
+
+		// Calculate time until the next boundary
+		const timeUntilBoundaryMs = nextBoundary.getTime() - nowMs;
+		const timeUntilBoundarySeconds = Math.floor(timeUntilBoundaryMs / 1000);
+
+		// If we've passed the boundary (timer hit zero), check if we're in timelock
+		if (timeUntilBoundarySeconds < 0) {
+			const timePastBoundarySeconds = -timeUntilBoundarySeconds;
+			// 20 second timelock for 5-minute ponds
+			return timePastBoundarySeconds < 20;
+		}
+
+		return false;
 	};
 
 	// Check if the component is in a loading state
@@ -84,6 +144,7 @@ export default function CoinTossButton({
 			address: pondCoreConfig.address as `0x${string}`,
 			functionName: 'selectLuckyWinner',
 			args: [selectedPond as `0x${string}`],
+			type: 'legacy',
 		});
 
 		return hash;
@@ -122,7 +183,7 @@ export default function CoinTossButton({
 
 		try {
 			// If pond is ready for winner selection, do it silently
-			if (pondStatus === PondStatus.SelectWinner) {
+			if (pondInfo.timeUntilEnd <= 0 && pondInfo.prizeDistributed === false) {
 				toast.loading('Processing transaction...', { id: 'toss-loading' });
 				try {
 					// Silently trigger winner selection
@@ -132,7 +193,6 @@ export default function CoinTossButton({
 				} catch (error: unknown) {
 					toast.error('Transaction failed', {
 						id: 'toss-loading',
-						description: 'There was an error processing your transaction.',
 					});
 					setIsProcessing(false);
 					return;
@@ -162,22 +222,6 @@ export default function CoinTossButton({
 
 	// Get the button text based on connection, loading, and pond status
 	const getButtonText = () => {
-		if (isLoading) {
-			return (
-				<>
-					<Loader2 className="mr-2 h-5 w-5 animate-spin" /> Processing...
-				</>
-			);
-		}
-
-		if (isTimeLocked) {
-			return (
-				<>
-					<Loader2 className="mr-2 h-5 w-5 animate-spin" /> Selecting winner...
-				</>
-			);
-		}
-
 		// Not connected - show connect wallet button
 		if (!isConnected) {
 			return (
@@ -187,9 +231,44 @@ export default function CoinTossButton({
 			);
 		}
 
+		if (isLoading) {
+			return (
+				<>
+					<Loader2 className="mr-2 h-5 w-5 animate-spin" /> Processing...
+				</>
+			);
+		}
+
+		if (isTimeLocked || is5MinutePondInTimelock()) {
+			return (
+				<>
+					<Loader2 className="mr-2 h-5 w-5 animate-spin" /> Selecting winner...
+				</>
+			);
+		}
+
+		// Show special message for SelectWinner status
+		if (pondStatus === PondStatus.SelectWinner) {
+			return (
+				<>
+					<Clock className="mr-2 h-5 w-5" /> Winner selection required - Switch
+					ponds to refresh
+				</>
+			);
+		}
+
 		// Pond about to end warning
 		if (isPondAboutToEnd()) {
-			return 'Pond ending soon - Tosses disabled';
+			const secondsRemaining = timeRemaining
+				? Math.ceil(timeRemaining / 1000)
+				: 0;
+			return (
+				<>
+					{secondsRemaining > 0
+						? `Pond ending in ${secondsRemaining}s - Tosses disabled`
+						: 'Pond ending soon - Tosses disabled'}
+				</>
+			);
 		}
 
 		// Connected - show standard toss message (same for all cases)
@@ -217,18 +296,30 @@ export default function CoinTossButton({
 				numberOfTosses < 1 ||
 				pondStatus === PondStatus.NotStarted ||
 				pondStatus === PondStatus.Completed ||
+				pondStatus === PondStatus.SelectWinner || // Disable when winner selection is needed
 				isPondAboutToEnd() || // Disable 5 seconds before end
-				isTimeLocked));
+				isTimeLocked ||
+				is5MinutePondInTimelock())); // Additional 5-minute pond timelock check
+
+	// Enhanced styling based on state
+	const getButtonStyling = () => {
+		if (isPondAboutToEnd()) {
+			return 'bg-red-500 text-white hover:bg-red-500'; // Warning styling for ending soon
+		}
+		if (isTimeLocked || is5MinutePondInTimelock()) {
+			return 'bg-orange-500 text-white hover:bg-orange-500'; // Orange for timelock/selecting winner
+		}
+		if (pondStatus === PondStatus.SelectWinner) {
+			return 'bg-yellow-500 text-black hover:bg-yellow-500'; // Yellow for SelectWinner state
+		}
+		return 'bg-drip-300 text-secondary-950 hover:bg-drip-300/90'; // Default styling
+	};
 
 	return (
 		<Button
 			onClick={handleClick}
 			disabled={isButtonDisabled}
-			className={`w-full py-6 font-bold text-xl ${
-				isPondAboutToEnd()
-					? 'bg-red-500 text-white hover:bg-red-600' // Warning styling for ending soon
-					: 'bg-drip-300 text-secondary-950 hover:bg-drip-300/90' // Default styling for all other cases
-			}`}
+			className={`w-full py-6 font-bold text-xl ${getButtonStyling()}`}
 		>
 			{getButtonText()}
 		</Button>

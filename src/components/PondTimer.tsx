@@ -10,9 +10,12 @@ import { PondPeriod } from '@/lib/types';
 import { Progress } from './ui/progress';
 import { usePondData } from '@/hooks/usePondData';
 
-export default function PondTimer({
-	pondInfo,
-}: { pondInfo: PondComprehensiveInfo }) {
+interface PondTimerProps {
+	pondInfo: PondComprehensiveInfo;
+	onTimerUpdate?: (timeRemaining: number, isAboutToEnd: boolean) => void;
+}
+
+export default function PondTimer({ pondInfo, onTimerUpdate }: PondTimerProps) {
 	// Get refetch function from pond data hook
 	const { refetchAll } = usePondData({
 		pondId: pondInfo?.name || null,
@@ -27,6 +30,9 @@ export default function PondTimer({
 
 	// State to track if we should show progress bar
 	const [showProgressBar, setShowProgressBar] = useState(false);
+
+	// State to force countdown re-render when cycle changes
+	const [cycleCounter, setCycleCounter] = useState(0);
 
 	// Reference to the countdown component for manual updates
 	const countdownRef = useRef<Countdown>(null);
@@ -44,6 +50,12 @@ export default function PondTimer({
 	// Debounce ref to prevent rapid successive refreshes
 	const lastRefreshTimeRef = useRef(0);
 
+	// Reference to track the current cycle end time to prevent duplicate calculations
+	const currentCycleEndTimeRef = useRef<number | null>(null);
+
+	// Reference to prevent recursive completion calls
+	const isHandlingCompletionRef = useRef(false);
+
 	// Constants
 	const FIVE_MINUTES_MS = 5 * 60 * 1000;
 	const DEBOUNCE_DELAY = 2000; // 2 seconds minimum between refreshes
@@ -59,10 +71,8 @@ export default function PondTimer({
 		try {
 			await refetchAll();
 		} catch (error) {
-			// Silently handle refresh errors
-			throw new Error(
-				`Failed to refresh pond data: ${error instanceof Error ? error.message : 'Unknown error'}`,
-			);
+			console.error('Failed to refresh pond data:', error);
+			// Don't throw error to prevent breaking the timer flow
 		}
 	};
 
@@ -107,6 +117,9 @@ export default function PondTimer({
 			durationRef.current = FIVE_MINUTES_MS;
 			setShowProgressBar(true);
 			setEndTimeMs(nextEndTime);
+
+			// Track this cycle
+			currentCycleEndTimeRef.current = nextEndTime;
 		} else {
 			// For other ponds, use the contract end time
 			if (!pondInfo.endTime || Number(pondInfo.endTime) === 0) {
@@ -152,20 +165,44 @@ export default function PondTimer({
 			// For 5-minute ponds, check if we need to recalculate the cycle
 			if (pondInfo.period === PondPeriod.FIVE_MIN) {
 				const now = Date.now();
-				// If we've passed the current end time, recalculate for the next cycle
-				if (endTimeMs && now > endTimeMs) {
-					const nextEndTime = getNext5MinuteEndTime();
-					const cycleStartTime = get5MinuteCycleStartTime(nextEndTime);
+				// If we've passed the current end time AND we haven't already handled this cycle
+				if (endTimeMs && now >= endTimeMs && !isHandlingCompletionRef.current) {
+					isHandlingCompletionRef.current = true;
 
-					startTimeRef.current = cycleStartTime;
-					setEndTimeMs(nextEndTime);
-					hasTriggeredRefetchRef.current = false; // Reset for new cycle
-
-					// Trigger data refresh when 5-minute cycle resets with debouncing
-					// Add a small delay to ensure contract state has updated
+					// Use setTimeout to break out of the current execution context
 					setTimeout(() => {
+						// Trigger immediate refetch when cycle completes
 						triggerDataRefresh();
-					}, 1500); // 1.5 second delay to account for contract state propagation and debouncing
+
+						const nextEndTime = getNext5MinuteEndTime();
+						const cycleStartTime = get5MinuteCycleStartTime(nextEndTime);
+
+						// Update refs FIRST
+						startTimeRef.current = cycleStartTime;
+						hasTriggeredRefetchRef.current = false; // Reset for new cycle
+
+						// Update current cycle tracking
+						currentCycleEndTimeRef.current = nextEndTime;
+
+						// Reset progress to 0 for new cycle AFTER refs are updated
+						// Use setTimeout to ensure refs are processed first
+						setTimeout(() => {
+							setProgressValue(0);
+						}, 50);
+
+						// Increment cycle counter to force countdown re-render
+						setCycleCounter((prev) => prev + 1);
+
+						// Set new end time - this will cause the countdown component to reset via key prop
+						setEndTimeMs(nextEndTime);
+
+						// Schedule additional refetch after timelock period
+						setTimeout(() => {
+							triggerDataRefresh();
+							// Reset completion handling flag after post-timelock refresh
+							isHandlingCompletionRef.current = false;
+						}, 25000); // 25 seconds (20s timelock + 5s buffer)
+					}, 100); // Small delay to break execution context
 				}
 
 				// Always update progress for 5-minute ponds (this ensures continuous updates)
@@ -212,6 +249,15 @@ export default function PondTimer({
 			Math.min(100, (elapsed / durationRef.current) * 100),
 		);
 
+		// Calculate time remaining for callback
+		const timeRemaining = Math.max(0, endTimeMs ? endTimeMs - now : 0);
+		const isAboutToEnd = timeRemaining > 0 && timeRemaining <= 5000; // 5 seconds
+
+		// Call the callback if provided
+		if (onTimerUpdate) {
+			onTimerUpdate(timeRemaining, isAboutToEnd);
+		}
+
 		setProgressValue(progress);
 	};
 
@@ -219,8 +265,13 @@ export default function PondTimer({
 	// biome-ignore lint/correctness/useExhaustiveDependencies: <explanation>
 	useEffect(() => {
 		if (pondInfo) {
-			// Reset refetch trigger when pond changes
+			// Reset all tracking refs when pond changes
 			hasTriggeredRefetchRef.current = false;
+			isHandlingCompletionRef.current = false;
+			currentCycleEndTimeRef.current = null;
+
+			// Reset cycle counter for fresh start
+			setCycleCounter(0);
 
 			// Set up the timer and progress bar
 			if (pondInfo.period === PondPeriod.FIVE_MIN) {
@@ -240,6 +291,9 @@ export default function PondTimer({
 				clearInterval(intervalRef.current);
 				intervalRef.current = null;
 			}
+			// Reset flags on cleanup
+			isHandlingCompletionRef.current = false;
+			currentCycleEndTimeRef.current = null;
 		};
 	}, [pondInfo]);
 
@@ -255,32 +309,55 @@ export default function PondTimer({
 
 	// Handle completion
 	const handleComplete = () => {
+		// Prevent recursive calls
+		if (isHandlingCompletionRef.current) {
+			return;
+		}
+
 		// For 5-minute ponds, immediately set up the next cycle
 		if (pondInfo.period === PondPeriod.FIVE_MIN) {
+			isHandlingCompletionRef.current = true;
+
+			// Immediate refetch when timer completes
+			triggerDataRefresh();
+
 			const nextEndTime = getNext5MinuteEndTime();
 			const cycleStartTime = get5MinuteCycleStartTime(nextEndTime);
 
-			// Update refs and state for the new cycle
+			// Update refs FIRST
 			startTimeRef.current = cycleStartTime;
-			setEndTimeMs(nextEndTime);
 			hasTriggeredRefetchRef.current = false; // Reset for new cycle
 
-			// Reset progress to 0 and immediately start calculating new progress
-			setProgressValue(0);
+			// Update cycle tracking AFTER refs are updated
+			currentCycleEndTimeRef.current = nextEndTime;
 
-			// Force countdown to update with new end time
-			if (countdownRef.current) {
-				countdownRef.current.forceUpdate();
-			} // Trigger data refresh
+			// Reset progress to 0 for new cycle AFTER refs are updated
+			// Use setTimeout to ensure refs are processed first
+			setTimeout(() => {
+				setProgressValue(0);
+			}, 50);
+
+			// Increment cycle counter to force countdown re-render
+			setCycleCounter((prev) => prev + 1);
+
+			// Set the new end time - this will trigger the key change and countdown reset
+			setEndTimeMs(nextEndTime);
+
+			// Schedule additional refetch after timelock period ends
+			setTimeout(() => {
+				triggerDataRefresh();
+				// Reset completion handling flag after refresh
+				isHandlingCompletionRef.current = false;
+			}, 25000); // 25 seconds (20s timelock + 5s buffer)
+		} else {
+			// For other ponds, immediate refetch when timer completes
 			triggerDataRefresh();
 
-			// Remove additional refresh to prevent spam
-		} else {
-			// For other ponds, hide progress bar when completed
+			// Hide progress bar when completed
 			setProgressValue(0);
 			setShowProgressBar(false);
 
-			// Trigger data refresh only once when timer completes
+			// Trigger additional data refresh only once when timer completes
 			if (!hasTriggeredRefetchRef.current) {
 				hasTriggeredRefetchRef.current = true;
 				setTimeout(() => {
@@ -404,7 +481,7 @@ export default function PondTimer({
 				date={endTimeMs ?? 0}
 				renderer={renderer}
 				onComplete={handleComplete}
-				key={`countdown-${endTimeMs}-${pondInfo.period}`}
+				key={`countdown-${endTimeMs}-${pondInfo.period}-${cycleCounter}`}
 			/>
 		</div>
 	);

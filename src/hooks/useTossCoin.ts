@@ -40,11 +40,6 @@ const getUserFriendlyErrorMessage = (errorMessage: string): string => {
 		return 'Network is congested. Try again with higher gas or later';
 	}
 
-	// Nonce errors
-	if (errorMessage.includes('nonce')) {
-		return 'Transaction sequence error. Please refresh and try again';
-	}
-
 	// Slippage / price impact
 	if (
 		errorMessage.includes('slippage') ||
@@ -78,6 +73,11 @@ const getUserFriendlyErrorMessage = (errorMessage: string): string => {
 		return 'Contract error. This transaction cannot be completed';
 	}
 
+	// Nonce errors
+	if (errorMessage.includes('nonce')) {
+		return 'Transaction sequence error. Please refresh and try again';
+	}
+
 	// Network/RPC errors
 	if (
 		errorMessage.includes('network') ||
@@ -88,6 +88,7 @@ const getUserFriendlyErrorMessage = (errorMessage: string): string => {
 	}
 
 	// Fallback for unknown errors
+	// return 'Transaction failed. Please try again';
 	return 'Transaction failed. Please try again';
 };
 

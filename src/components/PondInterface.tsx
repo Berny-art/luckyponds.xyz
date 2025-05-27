@@ -1,7 +1,7 @@
 // src/components/PondInterface.tsx
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import CoinTossInput from '@/components/CoinTossInput';
 import PondInfo from '@/components/PondInfo';
 import StandardPonds from '@/components/StandardPonds';
@@ -43,6 +43,10 @@ export default function PondInterface({ tokenAddress }: PondInterfaceProps) {
 		false,
 	);
 
+	// State for timer information
+	const [timeRemaining, setTimeRemaining] = useState<number>(0);
+	const [isAboutToEnd, setIsAboutToEnd] = useState<boolean>(false);
+
 	// Set token based on tokenAddress prop (for dynamic routes)
 	useEffect(() => {
 		if (tokenAddress) {
@@ -78,6 +82,26 @@ export default function PondInterface({ tokenAddress }: PondInterfaceProps) {
 	// Refs for event management
 	const initialEventsAddedRef = useRef(false);
 	const eventsTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+	// Handler for timer updates
+	const handleTimerUpdate = (remaining: number, aboutToEnd: boolean) => {
+		setTimeRemaining(remaining);
+		setIsAboutToEnd(aboutToEnd);
+	};
+
+	// Handler for pond selection changes
+	const handlePondSelect = (newPondId: string) => {
+		setSelectedPond(newPondId);
+		// Force a data refresh when pond changes to avoid stale data
+		setTimeout(() => {
+			refetchAll();
+		}, 100);
+	};
+
+	// Enhanced transaction success handler with additional status refresh
+	const handleTransactionSuccess = () => {
+		refetchAll();
+	};
 
 	// Add sample events only if needed
 	useEffect(() => {
@@ -124,7 +148,7 @@ export default function PondInterface({ tokenAddress }: PondInterfaceProps) {
 			<div className="relative flex w-full items-center justify-center gap-2 pt-12 lg:pt-0">
 				<div className="relative flex w-full flex-col items-center justify-center gap-4 md:max-w-[500px]">
 					{/* Header with Token Selector */}
-					<div className="mt-4 flex w-full items-center justify-center gap-4 py-4">
+					<div className="mt-4 flex w-full items-center justify-center gap-4 py-4 md:mt-0">
 						<h1 className="font-bold font-mono text-3xl text-primary-200 uppercase md:text-5xl">
 							WIN
 						</h1>
@@ -146,7 +170,8 @@ export default function PondInterface({ tokenAddress }: PondInterfaceProps) {
 							pondInfo && (
 								<PondTimer
 									pondInfo={pondInfo}
-									key={`timer-${selectedPond}-${pondInfo.endTime}`}
+									onTimerUpdate={handleTimerUpdate}
+									key={`timer-${selectedPond}-${pondInfo.endTime}-${pondInfo.period}`}
 								/>
 							)
 						)}
@@ -157,7 +182,7 @@ export default function PondInterface({ tokenAddress }: PondInterfaceProps) {
 						pondTypes={pondTypes}
 						isLoading={isLoadingPondTypes}
 						selectedPond={selectedPond}
-						onPondSelect={setSelectedPond}
+						onPondSelect={handlePondSelect}
 					/>
 
 					{/* Pond Info */}
@@ -182,7 +207,9 @@ export default function PondInterface({ tokenAddress }: PondInterfaceProps) {
 						pondInfo && (
 							<CoinTossInput
 								pondInfo={pondInfo}
-								onTransactionSuccess={refetchAll} // Use refetchAll for complete data refresh
+								onTransactionSuccess={handleTransactionSuccess} // Use enhanced handler
+								timeRemaining={timeRemaining}
+								isAboutToEnd={isAboutToEnd}
 							/>
 						)
 					)}

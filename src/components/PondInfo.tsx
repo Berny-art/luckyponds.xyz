@@ -68,10 +68,10 @@ export default function PondInfo({
 				{pondInfo.name.replace('ETH', '')} Info
 			</h2>
 			<div className="flex flex-col gap-2">
-				<div className="flex items-center justify-between">
+				{/* <div className="flex items-center justify-between">
 					<span className="font-bold text-sm">Status:</span>
 					<span className="font-mono text-sm">{pondStatus}</span>
-				</div>
+				</div> */}
 				<div className="flex items-center justify-between">
 					<span className="font-bold text-sm">Participants:</span>
 					<span className="font-mono text-sm">
