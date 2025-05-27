@@ -1,6 +1,6 @@
 // src/components/CoinTossButton.tsx
 'use client';
-/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable @typescript-eslint/no-unused-vars */
 
 import { useState, useEffect, useRef } from 'react';
 import { Button } from './ui/button';
@@ -131,8 +131,7 @@ export default function CoinTossButton({
 					await selectWinner();
 					// Small delay to ensure transactions are processed in order
 					await new Promise((resolve) => setTimeout(resolve, 500));
-					// biome-ignore lint/suspicious/noExplicitAny: <explanation>
-				} catch (error: any) {
+				} catch (error: unknown) {
 					toast.error('Transaction failed', {
 						id: 'toss-loading',
 						description: 'There was an error processing your transaction.',
