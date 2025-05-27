@@ -6,7 +6,7 @@ import { useAccount } from 'wagmi';
 import { Skeleton } from './ui/skeleton';
 import type { PondComprehensiveInfo } from '@/lib/types';
 import { usePondStatus } from '@/hooks/usePondStatus';
-import { useTokenStore } from '@/stores/tokenStore';
+import { useAppStore } from '@/stores/appStore';
 
 type PondInfoProps = {
 	pondInfo: PondComprehensiveInfo;
@@ -19,7 +19,7 @@ export default function PondInfo({
 }: PondInfoProps) {
 	const { address } = useAccount();
 	const isConnected = !!address;
-	const { selectedToken } = useTokenStore();
+	const { selectedToken } = useAppStore();
 
 	// Get pond status with accurate timelock information
 	const { status: pondStatus } = usePondStatus(pondInfo);

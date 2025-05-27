@@ -13,7 +13,7 @@ import {
 import { Badge } from './ui/badge';
 import { formatEther } from 'ethers';
 import { useEffect, useState, useRef } from 'react';
-import type { ContractEvent } from '@/stores/eventsStore';
+import type { ContractEvent } from '@/stores/appStore';
 
 function getCoinIcon(multiplier: number) {
 	if (multiplier >= 6) return <MultipleCoins />;

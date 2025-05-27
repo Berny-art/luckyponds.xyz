@@ -7,7 +7,7 @@ import { useEffect } from 'react';
 import { useReadContract } from 'wagmi';
 import { pondCoreConfig } from '@/contracts/PondCore';
 import { PondPeriod, type PondDisplayInfo } from '@/lib/types';
-import { usePondStore, type EnhancedPond } from '@/stores/pondStore';
+import { useAppStore, type EnhancedPond } from '@/stores/appStore';
 import useLocalStorage from 'use-local-storage';
 
 /**
@@ -17,7 +17,7 @@ export function useStandardPondsForUI(
 	tokenAddress = '0x0000000000000000000000000000000000000000', // Default to native
 ) {
 	const { setPondTypes, setIsLoadingPondTypes, setSelectedPond, selectedPond } =
-		usePondStore();
+		useAppStore();
 	const [lightningMode] = useLocalStorage('lightningMode', false);
 
 	// Convert to 0x-prefixed address for wagmi

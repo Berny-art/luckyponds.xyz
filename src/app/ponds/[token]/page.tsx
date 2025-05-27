@@ -3,14 +3,14 @@
 
 import { useEffect } from 'react';
 import { useParams, notFound } from 'next/navigation';
-import { useTokenStore } from '@/stores/tokenStore';
+import { useAppStore } from '@/stores/appStore';
 import PondInterface from '@/components/PondInterface';
 
 export default function TokenPondPage() {
 	const params = useParams();
 	const tokenParam = params.token as string;
 
-	const { getTokenBySymbol, getTokenByAddress } = useTokenStore();
+	const { getTokenBySymbol, getTokenByAddress } = useAppStore();
 
 	// Validate token exists
 	useEffect(() => {

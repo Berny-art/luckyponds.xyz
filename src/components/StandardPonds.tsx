@@ -3,10 +3,10 @@
 
 import { cn } from '@/lib/utils';
 import { Button } from './ui/button';
-import { useAnimationStore } from '@/stores/animationStore';
+import { useAppStore } from '@/stores/appStore';
 import { PondPeriod } from '@/lib/types';
 import { Skeleton } from './ui/skeleton';
-import type { EnhancedPond } from '@/stores/pondStore';
+import type { EnhancedPond } from '@/stores/appStore';
 import { useState, useEffect } from 'react';
 import useLocalStorage from 'use-local-storage';
 
@@ -23,7 +23,7 @@ export default function StandardPonds({
 	selectedPond,
 	onPondSelect,
 }: StandardPondsProps) {
-	const { showRandom } = useAnimationStore();
+	const { showAnimation } = useAppStore();
 	const [lightningMode] = useLocalStorage('lightningMode', false);
 	const [displayPonds, setDisplayPonds] = useState<EnhancedPond[]>([]);
 
@@ -62,15 +62,14 @@ export default function StandardPonds({
 	// Handle pond selection with animation
 	const handlePondSelect = (pondType: string, e: React.MouseEvent) => {
 		// Only trigger animation and selection if it's not already selected
-		if (selectedPond !== pondType) {
-			// Get click coordinates
-			const x = e.clientX;
-			const y = e.clientY;
+		if (selectedPond !== pondType) {		// Get click coordinates
+		const x = e.clientX;
+		const y = e.clientY;
 
-			if (x && y) {
-				// Trigger animation at click position
-				showRandom({ x, y });
-			}
+		if (x && y) {
+			// Trigger animation at click position
+			showAnimation({ x, y });
+		}
 
 			// Set the selected pond
 			onPondSelect(pondType);

@@ -2,7 +2,7 @@
 'use client';
 
 import { formatAddress, formatValue } from '@/lib/utils';
-import { useEventsStore } from '@/stores/eventsStore';
+import { useAppStore } from '@/stores/appStore';
 import { useEffect, useState } from 'react';
 import type { PondComprehensiveInfo } from '@/lib/types';
 interface ShakeNotificationProps {
@@ -15,14 +15,9 @@ export default function ShakeNotification({
 	className = '',
 }: ShakeNotificationProps) {
 	// Get latest event from store
-	const { latestEvent, setPondInfo } = useEventsStore();
+	const { latestEvent } = useAppStore();
 	// Track the event ID to force re-renders for shake animation
 	const [eventKey, setEventKey] = useState('');
-
-	// Update pond info in store
-	useEffect(() => {
-		setPondInfo(pondInfo);
-	}, [pondInfo, setPondInfo]);
 
 	// Update the key whenever latestEvent changes to trigger animation
 	useEffect(() => {

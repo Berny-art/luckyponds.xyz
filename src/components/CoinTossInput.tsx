@@ -7,8 +7,7 @@ import { formatEther, parseEther } from 'viem';
 import { useAccount, useBalance } from 'wagmi';
 import CoinTossButton from './CoinTossButton';
 import type { PondComprehensiveInfo } from '@/lib/types';
-import { useAnimationStore } from '@/stores/animationStore';
-import { useTokenStore } from '@/stores/tokenStore';
+import { useAppStore } from '@/stores/appStore';
 
 export default function CoinTossInput({
 	pondInfo,
@@ -16,13 +15,12 @@ export default function CoinTossInput({
 }: { pondInfo: PondComprehensiveInfo; onTransactionSuccess?: () => void }) {
 	const { address } = useAccount();
 	const { data: balance } = useBalance({ address });
-	const { showHigher, showDegen } = useAnimationStore();
+	const { selectedToken, showAnimation } = useAppStore();
 
 	const isConnected = !!address;
 
 	const [numberOfTosses, setNumberOfTosses] = useState(1);
 	const [tossAmount, setTossAmount] = useState('0');
-	const { selectedToken } = useTokenStore();
 
 	// Get the price per toss from pond info
 	const minTossPrice = pondInfo?.minTossPrice || parseEther('0.01');
@@ -81,7 +79,7 @@ export default function CoinTossInput({
 				const y = e.clientY;
 
 				if (x && y) {
-					showHigher({ x, y });
+					showAnimation({ x, y });
 				}
 			}, 10);
 		}
@@ -101,16 +99,15 @@ export default function CoinTossInput({
 		// Only update if the max is greater than current value
 		if (maxTosses > oldValue) {
 			setNumberOfTosses(maxTosses);
+		// Ensure we have valid coordinates and delay slightly
+		setTimeout(() => {
+			const x = e.clientX;
+			const y = e.clientY;
 
-			// Ensure we have valid coordinates and delay slightly
-			setTimeout(() => {
-				const x = e.clientX;
-				const y = e.clientY;
-
-				if (x && y) {
-					showDegen({ x, y });
-				}
-			}, 10);
+			if (x && y) {
+				showAnimation({ x, y });
+			}
+		}, 10);
 		}
 	};
 

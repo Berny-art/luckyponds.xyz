@@ -8,13 +8,16 @@ import { cn } from '@/lib/utils';
 import type { PondComprehensiveInfo } from '@/lib/types';
 import { PondPeriod } from '@/lib/types';
 import { Progress } from './ui/progress';
-import { usePondData } from '@/stores/pondDataStore';
+import { usePondData } from '@/hooks/usePondData';
 
 export default function PondTimer({
 	pondInfo,
 }: { pondInfo: PondComprehensiveInfo }) {
-	// Get refetch function from pond data store
-	const { refetchAll } = usePondData();
+	// Get refetch function from pond data hook
+	const { refetchAll } = usePondData({
+		pondId: pondInfo?.name || null,
+		tokenAddress: pondInfo?.tokenAddress || null,
+	});
 
 	// State to track end time in milliseconds
 	const [endTimeMs, setEndTimeMs] = useState<number | null>(null);

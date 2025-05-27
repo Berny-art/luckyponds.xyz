@@ -5,8 +5,8 @@ import { useEffect, useRef } from 'react';
 import CoinTossInput from '@/components/CoinTossInput';
 import PondInfo from '@/components/PondInfo';
 import StandardPonds from '@/components/StandardPonds';
-import { usePondStore } from '@/stores/pondStore';
-import { usePondData } from '@/stores/pondDataStore'; // New store
+import { usePondData } from '@/hooks/usePondData';
+import { useAppStore } from '@/stores/appStore';
 import { cn, formatValue } from '@/lib/utils';
 import PondWinners from '@/components/PondWinners';
 import PondWinnerDialog from '@/components/PondWinnerDialog';
@@ -15,12 +15,10 @@ import { Clock, Zap } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import FloatingEvents from '@/components/FloatingEvents';
 import ShakeNotification from '@/components/ShakeNotification';
-import { useEventsStore } from '@/stores/eventsStore';
 import { useStandardPondsForUI } from '@/hooks/useStandardPondsForUI';
 import { PondPeriod } from '@/lib/types';
 import { useResponsiveBreakpoints } from '@/hooks/useBreakpoints';
 import TokenSelector from '@/components/TokenSelector';
-import { useTokenStore } from '@/stores/tokenStore';
 import useLocalStorage from 'use-local-storage';
 
 interface PondInterfaceProps {
@@ -28,22 +26,17 @@ interface PondInterfaceProps {
 }
 
 export default function PondInterface({ tokenAddress }: PondInterfaceProps) {
-	const { selectedToken, setSelectedToken, getTokenByAddress } =
-		useTokenStore();
-	const { selectedPond, setSelectedPond, pondTypes, isLoadingPondTypes } =
-		usePondStore();
-
-	// New centralized pond data
 	const {
-		pondInfo,
-		isLoading: isPondDataLoading,
-		isFetching: isPondDataFetching,
-		setSelectedPondId,
-		setCurrentTokenAddress,
-		refetchAll,
-	} = usePondData();
+		selectedToken,
+		setSelectedToken,
+		getTokenByAddress,
+		selectedPond,
+		setSelectedPond,
+		pondTypes,
+		isLoadingPondTypes,
+		addEvent,
+	} = useAppStore();
 
-	const { addEvent } = useEventsStore();
 	const { isLg } = useResponsiveBreakpoints();
 	const [lightningMode, setLightningMode] = useLocalStorage(
 		'lightningMode',
@@ -68,16 +61,16 @@ export default function PondInterface({ tokenAddress }: PondInterfaceProps) {
 	// Use the current token address for pond fetching
 	const currentTokenAddress = tokenAddress || selectedToken.address;
 
-	// Update the pond data store with current selections
-	useEffect(() => {
-		setCurrentTokenAddress(currentTokenAddress);
-	}, [currentTokenAddress, setCurrentTokenAddress]);
-
-	useEffect(() => {
-		if (selectedPond) {
-			setSelectedPondId(selectedPond);
-		}
-	}, [selectedPond, setSelectedPondId]);
+	// New centralized pond data
+	const {
+		pondInfo,
+		isLoading: isPondDataLoading,
+		isFetching: isPondDataFetching,
+		refetchAll,
+	} = usePondData({
+		pondId: selectedPond,
+		tokenAddress: currentTokenAddress,
+	});
 
 	// Use simplified hook to fetch pond types - updates store
 	useStandardPondsForUI(currentTokenAddress);

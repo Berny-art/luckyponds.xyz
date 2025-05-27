@@ -4,12 +4,12 @@ import { cn, formatAddress, formatValue } from '@/lib/utils';
 import PondWinnerCard from './PondWinnerCard';
 import { PondPeriod } from '@/lib/types';
 import { useAllPondWinners } from '@/hooks/useAllPondWinners';
-import { useTokenStore } from '@/stores/tokenStore';
+import { useAppStore } from '@/stores/appStore';
 import useLocalStorage from 'use-local-storage';
 
 export default function PondWinners({ classNames }: { classNames?: string }) {
 	// Get current token address and lightning mode
-	const { selectedToken } = useTokenStore();
+	const { selectedToken } = useAppStore();
 	const [lightningMode] = useLocalStorage('lightningMode', false);
 
 	// Fetch all pond winners independently of selected pond

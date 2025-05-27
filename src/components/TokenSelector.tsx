@@ -19,7 +19,7 @@ import {
 	PopoverContent,
 	PopoverTrigger,
 } from '@/components/ui/popover';
-import { useTokenStore, type Token } from '@/stores/tokenStore';
+import { useAppStore, type Token } from '@/stores/appStore';
 import { Skeleton } from './ui/skeleton';
 
 interface TokenSelectorProps {
@@ -35,7 +35,7 @@ export default function TokenSelector({
 }: TokenSelectorProps) {
 	const [open, setOpen] = useState(false);
 	const router = useRouter();
-	const { selectedToken, availableTokens, setSelectedToken } = useTokenStore();
+	const { selectedToken, availableTokens, setSelectedToken } = useAppStore();
 
 	const handleTokenSelect = (token: Token) => {
 		setSelectedToken(token);

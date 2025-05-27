@@ -5,7 +5,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { Button } from './ui/button';
 import { useTossCoin } from '@/hooks/useTossCoin';
-import { usePondStore } from '@/stores/pondStore';
+import { useAppStore } from '@/stores/appStore';
 import { Loader2, Wallet } from 'lucide-react';
 import type { PondComprehensiveInfo } from '@/lib/types';
 import { useAccount, useWriteContract } from 'wagmi';
@@ -14,7 +14,6 @@ import { pondCoreConfig } from '@/contracts/PondCore';
 import { toast } from 'sonner';
 import { PondStatus } from '@/functions/getPondStatus';
 import { usePondStatus } from '@/hooks/usePondStatus';
-import { useAnimationStore } from '@/stores/animationStore';
 
 interface CoinTossButtonProps {
 	amount: string;
@@ -34,11 +33,10 @@ export default function CoinTossButton({
 	const { address } = useAccount();
 	const isConnected = !!address;
 	const { openConnectModal } = useConnectModal();
-	const { selectedPond } = usePondStore();
+	const { selectedPond, showAnimation } = useAppStore();
 	const { tossCoin, isLoading: tossLoading, lastTxResult } = useTossCoin();
 	const [isProcessing, setIsProcessing] = useState(false);
 	const { writeContractAsync, isPending: isWritePending } = useWriteContract();
-	const { showLFG } = useAnimationStore();
 
 	// Ref to track which transaction hash we've already processed
 	const processedTxHashRef = useRef<string | null>(null);
@@ -96,7 +94,7 @@ export default function CoinTossButton({
 		const x = e.clientX;
 		const y = e.clientY;
 		if (x && y) {
-			showLFG({ x, y });
+			showAnimation({ x, y });
 		}
 
 		if (openConnectModal) {
@@ -117,7 +115,7 @@ export default function CoinTossButton({
 		const x = e.clientX;
 		const y = e.clientY;
 		if (x && y) {
-			showLFG({ x, y });
+			showAnimation({ x, y });
 		}
 
 		setIsProcessing(true);

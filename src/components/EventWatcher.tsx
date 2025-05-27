@@ -2,7 +2,7 @@
 'use client';
 
 import { useWatchContractEvent } from 'wagmi';
-import { type ContractEvent, useEventsStore } from '@/stores/eventsStore';
+import { type ContractEvent, useAppStore } from '@/stores/appStore';
 import { pondCoreConfig } from '@/contracts/PondCore';
 import { formatEther } from 'viem';
 
@@ -25,7 +25,7 @@ interface CoinTossedLog {
  * This component doesn't render anything - it's just for event handling.
  */
 export default function EventWatcher() {
-	const { addEvent } = useEventsStore();
+	const { addEvent } = useAppStore();
 
 	// Watch for CoinTossed events
 	useWatchContractEvent({

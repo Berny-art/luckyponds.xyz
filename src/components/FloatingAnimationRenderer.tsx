@@ -2,18 +2,17 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { Badge } from './ui/badge';
-import { useAnimationStore } from '@/stores/animationStore';
+import { useAppStore } from '@/stores/appStore';
 import { cn } from '@/lib/utils';
 
 export default function FloatingAnimationRenderer() {
 	const {
-		isVisible,
-		position,
-		text,
-		textColor,
+		isAnimationVisible: isVisible,
+		animationPosition: position,
+		animationText: text,
+		animationTimestamp: timestamp,
 		hideAnimation,
-		timestamp, // Add timestamp to detect new animation triggers
-	} = useAnimationStore();
+	} = useAppStore();
 
 	// Use a ref to track animation timers for cleanup
 	const animationTimers = useRef<{
@@ -100,7 +99,7 @@ export default function FloatingAnimationRenderer() {
 	// Don't render if no active animation or missing essential props
 	if (!animationState.isActive || !text) return null;
 
-	// Get the correct gradient class based on fromColor and toColor
+	// Get the correct gradient class based on text content
 	const getGradientClass = () => {
 		// For "Higher" animation (default)
 		if (text === 'HIGHER') {
@@ -137,7 +136,7 @@ export default function FloatingAnimationRenderer() {
 					variant={'secondary'}
 					className={cn(
 						getGradientClass(),
-						textColor || 'text-primary-foreground',
+						'text-primary-foreground',
 						'px-4 py-1 font-bold uppercase shadow-md',
 					)}
 				>

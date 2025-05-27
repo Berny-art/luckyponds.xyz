@@ -11,7 +11,7 @@ import {
 } from './ui/dialog';
 import { Button } from './ui/button';
 import { useAllPondWinners } from '@/hooks/useAllPondWinners';
-import { useTokenStore } from '@/stores/tokenStore';
+import { useAppStore } from '@/stores/appStore';
 import PondWinnerCard from './PondWinnerCard';
 
 /**
@@ -21,7 +21,7 @@ import PondWinnerCard from './PondWinnerCard';
 export default function PondWinnerDialog({
 	classNames,
 }: { classNames?: string }) {
-	const { selectedToken } = useTokenStore();
+	const { selectedToken } = useAppStore();
 
 	// Fetch winners for all pond periods using the dedicated hook
 	const { winners, isLoading, isError } = useAllPondWinners(
