@@ -226,7 +226,6 @@ export function useTossCoin() {
 				});
 			}
 
-			console.error('Toss coin error:', error);
 			return { success: false, error };
 		}
 	};

@@ -1,7 +1,7 @@
 // src/components/CoinTossButton.tsx
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Button } from './ui/button';
 import { useTossCoin } from '@/hooks/useTossCoin';
 import { usePondStore } from '@/stores/pondStore';
@@ -35,13 +35,32 @@ export default function CoinTossButton({
 	const isConnected = !!address;
 	const { openConnectModal } = useConnectModal();
 	const { selectedPond } = usePondStore();
-	const { tossCoin, isLoading: tossLoading } = useTossCoin();
+	const { tossCoin, isLoading: tossLoading, lastTxResult } = useTossCoin();
 	const [isProcessing, setIsProcessing] = useState(false);
 	const { writeContractAsync, isPending: isWritePending } = useWriteContract();
 	const { showLFG } = useAnimationStore();
 
+	// Ref to track which transaction hash we've already processed
+	const processedTxHashRef = useRef<string | null>(null);
+
 	// Get pond status with accurate timelock information
 	const { status: pondStatus } = usePondStatus(pondInfo);
+
+	// Use effect to monitor transaction confirmation and trigger callback
+	useEffect(() => {
+		if (
+			lastTxResult?.success &&
+			lastTxResult.hash &&
+			onTransactionSuccess &&
+			processedTxHashRef.current !== lastTxResult.hash
+		) {
+			// Mark this transaction as processed
+			processedTxHashRef.current = lastTxResult.hash;
+
+			// Transaction was confirmed successfully, trigger callback
+			onTransactionSuccess();
+		}
+	}, [lastTxResult, onTransactionSuccess]);
 
 	// Check if pond is about to end (5 seconds before end time)
 	const isPondAboutToEnd = () => {
@@ -55,11 +74,23 @@ export default function CoinTossButton({
 		return timeUntilEnd <= 5 && timeUntilEnd > 0;
 	};
 
-	// Check if this is a 5-minute pond in select winner status (should be enabled)
-	const isFiveMinPondSelectWinner = () => {
+	// Check if this is a 5-minute pond that should allow tosses during status transitions
+	const isFiveMinPondAllowToss = () => {
+		if (pondInfo?.period !== PondPeriod.FIVE_MIN) return false;
+
+		const now = Math.floor(Date.now() / 1000);
+		const endTime = Number(pondInfo.endTime);
+		const timeSinceEnd = now - endTime;
+
+		// For 5-minute ponds, be very permissive with tosses
+		// Only restrict if we're more than 2 minutes past the end time (abnormal situation)
+		const isAbnormallyLate = timeSinceEnd > 120; // 2 minutes past end
+
+		// Allow tosses in most states for 5-minute ponds
 		return (
-			pondInfo?.period === PondPeriod.FIVE_MIN &&
-			pondStatus === PondStatus.SelectWinner
+			pondStatus === PondStatus.Open ||
+			pondStatus === PondStatus.SelectWinner ||
+			(pondStatus === PondStatus.TimeLocked && !isAbnormallyLate)
 		);
 	};
 
@@ -70,21 +101,14 @@ export default function CoinTossButton({
 	const selectWinner = async () => {
 		if (!selectedPond) return;
 
-		try {
-			// No toast notification for this step - we keep it hidden
-			const hash = await writeContractAsync({
-				...pondCoreConfig,
-				address: pondCoreConfig.address as `0x${string}`,
-				functionName: 'selectLuckyWinner',
-				args: [selectedPond as `0x${string}`],
-			});
+		const hash = await writeContractAsync({
+			...pondCoreConfig,
+			address: pondCoreConfig.address as `0x${string}`,
+			functionName: 'selectLuckyWinner',
+			args: [selectedPond as `0x${string}`],
+		});
 
-			console.log('Silent winner selection transaction:', hash);
-			return hash;
-		} catch (error: unknown) {
-			console.error('Silent winner selection error:', error);
-			throw error;
-		}
+		return hash;
 	};
 
 	// Handle the connect wallet action with RainbowKit
@@ -132,24 +156,17 @@ export default function CoinTossButton({
 						id: 'toss-loading',
 						description: 'There was an error processing your transaction.',
 					});
-					console.error('Error in silent winner selection:', error);
 					setIsProcessing(false);
 					return;
 				}
 			}
 
 			// Proceed with the toss (standard or after selection)
-			const result = await tossCoin(selectedPond, amount, pondInfo.tokenType);
+			await tossCoin(selectedPond, amount, pondInfo.tokenType);
 
-			// Call the callback on successful transaction
-			if (result.success && onTransactionSuccess) {
-				// Wait a bit for the transaction to be mined, then refresh user data
-				setTimeout(() => {
-					onTransactionSuccess();
-				}, 2000); // 2 seconds should be enough for most transactions
-			}
+			// The callback will be triggered by the useEffect when lastTxResult is updated
 		} catch (error) {
-			console.error('Toss process error:', error);
+			// Error is handled by the tossCoin function
 		} finally {
 			setIsProcessing(false);
 		}
@@ -222,7 +239,7 @@ export default function CoinTossButton({
 				pondStatus === PondStatus.NotStarted ||
 				pondStatus === PondStatus.Completed ||
 				isPondAboutToEnd() || // Disable 5 seconds before end
-				(isTimeLocked && !isFiveMinPondSelectWinner()))); // Allow 5-min ponds in select winner status
+				isTimeLocked));
 
 	return (
 		<Button

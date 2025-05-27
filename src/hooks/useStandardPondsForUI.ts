@@ -68,10 +68,10 @@ export function useStandardPondsForUI(
 						);
 					}
 				} else {
-					console.warn('No valid pond types found after filtering');
+					// No valid pond types found
 				}
 			} catch (processingError) {
-				console.error('Error processing pond data:', processingError);
+				// Error processing pond data
 			} finally {
 				// Ensure loading state is set to false even if processing fails
 				setIsLoadingPondTypes(false);

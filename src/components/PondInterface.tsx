@@ -40,7 +40,7 @@ export default function PondInterface({ tokenAddress }: PondInterfaceProps) {
 		isFetching: isPondDataFetching,
 		setSelectedPondId,
 		setCurrentTokenAddress,
-		refetchUserData,
+		refetchAll,
 	} = usePondData();
 
 	const { addEvent } = useEventsStore();
@@ -189,7 +189,7 @@ export default function PondInterface({ tokenAddress }: PondInterfaceProps) {
 						pondInfo && (
 							<CoinTossInput
 								pondInfo={pondInfo}
-								onTransactionSuccess={refetchUserData} // Add callback for updates
+								onTransactionSuccess={refetchAll} // Use refetchAll for complete data refresh
 							/>
 						)
 					)}

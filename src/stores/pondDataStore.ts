@@ -69,7 +69,6 @@ const handleQueryError = (
 	functionName: string,
 	setLastError: (error: Error | null) => void,
 ) => {
-	console.error(`Error in ${functionName}:`, error);
 	const enhancedError = new Error(
 		`${functionName}: ${error instanceof Error ? error.message : 'Unknown error'}`,
 	);
@@ -121,18 +120,42 @@ export function usePondData() {
 
 				if (data && Array.isArray(data)) {
 					const period = data[12] as PondPeriod;
+					const now = Math.floor(Date.now() / 1000);
+					const endTime = Number(data[2] as bigint);
+					const timeUntilEnd = endTime - now;
+					const prizeDistributed = Boolean(data[8]);
+
+					// Circuit breaker: If pond is completed and prize distributed for non-5min ponds, stop polling
+					if (
+						prizeDistributed &&
+						period !== PondPeriod.FIVE_MIN &&
+						timeUntilEnd < -300
+					) {
+						return false; // Stop polling completely for completed non-5min ponds
+					}
+
 					switch (period) {
 						case PondPeriod.FIVE_MIN:
-							return retryCount > 0 ? 5000 : 3000; // Adapt based on retry count
+							// If prize is already distributed, slow down requests significantly
+							if (prizeDistributed) {
+								return 30000; // 30 seconds when pond is complete
+							}
+
+							// More conservative refresh for 5-minute ponds during transitions
+							if (timeUntilEnd <= 10 && timeUntilEnd >= -20) {
+								// Frequent updates only during critical transition period (10s before to 20s after)
+								return retryCount > 0 ? 3000 : 2000;
+							}
+							return retryCount > 0 ? 8000 : 6000; // Slower default refresh
 						case PondPeriod.HOURLY:
-							return retryCount > 0 ? 12000 : 8000;
+							return retryCount > 0 ? 15000 : 12000;
 						case PondPeriod.DAILY:
-							return retryCount > 0 ? 30000 : 20000;
+							return retryCount > 0 ? 30000 : 25000;
 						default:
-							return retryCount > 0 ? 45000 : 30000;
+							return retryCount > 0 ? 45000 : 35000;
 					}
 				}
-				return retryCount > 0 ? 20000 : 15000;
+				return retryCount > 0 ? 25000 : 20000;
 			},
 			staleTime: 2000,
 		},

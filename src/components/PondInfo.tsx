@@ -73,16 +73,15 @@ export default function PondInfo({
 					<span className="font-mono text-sm">{pondStatus}</span>
 				</div>
 				<div className="flex items-center justify-between">
-					<span className="font-bold text-sm">Prize Pool:</span>
-					<span className="font-mono text-sm">
-						{formatValue(pondInfo.totalValue)} {selectedToken.symbol}
-					</span>
-				</div>
-
-				<div className="flex items-center justify-between">
 					<span className="font-bold text-sm">Participants:</span>
 					<span className="font-mono text-sm">
 						{pondInfo.totalParticipants.toString()}
+					</span>
+				</div>
+				<div className="flex items-center justify-between">
+					<span className="font-bold text-sm">Prize Pool:</span>
+					<span className="font-mono text-drip-300 text-sm">
+						{formatValue(pondInfo.totalValue)} {selectedToken.symbol}
 					</span>
 				</div>
 

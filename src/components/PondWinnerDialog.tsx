@@ -10,11 +10,8 @@ import {
 	DialogTrigger,
 } from './ui/dialog';
 import { Button } from './ui/button';
-import { PondPeriod } from '@/lib/types';
-import { usePondStore } from '@/stores/pondStore';
-import { usePondData } from '@/stores/pondDataStore';
-import { useEffect, useState } from 'react';
-import type { PondComprehensiveInfo } from '@/lib/types';
+import { useAllPondWinners } from '@/hooks/useAllPondWinners';
+import { useTokenStore } from '@/stores/tokenStore';
 
 /**
  * Mobile-friendly component for displaying pond winners
@@ -23,41 +20,12 @@ import type { PondComprehensiveInfo } from '@/lib/types';
 export default function PondWinnerDialog({
 	classNames,
 }: { classNames?: string }) {
-	// Get pond types directly from the store
-	const { pondTypes, isLoadingPondTypes } = usePondStore();
-	const { pondInfo } = usePondData();
-	const [pondDataCache, setPondDataCache] = useState<
-		Record<string, PondComprehensiveInfo>
-	>({});
+	const { selectedToken } = useTokenStore();
 
-	const dailyPondType = pondTypes.find(
-		(p) => p.period === PondPeriod.DAILY,
-	)?.type;
-
-	const weeklyPondType = pondTypes.find(
-		(p) => p.period === PondPeriod.WEEKLY,
-	)?.type;
-
-	const monthlyPondType = pondTypes.find(
-		(p) => p.period === PondPeriod.MONTHLY,
-	)?.type;
-
-	// Cache pond data when available
-	useEffect(() => {
-		if (pondInfo) {
-			setPondDataCache((prev) => ({
-				...prev,
-				[pondInfo.period]: pondInfo,
-			}));
-		}
-	}, [pondInfo]);
-
-	// Get cached data for each pond period
-	const fiveMinInfo = pondDataCache[PondPeriod.FIVE_MIN];
-	const hourlyInfo = pondDataCache[PondPeriod.HOURLY];
-	const dailyInfo = pondDataCache[PondPeriod.DAILY];
-	const weeklyInfo = pondDataCache[PondPeriod.WEEKLY];
-	const monthlyInfo = pondDataCache[PondPeriod.MONTHLY];
+	// Fetch winners for all pond periods using the dedicated hook
+	const { winners, isLoading, isError } = useAllPondWinners(
+		selectedToken.address,
+	);
 
 	// Check if there's a winner (address is not zero)
 	const hasWinner = (address: string | undefined) => {
@@ -71,48 +39,6 @@ export default function PondWinnerDialog({
 		}
 		return 'No winner yet';
 	};
-
-	const isLoading =
-		isLoadingPondTypes || !dailyPondType || !weeklyPondType || !monthlyPondType;
-
-	// Define display configuration for all pond types
-	const pondsConfig = [
-		{
-			pondInfo: fiveMinInfo,
-			title: '5 Min Winner',
-			colorClass: 'text-purple-400',
-			bgClass: 'bg-purple-400/10',
-			borderClass: 'border-purple-400',
-		},
-		{
-			pondInfo: hourlyInfo,
-			title: 'Hourly Winner',
-			colorClass: 'text-blue-400',
-			bgClass: 'bg-blue-400/10',
-			borderClass: 'border-blue-400',
-		},
-		{
-			pondInfo: dailyInfo,
-			title: 'Daily Winner',
-			colorClass: 'text-primary-200',
-			bgClass: 'bg-primary-200/10',
-			borderClass: 'border-primary-200',
-		},
-		{
-			pondInfo: weeklyInfo,
-			title: 'Weekly Winner',
-			colorClass: 'text-orange-400',
-			bgClass: 'bg-orange-400/10',
-			borderClass: 'border-orange-400',
-		},
-		{
-			pondInfo: monthlyInfo,
-			title: 'Monthly Winner',
-			colorClass: 'text-drip-300',
-			bgClass: 'bg-drip-300/10',
-			borderClass: 'border-drip-300',
-		},
-	];
 
 	return (
 		<Dialog>
@@ -139,25 +65,28 @@ export default function PondWinnerDialog({
 
 				{isLoading ? (
 					<div className="py-2 text-center">Loading winners...</div>
+				) : isError ? (
+					<div className="py-2 text-center text-red-400">
+						Error loading winners
+					</div>
 				) : (
 					<div className="flex flex-col gap-2">
-						{pondsConfig.map((pond) => (
+						{winners.map((winner) => (
 							<div
-								key={pond.title}
+								key={winner.title}
 								className={cn(
 									'flex flex-col items-center justify-center rounded-lg border-2 p-2 text-center',
-									pond.bgClass,
-									pond.borderClass,
+									winner.colorClass,
 								)}
 							>
-								<h3 className="font-bold font-mono text-lg">{pond.title}</h3>
-								<p className={cn('mt-1 font-bold text-2xl', pond.colorClass)}>
-									{formatValue(pond.pondInfo?.lastPondPrize)} HYPE
+								<h3 className="font-bold font-mono text-lg">{winner.title}</h3>
+								<p className={cn('mt-1 font-bold text-2xl', winner.textClass)}>
+									{formatValue(winner.lastPrize)} HYPE
 								</p>
 								<div className="mt-2 font-mono text-primary-200 text-sm">
-									{hasWinner(pond.pondInfo?.lastPondWinner) ? (
+									{hasWinner(winner.lastWinner) ? (
 										<div className="flex flex-col items-center gap-1">
-											<p>{formatWinner(pond.pondInfo?.lastPondWinner)}</p>
+											<p>{formatWinner(winner.lastWinner)}</p>
 										</div>
 									) : (
 										'No winner yet'

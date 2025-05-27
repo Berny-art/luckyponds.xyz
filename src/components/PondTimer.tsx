@@ -38,15 +38,25 @@ export default function PondTimer({
 	// Reference to track if we've already triggered refetch on completion
 	const hasTriggeredRefetchRef = useRef(false);
 
+	// Debounce ref to prevent rapid successive refreshes
+	const lastRefreshTimeRef = useRef(0);
+
 	// Constants
 	const FIVE_MINUTES_MS = 5 * 60 * 1000;
+	const DEBOUNCE_DELAY = 2000; // 2 seconds minimum between refreshes
 
-	// Function to trigger data refresh
+	// Function to trigger data refresh with debouncing
 	const triggerDataRefresh = async () => {
+		const now = Date.now();
+		if (now - lastRefreshTimeRef.current < DEBOUNCE_DELAY) {
+			return;
+		}
+
+		lastRefreshTimeRef.current = now;
 		try {
 			await refetchAll();
 		} catch (error) {
-			console.error('Failed to refresh pond data from timer:', error);
+			// Silently handle refresh errors
 		}
 	};
 
@@ -127,9 +137,9 @@ export default function PondTimer({
 			clearInterval(intervalRef.current);
 		}
 
-		// More frequent updates for 5-minute ponds or when showing progress
+		// More conservative update frequency to reduce request spam
 		const updateFrequency =
-			pondInfo.period === PondPeriod.FIVE_MIN ? 250 : 1000;
+			pondInfo.period === PondPeriod.FIVE_MIN ? 1000 : 2000; // 1s for 5-min, 2s for others
 
 		// Set interval for updates
 		intervalRef.current = setInterval(() => {
@@ -145,14 +155,11 @@ export default function PondTimer({
 					setEndTimeMs(nextEndTime);
 					hasTriggeredRefetchRef.current = false; // Reset for new cycle
 
-					console.log('New 5-min cycle started (UTC aligned):', {
-						start: new Date(cycleStartTime).toISOString(),
-						end: new Date(nextEndTime).toISOString(),
-						utcMinutes: new Date(nextEndTime).getUTCMinutes(),
-					});
-
-					// Trigger data refresh when 5-minute cycle resets
-					triggerDataRefresh();
+					// Trigger data refresh when 5-minute cycle resets with debouncing
+					// Add a small delay to ensure contract state has updated
+					setTimeout(() => {
+						triggerDataRefresh();
+					}, 1500); // 1.5 second delay to account for contract state propagation and debouncing
 				}
 
 				// Always update progress for 5-minute ponds (this ensures continuous updates)
@@ -171,21 +178,11 @@ export default function PondTimer({
 						startTimeRef.current = endTimeMilliseconds - FIVE_MINUTES_MS;
 						durationRef.current = FIVE_MINUTES_MS;
 						setShowProgressBar(true);
-						console.log(
-							'Started showing progress bar with',
-							timeRemaining / 1000 / 60,
-							'minutes remaining',
-						);
 					}
 					updateProgress();
 				} else if (showProgressBar) {
 					// Hide progress bar if time is up or too far away
 					setShowProgressBar(false);
-					console.log(
-						'Hiding progress bar, time remaining:',
-						timeRemaining / 1000 / 60,
-						'minutes',
-					);
 				}
 			}
 
@@ -194,23 +191,6 @@ export default function PondTimer({
 				countdownRef.current.forceUpdate();
 			}
 		}, updateFrequency);
-	};
-
-	// Function to check if we should start showing progress for non-5min ponds
-	const checkIfShouldShowProgress = () => {
-		if (!pondInfo.endTime || Number(pondInfo.endTime) === 0) return;
-
-		const endTimeSeconds = Number(pondInfo.endTime);
-		const endTimeMilliseconds = endTimeSeconds * 1000;
-		const now = Date.now();
-		const timeRemaining = endTimeMilliseconds - now;
-
-		// Start showing progress bar when 5 minutes or less remaining
-		if (timeRemaining <= FIVE_MINUTES_MS && timeRemaining > 0) {
-			startTimeRef.current = endTimeMilliseconds - FIVE_MINUTES_MS;
-			durationRef.current = FIVE_MINUTES_MS;
-			setShowProgressBar(true);
-		}
 	};
 
 	// Function to update progress based on elapsed time
@@ -285,10 +265,10 @@ export default function PondTimer({
 			// Force countdown to update with new end time
 			if (countdownRef.current) {
 				countdownRef.current.forceUpdate();
-			}
-
-			// Trigger data refresh
+			} // Trigger data refresh
 			triggerDataRefresh();
+
+			// Remove additional refresh to prevent spam
 		} else {
 			// For other ponds, hide progress bar when completed
 			setProgressValue(0);
