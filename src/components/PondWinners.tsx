@@ -3,58 +3,38 @@
 import { cn, formatAddress, formatValue } from '@/lib/utils';
 import PondWinnerCard from './PondWinnerCard';
 import { PondPeriod } from '@/lib/types';
-import usePondInfo from '@/hooks/usePondInfo';
 import { usePondStore } from '@/stores/pondStore';
+import { usePondData } from '@/stores/pondDataStore';
 import useLocalStorage from 'use-local-storage';
+import { useEffect, useState } from 'react';
+import type { PondComprehensiveInfo } from '@/lib/types';
 
 export default function PondWinners({ classNames }: { classNames?: string }) {
 	// Get pond types and lightning mode directly from the store
-	const { pondTypes, isLoadingPondTypes } = usePondStore();
+	const { isLoadingPondTypes } = usePondStore();
+	const { pondInfo } = usePondData();
 
 	const [lightningMode] = useLocalStorage('lightningMode', false);
+	const [pondDataCache, setPondDataCache] = useState<
+		Record<string, PondComprehensiveInfo>
+	>({});
 
-	// Extract pond types if available
-	const fiveMinPondType = pondTypes.find(
-		(p) => p.period === PondPeriod.FIVE_MIN,
-	)?.type;
+	// Cache pond data when available
+	useEffect(() => {
+		if (pondInfo) {
+			setPondDataCache((prev) => ({
+				...prev,
+				[pondInfo.period]: pondInfo,
+			}));
+		}
+	}, [pondInfo]);
 
-	const hourlyPondType = pondTypes.find(
-		(p) => p.period === PondPeriod.HOURLY,
-	)?.type;
-
-	const dailyPondType = pondTypes.find(
-		(p) => p.period === PondPeriod.DAILY,
-	)?.type;
-
-	const weeklyPondType = pondTypes.find(
-		(p) => p.period === PondPeriod.WEEKLY,
-	)?.type;
-
-	const monthlyPondType = pondTypes.find(
-		(p) => p.period === PondPeriod.MONTHLY,
-	)?.type;
-
-	// Only fetch data for ponds we'll actually show based on lightning mode
-	// This avoids unnecessary contract calls
-	const { data: fiveMinInfo, isLoading: isFiveMinLoading } = usePondInfo(
-		lightningMode ? fiveMinPondType || '' : null,
-	);
-
-	const { data: hourlyInfo, isLoading: isHourlyLoading } = usePondInfo(
-		lightningMode ? hourlyPondType || '' : null,
-	);
-
-	const { data: dailyInfo, isLoading: isDailyLoading } = usePondInfo(
-		!lightningMode ? dailyPondType || '' : null,
-	);
-
-	const { data: weeklyInfo, isLoading: isWeeklyLoading } = usePondInfo(
-		!lightningMode ? weeklyPondType || '' : null,
-	);
-
-	const { data: monthlyInfo, isLoading: isMonthlyLoading } = usePondInfo(
-		!lightningMode ? monthlyPondType || '' : null,
-	);
+	// Get cached data for each pond period
+	const fiveMinInfo = pondDataCache[PondPeriod.FIVE_MIN];
+	const hourlyInfo = pondDataCache[PondPeriod.HOURLY];
+	const dailyInfo = pondDataCache[PondPeriod.DAILY];
+	const weeklyInfo = pondDataCache[PondPeriod.WEEKLY];
+	const monthlyInfo = pondDataCache[PondPeriod.MONTHLY];
 
 	// Check if there's a winner (address is not zero)
 	const hasWinner = (address: string | undefined) => {
@@ -70,21 +50,9 @@ export default function PondWinners({ classNames }: { classNames?: string }) {
 	};
 
 	// Determine loading state based on which ponds we're showing
-	const isLoading =
-		isLoadingPondTypes ||
-		(lightningMode
-			? !fiveMinPondType ||
-				!hourlyPondType ||
-				isFiveMinLoading ||
-				isHourlyLoading
-			: !dailyPondType ||
-				!weeklyPondType ||
-				!monthlyPondType ||
-				isDailyLoading ||
-				isWeeklyLoading ||
-				isMonthlyLoading);
+	const isWinnersLoading = isLoadingPondTypes;
 
-	if (isLoading) {
+	if (isWinnersLoading) {
 		return null;
 	}
 

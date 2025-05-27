@@ -3,7 +3,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Check, ChevronDown, ChevronsUpDown, Coins } from 'lucide-react';
+import { Check, ChevronDown } from 'lucide-react';
 import { cn, formatValue } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import {
@@ -20,8 +20,6 @@ import {
 	PopoverTrigger,
 } from '@/components/ui/popover';
 import { useTokenStore, type Token } from '@/stores/tokenStore';
-import { Badge } from '@/components/ui/badge';
-import Image from 'next/image';
 import { Skeleton } from './ui/skeleton';
 
 interface TokenSelectorProps {

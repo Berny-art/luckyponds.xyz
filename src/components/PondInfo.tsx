@@ -5,7 +5,8 @@ import { formatValue } from '@/lib/utils';
 import { useAccount } from 'wagmi';
 import { Skeleton } from './ui/skeleton';
 import type { PondComprehensiveInfo } from '@/lib/types';
-import { getPondStatus } from '@/functions/getPondStatus';
+import { usePondStatus } from '@/hooks/usePondStatus';
+import { useTokenStore } from '@/stores/tokenStore';
 
 type PondInfoProps = {
 	pondInfo: PondComprehensiveInfo;
@@ -18,18 +19,10 @@ export default function PondInfo({
 }: PondInfoProps) {
 	const { address } = useAccount();
 	const isConnected = !!address;
+	const { selectedToken } = useTokenStore();
 
-	// Calculate time remaining in a human-readable format
-	const getTimeRemaining = (timeUntilEnd: bigint) => {
-		const totalSeconds = Number(timeUntilEnd);
-		const days = Math.floor(totalSeconds / 86400);
-		const hours = Math.floor((totalSeconds % 86400) / 3600);
-		const minutes = Math.floor((totalSeconds % 3600) / 60);
-
-		if (days > 0) return `${days}d ${hours}h`;
-		if (hours > 0) return `${hours}h ${minutes}m`;
-		return `${minutes}m`;
-	};
+	// Get pond status with accurate timelock information
+	const { status: pondStatus } = usePondStatus(pondInfo);
 
 	// Loading state
 	if (isLoading) {
@@ -71,16 +64,18 @@ export default function PondInfo({
 
 	return (
 		<div className="flex w-full flex-col gap-4 rounded border-2 border-drip-300 bg-primary-200/10 p-4 font-mono text-primary-200">
-			<h2 className="font-bold text-lg">{pondInfo.name} Info</h2>
+			<h2 className="font-bold text-lg">
+				{pondInfo.name.replace('ETH', '')} Info
+			</h2>
 			<div className="flex flex-col gap-2">
 				<div className="flex items-center justify-between">
 					<span className="font-bold text-sm">Status:</span>
-					<span className="font-mono text-sm">{getPondStatus(pondInfo)}</span>
+					<span className="font-mono text-sm">{pondStatus}</span>
 				</div>
 				<div className="flex items-center justify-between">
 					<span className="font-bold text-sm">Prize Pool:</span>
 					<span className="font-mono text-sm">
-						{formatValue(pondInfo.totalValue)} HYPE
+						{formatValue(pondInfo.totalValue)} {selectedToken.symbol}
 					</span>
 				</div>
 
@@ -91,18 +86,11 @@ export default function PondInfo({
 					</span>
 				</div>
 
-				<div className="flex items-center justify-between">
-					<span className="font-bold text-sm">Time Remaining:</span>
-					<span className="font-mono text-sm">
-						{getTimeRemaining(pondInfo.timeUntilEnd)}
-					</span>
-				</div>
-
 				{isConnected && (
 					<div className="flex items-center justify-between">
 						<span className="font-bold text-sm">Your Stake:</span>
 						<span className="font-mono text-sm">
-							{formatValue(pondInfo.userTossAmount)} HYPE
+							{formatValue(pondInfo.userTossAmount)} {selectedToken.symbol}
 						</span>
 					</div>
 				)}

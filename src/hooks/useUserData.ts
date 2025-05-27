@@ -22,27 +22,35 @@ export function useUserData(
 	return useQuery<UserData>({
 		queryKey: ['userData', address?.toLowerCase()],
 		queryFn: async () => {
-			if (!address) {
-				throw new Error('Address is required');
+			if (!address) throw new Error('Address is required');
+
+			const controller = new AbortController();
+
+			try {
+				const response = await fetch(`/api/user/${address}`, {
+					signal: controller.signal,
+					headers: {
+						'Cache-Control': 'max-age=300', // 5 minutes client cache
+					},
+				});
+
+				if (!response.ok) {
+					const errorData = await response.json().catch(() => ({}));
+					throw new Error(errorData.error || `HTTP ${response.status}`);
+				}
+
+				return await response.json();
+			} catch {
+				throw new Error('Request timeout');
 			}
-
-			// Use our server-side API route to fetch user data
-			const response = await fetch(`/api/user/${address}`);
-
-			if (!response.ok) {
-				const errorData = await response.json().catch(() => ({}));
-				throw new Error(
-					errorData.error || `Failed to fetch user data: ${response.status}`,
-				);
-			}
-
-			const data = await response.json();
-			return data as UserData;
 		},
-		enabled: !!address && options?.enabled !== false, // Only enable if we have an address and enabled isn't explicitly false
-		staleTime: options?.staleTime || 300000, // Default to 5 minutes
-		refetchOnWindowFocus: options?.refetchOnWindowFocus ?? false, // Default to false
-		retry: options?.retry ?? 1, // Default to 1 retry
+		enabled: !!address && options?.enabled !== false,
+		staleTime: options?.staleTime || 300000, // 5 minutes
+		gcTime: 600000, // 10 minutes
+		refetchOnWindowFocus: options?.refetchOnWindowFocus ?? false,
+		retry: options?.retry ?? 2,
+		// Add request deduplication
+		networkMode: 'always',
 	});
 }
 

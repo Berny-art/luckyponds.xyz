@@ -17,22 +17,78 @@ interface PondDataState {
 	selectedPondId: string | null;
 	currentTokenAddress: string;
 
+	// Error handling
+	lastError: Error | null;
+	retryCount: number;
+	isConnectionHealthy: boolean;
+
 	// Actions
 	setSelectedPondId: (pondId: string) => void;
 	setCurrentTokenAddress: (address: string) => void;
+	setLastError: (error: Error | null) => void;
+	incrementRetryCount: () => void;
+	resetRetryCount: () => void;
+	setConnectionHealthy: (healthy: boolean) => void;
 }
 
 export const usePondDataStore = create<PondDataState>((set) => ({
 	selectedPondId: null,
 	currentTokenAddress: '0x0000000000000000000000000000000000000000', // Default to native
+	lastError: null,
+	retryCount: 0,
+	isConnectionHealthy: true,
 
 	setSelectedPondId: (pondId) => set({ selectedPondId: pondId }),
 	setCurrentTokenAddress: (address) => set({ currentTokenAddress: address }),
+	setLastError: (error) => set({ lastError: error }),
+	incrementRetryCount: () =>
+		set((state) => ({ retryCount: state.retryCount + 1 })),
+	resetRetryCount: () => set({ retryCount: 0 }),
+	setConnectionHealthy: (healthy) => set({ isConnectionHealthy: healthy }),
 }));
+
+// Enhanced retry configuration
+const getRetryConfig = (period?: PondPeriod) => {
+	const baseRetries = 3;
+	const baseDelay = 1000;
+
+	// More aggressive retries for 5-minute ponds
+	const retries = period === PondPeriod.FIVE_MIN ? 5 : baseRetries;
+	const delay = period === PondPeriod.FIVE_MIN ? 500 : baseDelay;
+
+	return {
+		retry: retries,
+		retryDelay: (attemptIndex: number) =>
+			Math.min(delay * 2 ** attemptIndex, 10000),
+	};
+};
+
+// Enhanced error handling function
+const handleQueryError = (
+	error: Error | unknown,
+	functionName: string,
+	setLastError: (error: Error | null) => void,
+) => {
+	console.error(`Error in ${functionName}:`, error);
+	const enhancedError = new Error(
+		`${functionName}: ${error instanceof Error ? error.message : 'Unknown error'}`,
+	);
+	setLastError(enhancedError);
+};
 
 // Main hook for pond data - this replaces your existing usePondInfo
 export function usePondData() {
-	const { selectedPondId, currentTokenAddress } = usePondDataStore();
+	const {
+		selectedPondId,
+		currentTokenAddress,
+		setLastError,
+		incrementRetryCount,
+		resetRetryCount,
+		setConnectionHealthy,
+		lastError,
+		retryCount,
+		isConnectionHealthy,
+	} = usePondDataStore();
 	const { address } = useAccount();
 	const queryClient = useQueryClient();
 
@@ -44,7 +100,7 @@ export function usePondData() {
 		: undefined;
 	const userAddress = address as `0x${string}` | undefined;
 
-	// Main pond status query - this drives everything
+	// Main pond status query - this drives everything with enhanced error handling
 	const {
 		data: pondStatusData,
 		isLoading: isStatusLoading,
@@ -58,83 +114,141 @@ export function usePondData() {
 		args: pondIdFormatted ? [pondIdFormatted] : undefined,
 		query: {
 			enabled: isValidPondId,
+			...getRetryConfig(),
 			refetchInterval: (data) => {
-				// Smart refetch intervals based on pond type
+				// Smart refetch intervals based on pond type and connection health
+				if (!isConnectionHealthy) return 60000; // Slower when connection issues
+
 				if (data && Array.isArray(data)) {
 					const period = data[12] as PondPeriod;
 					switch (period) {
 						case PondPeriod.FIVE_MIN:
-							return 3000; // 3 seconds for 5-min ponds
+							return retryCount > 0 ? 5000 : 3000; // Adapt based on retry count
 						case PondPeriod.HOURLY:
-							return 8000; // 8 seconds for hourly
+							return retryCount > 0 ? 12000 : 8000;
 						case PondPeriod.DAILY:
-							return 20000; // 20 seconds for daily
+							return retryCount > 0 ? 30000 : 20000;
 						default:
-							return 30000; // 30 seconds for longer ponds
+							return retryCount > 0 ? 45000 : 30000;
 					}
 				}
-				return 15000;
+				return retryCount > 0 ? 20000 : 15000;
 			},
-			staleTime: 2000, // Fixed 2 seconds for simplicity
+			staleTime: 2000,
 		},
 	});
 
-	// User's toss amount
-	const { data: userTossAmount, isLoading: isUserAmountLoading } =
-		useReadContract({
-			...pondCoreConfig,
-			address: pondCoreConfig.address as `0x${string}`,
-			functionName: 'getUserTossAmount',
-			args:
-				pondIdFormatted && userAddress
-					? [pondIdFormatted, userAddress]
-					: undefined,
-			query: {
-				enabled: isValidPondId && !!userAddress,
-				refetchInterval: 12000, // 12 seconds
-				staleTime: 8000,
-			},
-		});
+	// Handle status query errors and success
+	if (isStatusError && statusError) {
+		handleQueryError(statusError, 'getPondStatus', setLastError);
+		incrementRetryCount();
+		setConnectionHealthy(false);
+	} else if (pondStatusData && !isStatusError) {
+		if (retryCount > 0) {
+			resetRetryCount();
+		}
+		if (!isConnectionHealthy) {
+			setConnectionHealthy(true);
+		}
+		if (lastError) {
+			setLastError(null);
+		}
+	}
 
-	// Last winner and prize
-	const { data: lastWinner } = useReadContract({
+	// User's toss amount with enhanced error handling
+	const {
+		data: userTossAmount,
+		isLoading: isUserAmountLoading,
+		isError: isUserAmountError,
+		error: userAmountError,
+	} = useReadContract({
+		...pondCoreConfig,
+		address: pondCoreConfig.address as `0x${string}`,
+		functionName: 'getUserTossAmount',
+		args:
+			pondIdFormatted && userAddress
+				? [pondIdFormatted, userAddress]
+				: undefined,
+		query: {
+			enabled: isValidPondId && !!userAddress,
+			...getRetryConfig(),
+			refetchInterval: 12000, // 12 seconds
+			staleTime: 8000,
+		},
+	});
+
+	// Handle user amount query errors
+	if (isUserAmountError && userAmountError) {
+		handleQueryError(userAmountError, 'getUserTossAmount', setLastError);
+	}
+
+	// Last winner and prize with optimized refresh intervals
+	const {
+		data: lastWinner,
+		isError: isLastWinnerError,
+		error: lastWinnerError,
+	} = useReadContract({
 		...pondCoreConfig,
 		address: pondCoreConfig.address as `0x${string}`,
 		functionName: 'lastWinner',
 		args: pondIdFormatted ? [pondIdFormatted] : undefined,
 		query: {
 			enabled: isValidPondId,
+			...getRetryConfig(),
 			refetchInterval: 30000,
 			staleTime: 20000,
 		},
 	});
 
-	const { data: lastPrize } = useReadContract({
+	const {
+		data: lastPrize,
+		isError: isLastPrizeError,
+		error: lastPrizeError,
+	} = useReadContract({
 		...pondCoreConfig,
 		address: pondCoreConfig.address as `0x${string}`,
 		functionName: 'lastPrize',
 		args: pondIdFormatted ? [pondIdFormatted] : undefined,
 		query: {
 			enabled: isValidPondId,
+			...getRetryConfig(),
 			refetchInterval: 30000,
 			staleTime: 20000,
 		},
 	});
 
-	// Participants
-	const { data: participants } = useReadContract({
+	// Handle winner/prize query errors
+	if (isLastWinnerError && lastWinnerError) {
+		handleQueryError(lastWinnerError, 'lastWinner', setLastError);
+	}
+	if (isLastPrizeError && lastPrizeError) {
+		handleQueryError(lastPrizeError, 'lastPrize', setLastError);
+	}
+
+	// Participants with enhanced error handling
+	const {
+		data: participants,
+		isError: isParticipantsError,
+		error: participantsError,
+	} = useReadContract({
 		...pondCoreConfig,
 		address: pondCoreConfig.address as `0x${string}`,
 		functionName: 'getPondParticipants',
 		args: pondIdFormatted ? [pondIdFormatted] : undefined,
 		query: {
 			enabled: isValidPondId,
-			refetchInterval: 45000,
+			...getRetryConfig(),
+			refetchInterval: isConnectionHealthy ? 45000 : 90000, // Slower when connection issues
 			staleTime: 30000,
 		},
 	});
 
-	// Combine all data into pond info
+	// Handle participants query errors
+	if (isParticipantsError && participantsError) {
+		handleQueryError(participantsError, 'getPondParticipants', setLastError);
+	}
+
+	// Combine all data into pond info with enhanced validation and error handling
 	const pondInfo = useQuery({
 		queryKey: ['pondInfo', selectedPondId, currentTokenAddress, address],
 		queryFn: async (): Promise<PondComprehensiveInfo | null> => {
@@ -142,8 +256,20 @@ export function usePondData() {
 
 			try {
 				const status = pondStatusData as unknown[];
+
+				// Validate required data structure
+				if (!Array.isArray(status) || status.length < 13) {
+					throw new Error('Invalid pond status data structure');
+				}
+
+				// Validate critical numeric values
 				const maxTotalTossAmount = status[9] as bigint;
 				const userAmount = (userTossAmount as bigint) || BigInt(0);
+
+				if (typeof maxTotalTossAmount !== 'bigint') {
+					throw new Error('Invalid maxTotalTossAmount');
+				}
+
 				const remainingTossAmount = maxTotalTossAmount - userAmount;
 
 				let recentParticipants: ParticipantInfo[] = [];
@@ -156,8 +282,19 @@ export function usePondData() {
 				const timeUntilEnd =
 					endTimeValue > now ? BigInt(endTimeValue - now) : BigInt(0);
 
+				// Validate essential pond data
+				const pondName = status[0] as string;
+				if (!pondName || typeof pondName !== 'string') {
+					throw new Error('Invalid pond name');
+				}
+
+				const period = status[12] as PondPeriod;
+				if (!Object.values(PondPeriod).includes(period)) {
+					throw new Error('Invalid pond period');
+				}
+
 				const info: PondComprehensiveInfo = {
-					name: status[0] as string,
+					name: pondName,
 					startTime: status[1] as bigint,
 					endTime: status[2] as bigint,
 					totalTosses: status[3] as bigint,
@@ -169,7 +306,7 @@ export function usePondData() {
 					maxTotalTossAmount,
 					tokenType: status[10] as TokenType,
 					tokenAddress: status[11] as `0x${string}`,
-					period: status[12] as PondPeriod,
+					period,
 					userTossAmount: userAmount,
 					remainingTossAmount,
 					lastPondWinner:
@@ -181,31 +318,90 @@ export function usePondData() {
 
 				return info;
 			} catch (error) {
-				console.error('Error processing pond data:', error);
-				return null;
+				const enhancedError = new Error(
+					`Error processing pond data: ${error instanceof Error ? error.message : 'Unknown error'}`,
+				);
+				handleQueryError(enhancedError, 'pondInfo processing', setLastError);
+				throw enhancedError;
 			}
 		},
 		enabled: !!pondStatusData,
 		staleTime: 2000, // Fixed 2 seconds - keep it simple
 		refetchInterval: false, // Rely on constituent queries
+		...getRetryConfig(), // Add retry configuration to main query
 	});
 
-	// Utility functions
+	// Utility functions with enhanced query management
 	const refetchUserData = async () => {
-		await queryClient.invalidateQueries({
-			queryKey: [
-				{
-					entity: 'readContract',
-					functionName: 'getUserTossAmount',
-				},
-			],
-		});
+		try {
+			resetRetryCount();
+			await queryClient.invalidateQueries({
+				queryKey: [
+					{
+						entity: 'readContract',
+						functionName: 'getUserTossAmount',
+					},
+				],
+			});
+		} catch (error) {
+			handleQueryError(error, 'refetchUserData', setLastError);
+		}
 	};
 
 	const refetchAll = async () => {
-		await queryClient.invalidateQueries({
-			queryKey: ['pondInfo', selectedPondId, currentTokenAddress],
-		});
+		try {
+			resetRetryCount();
+			// Invalidate all pond-related queries in the correct order
+			await Promise.all([
+				queryClient.invalidateQueries({
+					queryKey: [
+						{
+							entity: 'readContract',
+							functionName: 'getPondStatus',
+						},
+					],
+				}),
+				queryClient.invalidateQueries({
+					queryKey: [
+						{
+							entity: 'readContract',
+							functionName: 'getUserTossAmount',
+						},
+					],
+				}),
+				queryClient.invalidateQueries({
+					queryKey: [
+						{
+							entity: 'readContract',
+							functionName: 'lastWinner',
+						},
+					],
+				}),
+				queryClient.invalidateQueries({
+					queryKey: [
+						{
+							entity: 'readContract',
+							functionName: 'lastPrize',
+						},
+					],
+				}),
+				queryClient.invalidateQueries({
+					queryKey: [
+						{
+							entity: 'readContract',
+							functionName: 'getPondParticipants',
+						},
+					],
+				}),
+			]);
+
+			// Finally invalidate the combined query
+			await queryClient.invalidateQueries({
+				queryKey: ['pondInfo', selectedPondId, currentTokenAddress],
+			});
+		} catch (error) {
+			handleQueryError(error, 'refetchAll', setLastError);
+		}
 	};
 
 	return {
@@ -220,6 +416,11 @@ export function usePondData() {
 		// Error states
 		isError: isStatusError || pondInfo.isError,
 		error: statusError || pondInfo.error,
+
+		// Enhanced error handling state
+		lastError,
+		retryCount,
+		isConnectionHealthy,
 
 		// Utility functions
 		refetchAll,

@@ -10,9 +10,11 @@ import {
 	DialogTrigger,
 } from './ui/dialog';
 import { Button } from './ui/button';
-import usePondInfo from '@/hooks/usePondInfo';
 import { PondPeriod } from '@/lib/types';
 import { usePondStore } from '@/stores/pondStore';
+import { usePondData } from '@/stores/pondDataStore';
+import { useEffect, useState } from 'react';
+import type { PondComprehensiveInfo } from '@/lib/types';
 
 /**
  * Mobile-friendly component for displaying pond winners
@@ -23,15 +25,10 @@ export default function PondWinnerDialog({
 }: { classNames?: string }) {
 	// Get pond types directly from the store
 	const { pondTypes, isLoadingPondTypes } = usePondStore();
-
-	// Extract pond types if available
-	const fiveMinPondType = pondTypes.find(
-		(p) => p.period === PondPeriod.FIVE_MIN,
-	)?.type;
-
-	const hourlyPondType = pondTypes.find(
-		(p) => p.period === PondPeriod.HOURLY,
-	)?.type;
+	const { pondInfo } = usePondData();
+	const [pondDataCache, setPondDataCache] = useState<
+		Record<string, PondComprehensiveInfo>
+	>({});
 
 	const dailyPondType = pondTypes.find(
 		(p) => p.period === PondPeriod.DAILY,
@@ -45,12 +42,22 @@ export default function PondWinnerDialog({
 		(p) => p.period === PondPeriod.MONTHLY,
 	)?.type;
 
-	// Use our usePondInfo hook to get info for each pond
-	const { data: fiveMinInfo } = usePondInfo(fiveMinPondType || '');
-	const { data: hourlyInfo } = usePondInfo(hourlyPondType || '');
-	const { data: dailyInfo } = usePondInfo(dailyPondType || '');
-	const { data: weeklyInfo } = usePondInfo(weeklyPondType || '');
-	const { data: monthlyInfo } = usePondInfo(monthlyPondType || '');
+	// Cache pond data when available
+	useEffect(() => {
+		if (pondInfo) {
+			setPondDataCache((prev) => ({
+				...prev,
+				[pondInfo.period]: pondInfo,
+			}));
+		}
+	}, [pondInfo]);
+
+	// Get cached data for each pond period
+	const fiveMinInfo = pondDataCache[PondPeriod.FIVE_MIN];
+	const hourlyInfo = pondDataCache[PondPeriod.HOURLY];
+	const dailyInfo = pondDataCache[PondPeriod.DAILY];
+	const weeklyInfo = pondDataCache[PondPeriod.WEEKLY];
+	const monthlyInfo = pondDataCache[PondPeriod.MONTHLY];
 
 	// Check if there's a winner (address is not zero)
 	const hasWinner = (address: string | undefined) => {

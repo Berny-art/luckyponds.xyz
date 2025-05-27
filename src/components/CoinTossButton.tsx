@@ -55,8 +55,6 @@ export default function CoinTossButton({
 		return timeUntilEnd <= 5 && timeUntilEnd > 0;
 	};
 
-	console.log('Pond status:', pondStatus);
-
 	// Check if this is a 5-minute pond in select winner status (should be enabled)
 	const isFiveMinPondSelectWinner = () => {
 		return (
@@ -158,10 +156,13 @@ export default function CoinTossButton({
 	};
 
 	// Get pond name for display
-	const pondName = pondInfo?.name || 'pond';
+	const pondName = pondInfo?.name.replace('ETH', '') || 'pond';
 	const displayPondName = pondName.includes('Pond')
 		? pondName.replace('Pond', '').trim()
 		: pondName;
+
+	// Apply correct timelock duration based on pond period (shorter for 5-min ponds)
+	const isTimeLocked = pondStatus === PondStatus.TimeLocked;
 
 	// Get the button text based on connection, loading, and pond status
 	const getButtonText = () => {
@@ -169,6 +170,14 @@ export default function CoinTossButton({
 			return (
 				<>
 					<Loader2 className="mr-2 h-5 w-5 animate-spin" /> Processing...
+				</>
+			);
+		}
+
+		if (isTimeLocked) {
+			return (
+				<>
+					<Loader2 className="mr-2 h-5 w-5 animate-spin" /> Selecting winner...
 				</>
 			);
 		}
@@ -201,9 +210,6 @@ export default function CoinTossButton({
 			handleToss(e);
 		}
 	};
-
-	// Apply correct timelock duration based on pond period (shorter for 5-min ponds)
-	const isTimeLocked = pondStatus === PondStatus.TimeLocked;
 
 	// Determine if button should be disabled
 	const isButtonDisabled =

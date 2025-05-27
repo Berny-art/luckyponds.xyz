@@ -1,7 +1,7 @@
 // src/components/PondInterface.tsx
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useEffect, useRef } from 'react';
 import CoinTossInput from '@/components/CoinTossInput';
 import PondInfo from '@/components/PondInfo';
 import StandardPonds from '@/components/StandardPonds';

@@ -8,6 +8,7 @@ import { useAccount, useBalance } from 'wagmi';
 import CoinTossButton from './CoinTossButton';
 import type { PondComprehensiveInfo } from '@/lib/types';
 import { useAnimationStore } from '@/stores/animationStore';
+import { useTokenStore } from '@/stores/tokenStore';
 
 export default function CoinTossInput({
 	pondInfo,
@@ -21,6 +22,7 @@ export default function CoinTossInput({
 
 	const [numberOfTosses, setNumberOfTosses] = useState(1);
 	const [tossAmount, setTossAmount] = useState('0');
+	const { selectedToken } = useTokenStore();
 
 	// Get the price per toss from pond info
 	const minTossPrice = pondInfo?.minTossPrice || parseEther('0.01');
@@ -129,10 +131,7 @@ export default function CoinTossInput({
 		}
 	};
 
-	// Get token symbol from the pond info or default to ETH
-	const tokenSymbol = 'HYPE';
-
-	// Determine if user can toss at all
+	const tokenSymbol = selectedToken?.symbol || 'UNKNOWN';
 	const canToss = balance && balance.value >= minTossPrice;
 
 	return (
