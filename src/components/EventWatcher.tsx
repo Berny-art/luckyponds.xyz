@@ -34,7 +34,7 @@ export default function EventWatcher() {
 		eventName: 'CoinTossed',
 		enabled: true,
 		onError(error) {
-			// Silently handle event watching errors
+			console.error('Error watching CoinTossed event:', error);
 		},
 		onLogs(logs) {
 			for (const log of logs) {

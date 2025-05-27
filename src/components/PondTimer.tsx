@@ -57,6 +57,9 @@ export default function PondTimer({
 			await refetchAll();
 		} catch (error) {
 			// Silently handle refresh errors
+			throw new Error(
+				`Failed to refresh pond data: ${error instanceof Error ? error.message : 'Unknown error'}`,
+			);
 		}
 	};
 

@@ -1,5 +1,6 @@
 // src/components/CoinTossButton.tsx
 'use client';
+/* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { useState, useEffect, useRef } from 'react';
 import { Button } from './ui/button';
@@ -14,7 +15,6 @@ import { toast } from 'sonner';
 import { PondStatus } from '@/functions/getPondStatus';
 import { usePondStatus } from '@/hooks/usePondStatus';
 import { useAnimationStore } from '@/stores/animationStore';
-import { PondPeriod } from '@/lib/types';
 
 interface CoinTossButtonProps {
 	amount: string;
@@ -74,26 +74,6 @@ export default function CoinTossButton({
 		return timeUntilEnd <= 5 && timeUntilEnd > 0;
 	};
 
-	// Check if this is a 5-minute pond that should allow tosses during status transitions
-	const isFiveMinPondAllowToss = () => {
-		if (pondInfo?.period !== PondPeriod.FIVE_MIN) return false;
-
-		const now = Math.floor(Date.now() / 1000);
-		const endTime = Number(pondInfo.endTime);
-		const timeSinceEnd = now - endTime;
-
-		// For 5-minute ponds, be very permissive with tosses
-		// Only restrict if we're more than 2 minutes past the end time (abnormal situation)
-		const isAbnormallyLate = timeSinceEnd > 120; // 2 minutes past end
-
-		// Allow tosses in most states for 5-minute ponds
-		return (
-			pondStatus === PondStatus.Open ||
-			pondStatus === PondStatus.SelectWinner ||
-			(pondStatus === PondStatus.TimeLocked && !isAbnormallyLate)
-		);
-	};
-
 	// Check if the component is in a loading state
 	const isLoading = tossLoading || isProcessing || isWritePending;
 
@@ -151,7 +131,8 @@ export default function CoinTossButton({
 					await selectWinner();
 					// Small delay to ensure transactions are processed in order
 					await new Promise((resolve) => setTimeout(resolve, 500));
-				} catch (error: unknown) {
+					// biome-ignore lint/suspicious/noExplicitAny: <explanation>
+				} catch (error: any) {
 					toast.error('Transaction failed', {
 						id: 'toss-loading',
 						description: 'There was an error processing your transaction.',
@@ -167,6 +148,7 @@ export default function CoinTossButton({
 			// The callback will be triggered by the useEffect when lastTxResult is updated
 		} catch (error) {
 			// Error is handled by the tossCoin function
+			console.error('Error tossing coin:', error);
 		} finally {
 			setIsProcessing(false);
 		}

@@ -72,6 +72,7 @@ export function useStandardPondsForUI(
 				}
 			} catch (processingError) {
 				// Error processing pond data
+				console.error('Error processing pond types:', processingError);
 			} finally {
 				// Ensure loading state is set to false even if processing fails
 				setIsLoadingPondTypes(false);
@@ -84,7 +85,8 @@ export function useStandardPondsForUI(
 		setIsLoadingPondTypes,
 		setSelectedPond,
 		selectedPond,
-		tokenAddress, // Add tokenAddress as dependency
+		tokenAddress,
+		lightningMode, // Add tokenAddress as dependency
 	]);
 
 	// Reset selected pond when token changes
