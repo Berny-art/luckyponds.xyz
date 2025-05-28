@@ -2,25 +2,30 @@
 
 import { useState, useEffect } from 'react';
 import { useAccount } from 'wagmi';
-import { useSearchParams } from 'next/navigation';
 
-export function useReferralCode() {
+interface UseReferralCodeProps {
+	initialReferrerCode?: string | null;
+}
+
+export function useReferralCode({
+	initialReferrerCode,
+}: UseReferralCodeProps = {}) {
 	const { address, isConnected } = useAccount();
-	const searchParams = useSearchParams();
 
 	const [referralCode, setReferralCode] = useState<string | null>(null);
-	const [referrerCode, setReferrerCode] = useState<string | null>(null);
+	const [referrerCode, setReferrerCode] = useState<string | null>(
+		initialReferrerCode || null,
+	);
 	const [isLoading, setIsLoading] = useState(false);
 	const [error, setError] = useState<string | null>(null);
 	const [hasAppliedReferral, setHasAppliedReferral] = useState(false);
 
-	// Get the referral code from the URL if present
+	// Set the referrer code if provided as prop
 	useEffect(() => {
-		const refCode = searchParams.get('ref');
-		if (refCode) {
-			setReferrerCode(refCode);
+		if (initialReferrerCode) {
+			setReferrerCode(initialReferrerCode);
 		}
-	}, [searchParams]);
+	}, [initialReferrerCode]);
 
 	// Fetch or create a referral code for the connected user
 	const fetchReferralCode = async () => {
