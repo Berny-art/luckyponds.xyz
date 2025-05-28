@@ -247,16 +247,6 @@ export default function CoinTossButton({
 			);
 		}
 
-		// Show special message for SelectWinner status
-		if (pondStatus === PondStatus.SelectWinner) {
-			return (
-				<>
-					<Clock className="mr-2 h-5 w-5" /> Winner selection required - Switch
-					ponds to refresh
-				</>
-			);
-		}
-
 		// Pond about to end warning
 		if (isPondAboutToEnd()) {
 			const secondsRemaining = timeRemaining
@@ -296,7 +286,6 @@ export default function CoinTossButton({
 				numberOfTosses < 1 ||
 				pondStatus === PondStatus.NotStarted ||
 				pondStatus === PondStatus.Completed ||
-				pondStatus === PondStatus.SelectWinner || // Disable when winner selection is needed
 				isPondAboutToEnd() || // Disable 5 seconds before end
 				isTimeLocked ||
 				is5MinutePondInTimelock())); // Additional 5-minute pond timelock check
@@ -308,9 +297,6 @@ export default function CoinTossButton({
 		}
 		if (isTimeLocked || is5MinutePondInTimelock()) {
 			return 'bg-orange-500 text-white hover:bg-orange-500'; // Orange for timelock/selecting winner
-		}
-		if (pondStatus === PondStatus.SelectWinner) {
-			return 'bg-yellow-500 text-black hover:bg-yellow-500'; // Yellow for SelectWinner state
 		}
 		return 'bg-drip-300 text-secondary-950 hover:bg-drip-300/90'; // Default styling
 	};

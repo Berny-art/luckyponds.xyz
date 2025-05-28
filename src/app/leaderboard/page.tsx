@@ -22,6 +22,7 @@ import type { UserData } from '@/types/user';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { useAccount } from 'wagmi';
+import { Badge } from '@/components/ui/badge';
 
 // Fetch leaderboard data
 const fetchLeaderboard = async (
@@ -249,7 +250,7 @@ export default function Leaderboard() {
 
 	const formatPoints = (points: number) => {
 		if (points >= 1000000) return `${(points / 1_000_000).toFixed(1)}M`;
-		if (points >= 1000) return `${(points / 1_000).toFixed(1)}K`;
+		if (points >= 10000) return `${(points / 1_000_0).toFixed(1)}K`;
 		return points.toString();
 	};
 
@@ -327,13 +328,13 @@ export default function Leaderboard() {
 									Address
 								</TableHead>
 								<TableHead className="min-w-32 font-bold text-primary-200 lg:min-w-48">
-									# Tosses
+									Tosses
 								</TableHead>
 								<TableHead className="min-w-32 font-bold text-primary-200 lg:min-w-48">
-									# Value
+									Value
 								</TableHead>
 								<TableHead className="min-w-32 font-bold text-primary-200 lg:min-w-48">
-									# Wins
+									Wins
 								</TableHead>
 								{['total_points', 'referral_points'].map((field) => (
 									<TableHead
@@ -345,7 +346,7 @@ export default function Leaderboard() {
 											<span>
 												{field
 													.replace('_', ' ')
-													.replace('total ', '# ')
+													.replace('points', 'Luck')
 													.replace(/\b\w/g, (l) => l.toUpperCase())}
 												{getSortIndicator(field as SortField)}
 											</span>
@@ -383,8 +384,10 @@ export default function Leaderboard() {
 									<TableCell className="font-bold">
 										{entry.total_wins}
 									</TableCell>
-									<TableCell className="font-bold text-drip-300">
-										{formatPoints(entry.total_points || 0)}
+									<TableCell className="font-bold text-green-400">
+										<Badge className="bg-primary-200/10 text-green-400 border border-primary-200">
+											{formatPoints(entry.total_points || 0)}
+										</Badge>
 									</TableCell>
 									<TableCell>
 										{formatPoints(entry.referral_points || 0)}

@@ -15,8 +15,8 @@ export async function GET(
 			);
 		}
 
-		// Call the Lucky Ponds API to get user data
-		const apiUrl = `https://api.luckyponds.xyz/user/${address}`;
+		// Call the Lucky Ponds API to get or create a referral code
+		const apiUrl = `https://api.luckyponds.xyz/referral/code/${address}`;
 
 		const response = await fetch(apiUrl, {
 			headers: {
@@ -27,13 +27,8 @@ export async function GET(
 		});
 
 		if (!response.ok) {
-			// If user not found, return 404
-			if (response.status === 404) {
-				return NextResponse.json({ error: 'User not found' }, { status: 404 });
-			}
-
 			console.error(`API request failed with status ${response.status}`);
-			let errorMessage = 'Error fetching user data';
+			let errorMessage = 'Error fetching referral code';
 
 			try {
 				const errorData = await response.json();
@@ -53,10 +48,10 @@ export async function GET(
 
 		return NextResponse.json(data);
 	} catch (error) {
-		console.error('Error in user API route:', error);
+		console.error('Error in referral code API route:', error);
 		return NextResponse.json(
 			{
-				error: 'Failed to fetch user data',
+				error: 'Failed to fetch referral code',
 				details: error instanceof Error ? error.message : String(error),
 			},
 			{ status: 500 },

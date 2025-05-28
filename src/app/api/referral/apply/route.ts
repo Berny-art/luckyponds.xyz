@@ -1,13 +1,12 @@
 import { type NextRequest, NextResponse } from 'next/server';
 
-export async function GET(
-	request: NextRequest,
-	{ params }: { params: Promise<{ address: string }> },
-) {
+export async function POST(request: NextRequest) {
 	try {
-		const { address } = await params;
+		// Parse the request body
+		const body = await request.json();
+		const { address, referral_code } = body;
 
-		// Validate the address
+		// Validate the address and referral code
 		if (!address || !/^0x[a-fA-F0-9]{40}$/.test(address)) {
 			return NextResponse.json(
 				{ error: 'Invalid Ethereum address' },
@@ -15,25 +14,31 @@ export async function GET(
 			);
 		}
 
-		// Call the Lucky Ponds API to get user data
-		const apiUrl = `https://api.luckyponds.xyz/user/${address}`;
+		if (!referral_code) {
+			return NextResponse.json(
+				{ error: 'Referral code is required' },
+				{ status: 400 },
+			);
+		}
+
+		// Call the Lucky Ponds API to apply the referral code
+		const apiUrl = 'https://api.luckyponds.xyz/referral/apply';
 
 		const response = await fetch(apiUrl, {
+			method: 'POST',
 			headers: {
 				'X-API-Key': process.env.API_KEY || '', // Server-side environment variable
 				'Content-Type': 'application/json',
 			},
-			cache: 'no-store', // Don't use Next.js cache for this request
+			body: JSON.stringify({
+				address,
+				referral_code,
+			}),
 		});
 
 		if (!response.ok) {
-			// If user not found, return 404
-			if (response.status === 404) {
-				return NextResponse.json({ error: 'User not found' }, { status: 404 });
-			}
-
 			console.error(`API request failed with status ${response.status}`);
-			let errorMessage = 'Error fetching user data';
+			let errorMessage = 'Error applying referral code';
 
 			try {
 				const errorData = await response.json();
@@ -51,12 +56,15 @@ export async function GET(
 		// Parse the data and return it
 		const data = await response.json();
 
-		return NextResponse.json(data);
+		return NextResponse.json({
+			success: true,
+			...data,
+		});
 	} catch (error) {
-		console.error('Error in user API route:', error);
+		console.error('Error in apply referral API route:', error);
 		return NextResponse.json(
 			{
-				error: 'Failed to fetch user data',
+				error: 'Failed to apply referral code',
 				details: error instanceof Error ? error.message : String(error),
 			},
 			{ status: 500 },
