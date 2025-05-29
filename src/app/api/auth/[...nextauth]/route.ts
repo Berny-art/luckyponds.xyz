@@ -74,7 +74,6 @@ const authOptions = {
 	secret: process.env.NEXTAUTH_SECRET,
 	callbacks: {
 		// eslint-disable-next-line @typescript-eslint/no-explicit-any
-		// biome-ignore lint/suspicious/noExplicitAny: <explanation>
 		async session({ session, token }: any) {
 			if (token.sub) {
 				session.address = token.sub;
@@ -83,7 +82,6 @@ const authOptions = {
 			return session;
 		},
 		// eslint-disable-next-line @typescript-eslint/no-explicit-any
-		// biome-ignore lint/suspicious/noExplicitAny: <explanation>
 		async jwt({ token, user }: any) {
 			if (user) {
 				token.sub = user.id;
