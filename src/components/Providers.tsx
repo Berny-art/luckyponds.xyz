@@ -3,6 +3,11 @@
 import merge from 'lodash.merge';
 import '@rainbow-me/rainbowkit/styles.css';
 import {
+	RainbowKitSiweNextAuthProvider,
+	type GetSiweMessageOptions,
+} from '@rainbow-me/rainbowkit-siwe-next-auth';
+import { SessionProvider } from 'next-auth/react';
+import {
 	RainbowKitProvider,
 	darkTheme,
 	type Theme,
@@ -10,8 +15,9 @@ import {
 import { WagmiProvider } from 'wagmi';
 import { QueryClientProvider, QueryClient } from '@tanstack/react-query';
 import { config } from '@/lib/wagmiConfig';
-import FloatingAnimationRenderer from './FloatingAnimationRenderer';
-import EventWatcher from './EventWatcher';
+
+// import FloatingAnimationRenderer from './FloatingAnimationRenderer';
+// import EventWatcher from './EventWatcher';
 
 const frogTheme = merge(darkTheme(), {
 	colors: {
@@ -28,6 +34,11 @@ const frogTheme = merge(darkTheme(), {
 		modalMobile: '6px',
 	},
 } as Theme);
+
+// add terms and conditions url: https://lucky-ponds.gitbook.io/lucky-ponds/legal/terms-and-conditions
+const getSiweMessageOptions: GetSiweMessageOptions = () => ({
+	statement: 'Sign in to Lucky Ponds',
+});
 
 // Optimized QueryClient configuration for better performance
 const queryClient = new QueryClient({
@@ -64,13 +75,19 @@ const queryClient = new QueryClient({
 export default function Providers({ children }: { children: React.ReactNode }) {
 	return (
 		<WagmiProvider config={config}>
-			<QueryClientProvider client={queryClient}>
-				<RainbowKitProvider modalSize="compact" theme={frogTheme}>
-					<EventWatcher />
-					{children}
-					<FloatingAnimationRenderer />
-				</RainbowKitProvider>
-			</QueryClientProvider>
+			<SessionProvider refetchInterval={0}>
+				<QueryClientProvider client={queryClient}>
+					<RainbowKitSiweNextAuthProvider
+						getSiweMessageOptions={getSiweMessageOptions}
+					>
+						<RainbowKitProvider modalSize="compact" theme={frogTheme}>
+							{/* <EventWatcher /> */}
+							{children}
+							{/* <FloatingAnimationRenderer /> */}
+						</RainbowKitProvider>
+					</RainbowKitSiweNextAuthProvider>
+				</QueryClientProvider>
+			</SessionProvider>
 		</WagmiProvider>
 	);
 }

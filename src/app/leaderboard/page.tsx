@@ -385,7 +385,7 @@ export default function Leaderboard() {
 										{entry.total_wins}
 									</TableCell>
 									<TableCell className="font-bold text-green-400">
-										<Badge className="bg-primary-200/10 text-green-400 border border-primary-200">
+										<Badge className="border border-primary-200 bg-primary-200/10 text-green-400">
 											{formatPoints(entry.total_points || 0)}
 										</Badge>
 									</TableCell>

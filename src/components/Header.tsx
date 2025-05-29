@@ -63,9 +63,9 @@ export default function Header() {
 					{/* Desktop Navigation */}
 					<div className="hidden lg:flex lg:w-full lg:items-center lg:justify-between">
 						<nav className="ml-10 flex justify-center gap-6 font-mono text-primary-200 hover:[&>a]:text-drip-300">
-							<Link href="/">Home</Link>
+							{/* <Link href="/">Home</Link>
 							<span className="text-drip-300">/</span>
-							<Link href="/leaderboard">Leaderboard</Link>
+							<Link href="/leaderboard">Leaderboard</Link> */}
 						</nav>
 
 						<div className="flex items-center justify-end gap-8">
@@ -122,14 +122,14 @@ export default function Header() {
 											Home
 										</Link>
 									</SheetClose>
-									<SheetClose asChild>
+									{/* <SheetClose asChild>
 										<Link
 											href="/leaderboard"
 											className="flex items-center bg-secondary-900/50 p-4 transition-colors hover:text-drip-300"
 										>
 											Leaderboard
 										</Link>
-									</SheetClose>
+									</SheetClose> */}
 								</nav>
 
 								{/* Social Links */}

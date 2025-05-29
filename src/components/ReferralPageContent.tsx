@@ -150,7 +150,7 @@ export default function ReferralPageContent({
 							</div>
 							<Button
 								onClick={() => handleCopy(referralLink)}
-								className="w-full bg-drip-300 font-bold font-mono text-secondary-950 hover:bg-drip-300/70"
+								className="w-full animate-gradient bg-[linear-gradient(90deg,#F2E718_0%,#80E8A9_20%,#9353ED_50%,#ED5353_75%,#EDA553_100%)] font-bold font-mono text-white"
 							>
 								<CopyIcon className="mr-2 h-4 w-4" />
 								Copy Referral Link
