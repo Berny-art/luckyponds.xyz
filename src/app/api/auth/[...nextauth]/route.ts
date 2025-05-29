@@ -1,10 +1,9 @@
-import NextAuth from 'next-auth';
-import type { NextAuthOptions } from 'next-auth';
+import NextAuth from 'next-auth/next';
 import CredentialsProvider from 'next-auth/providers/credentials';
 import { verifyMessage } from 'viem';
 import { parseSiweMessage } from 'viem/siwe';
 
-const authOptions: NextAuthOptions = {
+const authOptions = {
 	providers: [
 		CredentialsProvider({
 			name: 'credentials',
@@ -71,17 +70,21 @@ const authOptions: NextAuthOptions = {
 			},
 		}),
 	],
-	session: { strategy: 'jwt' },
+	session: { strategy: 'jwt' as const },
 	secret: process.env.NEXTAUTH_SECRET,
 	callbacks: {
-		async session({ session, token }) {
+		// eslint-disable-next-line @typescript-eslint/no-explicit-any
+		// biome-ignore lint/suspicious/noExplicitAny: <explanation>
+		async session({ session, token }: any) {
 			if (token.sub) {
 				session.address = token.sub;
 				session.user = session.user || {};
 			}
 			return session;
 		},
-		async jwt({ token, user }) {
+		// eslint-disable-next-line @typescript-eslint/no-explicit-any
+		// biome-ignore lint/suspicious/noExplicitAny: <explanation>
+		async jwt({ token, user }: any) {
 			if (user) {
 				token.sub = user.id;
 			}
