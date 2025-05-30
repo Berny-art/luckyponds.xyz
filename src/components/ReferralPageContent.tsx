@@ -33,7 +33,7 @@ export default function ReferralPageContent({
 	const [isCodeFetched, setIsCodeFetched] = useState(false);
 	const [referralLink, setReferralLink] = useState('');
 	const { data } = useUserData(address as `0x${string}`);
-	const amountOfReferrals = (data?.referral_points || 0) / 20;
+	const amountOfReferrals = data?.referrals_count || 0;
 
 	// Generate referral link when the code is available
 	useEffect(() => {
