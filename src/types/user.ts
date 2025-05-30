@@ -45,6 +45,16 @@ export interface UserData {
 	 * Points earned from referrals
 	 */
 	referral_points: number;
+	
+	/**
+	 * referrals made by the user
+	 */
+	referrals_count: number;
+
+	/**
+	 * referrals activated by the user
+	 */
+	referrals_activated: number;
 
 	/**
 	 * User's rank in the leaderboard
