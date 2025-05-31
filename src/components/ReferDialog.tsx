@@ -6,9 +6,10 @@ import { Users } from "lucide-react";
 
 interface ReferDialogProps {
   initialReferrerCode?: string | null;
+  showLabel?: boolean;
 }
 
-export default function ReferDialog({ initialReferrerCode }: ReferDialogProps) {
+export default function ReferDialog({ initialReferrerCode, showLabel }: ReferDialogProps) {
   const { isLg } = useResponsiveBreakpoints();
   
   return (
@@ -22,11 +23,11 @@ export default function ReferDialog({ initialReferrerCode }: ReferDialogProps) {
           )}
           aria-label="Refer a friend"
         >
-          {isLg ? 'Refer a Friend' : ''}
+          {showLabel ? 'Refer a Friend' : (isLg ? 'Refer a Friend' : '')}
           <Users size={18} />
         </div>
       </DialogTrigger>
-      <DialogContent className="bg-secondary-950 text-primary-200">
+      <DialogContent className="bg-secondary-950 text-primary-200 border-2 border-primary-200 rounded-lg">
         <DialogTitle>Refer a friend</DialogTitle>
         <ReferralPageContent initialReferrerCode={initialReferrerCode} isDialog />
       </DialogContent>

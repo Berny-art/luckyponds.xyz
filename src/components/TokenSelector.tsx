@@ -95,7 +95,7 @@ export default function TokenSelector({
 										key={token.address + token.symbol}
 										value={token.symbol}
 										onSelect={() => handleTokenSelect(token)}
-										className="text-primary-200 bg-secondary-800 hover:bg-secondary-900"
+										className="text-primary-200 bg-secondary-950 hover:bg-secondary-900 data-[selected=true]:bg-secondary-200"
 									>
 										<div className="flex w-full items-center justify-between">
 											<div className="flex items-center gap-2">

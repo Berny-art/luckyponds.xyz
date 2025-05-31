@@ -42,7 +42,7 @@ export default function PondInterface({ tokenAddress, initialReferrerCode }: Pon
 		addEvent,
 	} = useAppStore();
 
-	const { isLg } = useResponsiveBreakpoints();
+	const { isSm, isLg } = useResponsiveBreakpoints();
 	const { address, isConnected } = useAccount();
 	const [lightningMode, setLightningMode] = useLocalStorage(
 		'lightningMode',
@@ -327,7 +327,9 @@ export default function PondInterface({ tokenAddress, initialReferrerCode }: Pon
 								{isLg ? `Turn Fast Mode ${lightningMode ? 'OFF' : 'ON'}` : ''}
 								<Zap size={18} />
 							</div>
-							<ReferDialog initialReferrerCode={referrerCode} />
+							{isSm && (
+								<ReferDialog initialReferrerCode={referrerCode} />
+							)}
 						</>
 					)}
 				</div>

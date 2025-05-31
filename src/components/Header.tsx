@@ -17,9 +17,13 @@ import {
 import { Button } from './ui/button';
 import { useState, useEffect } from 'react';
 import Image from 'next/image';
+import ReferDialogMobile from './ReferDialogMobile';
+import { useSearchParams } from 'next/navigation';
 
 export default function Header() {
 	const [isMobile, setIsMobile] = useState(false);
+	const searchParams = useSearchParams();
+	const referrerCode = searchParams.get('ref');
 
 	// Check if we're on mobile on client side
 	useEffect(() => {
@@ -129,6 +133,9 @@ export default function Header() {
 										>
 											Leaderboard
 										</Link>
+									</SheetClose>
+									<SheetClose asChild>
+										<ReferDialogMobile initialReferrerCode={referrerCode} />
 									</SheetClose>
 								</nav>
 

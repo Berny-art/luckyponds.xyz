@@ -215,7 +215,7 @@ export default function PondWinnerCard({
 			<DialogTrigger className="w-full">
 				<div
 					className={cn(
-						'flex w-full flex-col items-start justify-center rounded border px-4 py-2 text-primary-200',
+						'flex w-full flex-col items-start justify-center rounded border-2 px-4 py-2 text-primary-200',
 						getCardColor(),
 					)}
 				>
