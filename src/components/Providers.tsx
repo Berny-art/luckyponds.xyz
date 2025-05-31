@@ -16,8 +16,8 @@ import { WagmiProvider } from 'wagmi';
 import { QueryClientProvider, QueryClient } from '@tanstack/react-query';
 import { config } from '@/lib/wagmiConfig';
 
-// import FloatingAnimationRenderer from './FloatingAnimationRenderer';
-// import EventWatcher from './EventWatcher';
+import FloatingAnimationRenderer from './FloatingAnimationRenderer';
+import EventWatcher from './EventWatcher';
 
 const frogTheme = merge(darkTheme(), {
 	colors: {
@@ -81,9 +81,9 @@ export default function Providers({ children }: { children: React.ReactNode }) {
 						getSiweMessageOptions={getSiweMessageOptions}
 					>
 						<RainbowKitProvider modalSize="compact" theme={frogTheme}>
-							{/* <EventWatcher /> */}
+							<EventWatcher />
 							{children}
-							{/* <FloatingAnimationRenderer /> */}
+							<FloatingAnimationRenderer />
 						</RainbowKitProvider>
 					</RainbowKitSiweNextAuthProvider>
 				</QueryClientProvider>

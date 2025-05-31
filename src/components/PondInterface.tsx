@@ -20,12 +20,17 @@ import { PondPeriod } from '@/lib/types';
 import { useResponsiveBreakpoints } from '@/hooks/useBreakpoints';
 import TokenSelector from '@/components/TokenSelector';
 import useLocalStorage from 'use-local-storage';
+import ReferDialog from './ReferDialog';
+import { useReferralCode } from '@/hooks/useReferralCode';
+import { useAccount } from 'wagmi';
+import { toast } from 'sonner';
 
 interface PondInterfaceProps {
 	tokenAddress?: string;
+	initialReferrerCode?: string | null;
 }
 
-export default function PondInterface({ tokenAddress }: PondInterfaceProps) {
+export default function PondInterface({ tokenAddress, initialReferrerCode }: PondInterfaceProps) {
 	const {
 		selectedToken,
 		setSelectedToken,
@@ -38,14 +43,78 @@ export default function PondInterface({ tokenAddress }: PondInterfaceProps) {
 	} = useAppStore();
 
 	const { isLg } = useResponsiveBreakpoints();
+	const { address, isConnected } = useAccount();
 	const [lightningMode, setLightningMode] = useLocalStorage(
 		'lightningMode',
 		false,
 	);
 
+	const {
+		referrerCode,
+		isLoading: referralLoading,
+		error: referralError,
+		hasAppliedReferral,
+		fetchReferralCode,
+		applyReferralCode,
+	} = useReferralCode({ initialReferrerCode });
+
 	// State for timer information
 	const [timeRemaining, setTimeRemaining] = useState<number>(0);
 	const [isAboutToEnd, setIsAboutToEnd] = useState<boolean>(false);
+	
+	// State to track if we've processed the referral
+	const [hasProcessedReferral, setHasProcessedReferral] = useState(false);
+
+	// Handle referral code processing when user connects wallet
+	useEffect(() => {
+		if (
+			isConnected &&
+			address &&
+			referrerCode &&
+			!hasProcessedReferral &&
+			!hasAppliedReferral &&
+			!referralLoading
+		) {
+			const processReferral = async () => {
+				try {
+					// First fetch the user's own referral code to prevent self-referral
+					await fetchReferralCode();
+					
+					// Then apply the referrer's code
+					const success = await applyReferralCode(referrerCode);
+					if (success) {
+						toast.success('Referral code applied successfully! 🎉');
+					}
+				} catch (error) {
+					console.error('Error processing referral:', error);
+					if (referralError) {
+						toast.error(`Referral error: ${referralError}`);
+					}
+				} finally {
+					setHasProcessedReferral(true);
+				}
+			};
+
+			processReferral();
+		}
+	}, [
+		isConnected,
+		address,
+		referrerCode,
+		hasProcessedReferral,
+		hasAppliedReferral,
+		referralLoading,
+		fetchReferralCode,
+		applyReferralCode,
+		referralError,
+	]);
+
+	// Reset referral processing state when user disconnects
+	useEffect(() => {
+		if (!isConnected) {
+			setHasProcessedReferral(false);
+		}
+	}, [isConnected]);
 
 	// Set token based on tokenAddress prop (for dynamic routes)
 	useEffect(() => {
@@ -231,7 +300,7 @@ export default function PondInterface({ tokenAddress }: PondInterfaceProps) {
 									lightningMode
 										? 'bg-drip-300 text-secondary-950'
 										: 'bg-primary-200/10 text-primary-200',
-									'p-3 text-xs lg:pl-12',
+									'p-3 text-xs lg:pl-12 uppercase',
 								)}
 								onClick={() => {
 									const newLightningMode = !lightningMode;
@@ -258,6 +327,7 @@ export default function PondInterface({ tokenAddress }: PondInterfaceProps) {
 								{isLg ? `Turn Fast Mode ${lightningMode ? 'OFF' : 'ON'}` : ''}
 								<Zap size={18} />
 							</div>
+							<ReferDialog initialReferrerCode={referrerCode} />
 						</>
 					)}
 				</div>

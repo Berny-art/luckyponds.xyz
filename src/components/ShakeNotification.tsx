@@ -31,7 +31,7 @@ export default function ShakeNotification({
 			{/* Animated gradient background with CSS variables */}
 			<div className="animate-gradient rounded-md border-2 border-drip-300 bg-[linear-gradient(90deg,#F2E718_0%,#80E8A9_20%,#9353ED_50%,#ED5353_75%,#EDA553_100%)] pl-12">
 				{/* Content */}
-				<div className="flex min-w-48 items-center gap-1 rounded-[4px] p-3 backdrop-blur-sm">
+				<div className="flex min-w-48 items-center gap-1 rounded-[4px] p-3 backdrop-blur-sm uppercase">
 					<span className="font-bold font-mono text-drip-300 text-xs">
 						{latestEvent
 							? formatAddress(latestEvent.address)

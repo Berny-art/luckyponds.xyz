@@ -11,13 +11,16 @@ import { toast } from 'sonner';
 import { Input } from '@/components/ui/input';
 import { useCopyToClipboard } from 'usehooks-ts';
 import { useUserData } from '@/hooks/useUserData';
+import { cn } from '@/lib/utils';
 
 interface ReferralPageContentProps {
 	initialReferrerCode?: string | null;
+	isDialog?: boolean;
 }
 
 export default function ReferralPageContent({
 	initialReferrerCode,
+	isDialog = false,
 }: ReferralPageContentProps) {
 	const { address, isConnected } = useAccount();
 	const {
@@ -82,13 +85,14 @@ export default function ReferralPageContent({
 	};
 
 	return (
-		<div className="mx-auto flex min-h-[70vh] max-w-xl flex-col items-center justify-center gap-6 p-4">
+		<div className={cn('mx-auto flex', !isDialog ? 'min-h-[70vh]' : '', 'max-w-xl flex-col items-center justify-center gap-6 p-4')}>
+			{!isDialog && (
 			<h1 className="text-center font-bold font-mono text-3xl text-primary-200 md:text-5xl">
-				Feeling Lucky Yet?
+				 Feeling Lucky Yet?
 			</h1>
-
+			)}
 			<div className="text-center font-mono text-lg text-primary-200/50 leading-7">
-				Join the waitlist. Start earning{' '}
+				{!isDialog ? 'Join the waitlist. Start earning' : 'Earn '}{' '}
 				<span className="text-green-400">LUCK 🍀</span> by inviting your
 				friends. You referred{' '}
 				<Badge className="border border-drip-300 bg-drip-300/30 font-mono text-drip-300">

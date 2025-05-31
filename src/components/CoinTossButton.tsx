@@ -1,12 +1,11 @@
 // src/components/CoinTossButton.tsx
 'use client';
 /* eslint-disable @typescript-eslint/no-unused-vars */
-
 import { useState, useEffect, useRef } from 'react';
 import { Button } from './ui/button';
 import { useTossCoin } from '@/hooks/useTossCoin';
 import { useAppStore } from '@/stores/appStore';
-import { Loader2, Wallet, Clock } from 'lucide-react';
+import { Loader2, Wallet } from 'lucide-react';
 import type { PondComprehensiveInfo } from '@/lib/types';
 import { useAccount, useWriteContract } from 'wagmi';
 import { useConnectModal } from '@rainbow-me/rainbowkit';
@@ -15,7 +14,6 @@ import { toast } from 'sonner';
 import { PondStatus } from '@/functions/getPondStatus';
 import { usePondStatus } from '@/hooks/usePondStatus';
 import { PondPeriod } from '@/lib/types';
-import PondInfo from './PondInfo';
 
 interface CoinTossButtonProps {
 	amount: string;
@@ -298,7 +296,7 @@ export default function CoinTossButton({
 		if (isTimeLocked || is5MinutePondInTimelock()) {
 			return 'bg-orange-500 text-white hover:bg-orange-500'; // Orange for timelock/selecting winner
 		}
-		return 'bg-drip-300 text-secondary-950 hover:bg-drip-300/90'; // Default styling
+		return 'text-white animate-gradient bg-[linear-gradient(90deg,#F2E718_0%,#80E8A9_20%,#9353ED_50%,#ED5353_75%,#EDA553_100%)]'; // Default styling
 	};
 
 	return (

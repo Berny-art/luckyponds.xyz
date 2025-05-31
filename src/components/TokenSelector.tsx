@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import { Check, ChevronDown } from 'lucide-react';
 import { cn, formatValue } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
+import Image from 'next/image';
 import {
 	Command,
 	CommandEmpty,
@@ -80,13 +81,13 @@ export default function TokenSelector({
 						<ChevronDown className="!size-6 ml-2" />
 					</Button>
 				</PopoverTrigger>
-				<PopoverContent className="w-[300px] border-primary-200 bg-secondary-950 p-0">
-					<Command>
+				<PopoverContent className="w-[300px] border-primary-200 p-0">
+					<Command className='bg-secondary-950 text-primary-200 border-2 border-drip-300'>
 						<CommandInput
 							placeholder="Search tokens..."
 							className="text-primary-200"
 						/>
-						<CommandList>
+						<CommandList >
 							<CommandEmpty>No tokens found.</CommandEmpty>
 							<CommandGroup>
 								{availableTokens.map((token) => (
@@ -94,11 +95,11 @@ export default function TokenSelector({
 										key={token.address + token.symbol}
 										value={token.symbol}
 										onSelect={() => handleTokenSelect(token)}
-										className="text-primary-200 hover:bg-primary-200/10"
+										className="text-primary-200 bg-secondary-800 hover:bg-secondary-900"
 									>
 										<div className="flex w-full items-center justify-between">
 											<div className="flex items-center gap-2">
-												<img
+												<Image
 													src={token.logo ?? ''}
 													alt={`${token.symbol} logo`}
 													width={24}
@@ -115,7 +116,7 @@ export default function TokenSelector({
 											<Check
 												className={cn(
 													'ml-auto h-4 w-4',
-													selectedToken.address === token.address
+													selectedToken.name === token.name
 														? 'opacity-100'
 														: 'opacity-0',
 												)}
