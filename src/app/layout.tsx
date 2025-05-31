@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import { Roboto_Mono } from 'next/font/google';
 import './globals.css';
 import Providers from '@/components/Providers';
-import Header from '@/components/Header';
+import HeaderWrapper from '@/components/HeaderWrapper';
 import { Toaster } from '@/components/ui/sonner';
 import Image from 'next/image';
 
@@ -53,7 +53,7 @@ export default function RootLayout({
 				className={`${RobotoMono.variable} relative h-screen w-full overflow-x-hidden bg-secondary-950 bg-top font-bold text-roboto-mono text-secondary-950 antialiased lg:overflow-y-hidden `}
 			>
 				<Providers>
-					<Header />
+					<HeaderWrapper />
 					{children}
 				</Providers>
 				<Toaster
