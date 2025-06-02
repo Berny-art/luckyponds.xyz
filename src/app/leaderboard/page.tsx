@@ -317,7 +317,7 @@ export default function Leaderboard() {
 					</div>
 				)}
 
-				<div className="scrollbar-custom w-full overflow-x-auto rounded-lg bg-primary-200/5 p-4">
+				<div className="scrollbar-custom w-full overflow-y-scroll max-h-[60vh] overflow-x-auto rounded-lg bg-primary-200/5 p-4">
 					<Table>
 						<TableHeader>
 							<TableRow className="border-primary-200/20 border-b font-mono hover:bg-primary-200/5">
@@ -442,7 +442,7 @@ export default function Leaderboard() {
 				<div className="mt-4 text-center text-primary-200/70 text-sm">
 					{searchAddress
 						? `Showing user data for ${formatAddress(searchAddress)}`
-						: `Showing ${items.length} of ${totalUsers} players • Leaderboard updates every hour.`}
+						: `Showing ${items.length} of ${totalUsers} players • Leaderboard updates every 15m.`}
 				</div>
 			</div>
 		</div>

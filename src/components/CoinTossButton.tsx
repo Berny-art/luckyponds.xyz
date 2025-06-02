@@ -23,6 +23,7 @@ interface CoinTossButtonProps {
 	onTransactionSuccess?: () => void; // New callback prop
 	timeRemaining?: number; // Time remaining in milliseconds
 	isAboutToEnd?: boolean; // Whether timer is about to end (5 seconds)
+	canToss?: boolean; // Optional prop to control toss availability
 }
 
 export default function CoinTossButton({
@@ -33,6 +34,7 @@ export default function CoinTossButton({
 	onTransactionSuccess, // Add the new prop
 	timeRemaining,
 	isAboutToEnd,
+	canToss = true, // Optional prop to control toss availability
 }: CoinTossButtonProps) {
 	const { address } = useAccount();
 	const isConnected = !!address;
@@ -281,6 +283,7 @@ export default function CoinTossButton({
 		(isConnected &&
 			(!selectedPond ||
 				amount === '0' ||
+				!canToss ||
 				numberOfTosses < 1 ||
 				pondStatus === PondStatus.NotStarted ||
 				pondStatus === PondStatus.Completed ||

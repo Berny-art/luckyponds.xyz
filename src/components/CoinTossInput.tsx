@@ -211,6 +211,7 @@ export default function CoinTossInput({
 					onTransactionSuccess={onTransactionSuccess}
 					timeRemaining={timeRemaining}
 					isAboutToEnd={isAboutToEnd}
+					canToss={canToss}
 				/>
 			)}
 		</div>
