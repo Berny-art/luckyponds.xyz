@@ -101,27 +101,126 @@ export default function PondTimer({ pondInfo, onTimerUpdate }: PondTimerProps) {
 		return targetTime.getTime();
 	};
 
-	// Calculate the start time for the current 5-minute cycle
-	const get5MinuteCycleStartTime = (endTime: number) => {
-		return endTime - FIVE_MINUTES_MS;
+	// Calculate the next hourly interval boundary (aligned to UTC)
+	const getNextHourlyEndTime = () => {
+		const now = new Date();
+		const targetTime = new Date(now);
+		
+		// Set to next hour boundary (0 minutes, 0 seconds)
+		targetTime.setUTCHours(targetTime.getUTCHours() + 1, 0, 0, 0);
+		
+		return targetTime.getTime();
+	};
+
+	// Calculate the next daily interval boundary (aligned to UTC)
+	const getNextDailyEndTime = () => {
+		const now = new Date();
+		const targetTime = new Date(now);
+		
+		// Set to next day boundary (0 hours, 0 minutes, 0 seconds)
+		targetTime.setUTCDate(targetTime.getUTCDate() + 1);
+		targetTime.setUTCHours(0, 0, 0, 0);
+		
+		return targetTime.getTime();
+	};
+
+	// Calculate the next weekly interval boundary (aligned to UTC, Monday start)
+	const getNextWeeklyEndTime = () => {
+		const now = new Date();
+		const targetTime = new Date(now);
+		
+		// Get current day of week (0 = Sunday, 1 = Monday, etc.)
+		const currentDay = targetTime.getUTCDay();
+		
+		// Calculate days until next Monday (start of week)
+		const daysUntilNextMonday = currentDay === 0 ? 1 : 8 - currentDay;
+		
+		targetTime.setUTCDate(targetTime.getUTCDate() + daysUntilNextMonday);
+		targetTime.setUTCHours(0, 0, 0, 0);
+		
+		return targetTime.getTime();
+	};
+
+	// Calculate the next monthly interval boundary (aligned to UTC)
+	const getNextMonthlyEndTime = () => {
+		const now = new Date();
+		const targetTime = new Date(now);
+		
+		// Set to first day of next month (0 hours, 0 minutes, 0 seconds)
+		targetTime.setUTCMonth(targetTime.getUTCMonth() + 1, 1);
+		targetTime.setUTCHours(0, 0, 0, 0);
+		
+		return targetTime.getTime();
+	};
+
+	// Get the next end time based on pond period
+	const getNextEndTime = () => {
+		switch (pondInfo.period) {
+			case PondPeriod.FIVE_MIN:
+				return getNext5MinuteEndTime();
+			case PondPeriod.HOURLY:
+				return getNextHourlyEndTime();
+			case PondPeriod.DAILY:
+				return getNextDailyEndTime();
+			case PondPeriod.WEEKLY:
+				return getNextWeeklyEndTime();
+			case PondPeriod.MONTHLY:
+				return getNextMonthlyEndTime();
+			default:
+				// For custom or unknown periods, use contract end time
+				return Number(pondInfo.endTime) * 1000;
+		}
+	};
+
+	// Get the duration for the current period cycle
+	const getPeriodDuration = () => {
+		switch (pondInfo.period) {
+			case PondPeriod.FIVE_MIN:
+				return 5 * 60 * 1000; // 5 minutes
+			case PondPeriod.HOURLY:
+				return 60 * 60 * 1000; // 1 hour
+			case PondPeriod.DAILY:
+				return 24 * 60 * 60 * 1000; // 1 day
+			case PondPeriod.WEEKLY:
+				return 7 * 24 * 60 * 60 * 1000; // 1 week
+			case PondPeriod.MONTHLY:
+				return 30 * 24 * 60 * 60 * 1000; // 30 days (approximate)
+			default:
+				return FIVE_MINUTES_MS; // fallback
+		}
+	};
+
+	// Calculate the start time for the current cycle
+	const getCycleStartTime = (endTime: number) => {
+		const duration = getPeriodDuration();
+		return endTime - duration;
 	};
 
 	// Set up progress bar calculation
 	const setupProgressBar = () => {
-		if (pondInfo.period === PondPeriod.FIVE_MIN) {
-			// For 5-minute ponds, always calculate based on 5-minute cycles
-			const nextEndTime = getNext5MinuteEndTime();
-			const cycleStartTime = get5MinuteCycleStartTime(nextEndTime);
+		// For all standard pond periods, calculate based on UTC cycles
+		if (pondInfo.period !== PondPeriod.CUSTOM) {
+			const nextEndTime = getNextEndTime();
+			const cycleStartTime = getCycleStartTime(nextEndTime);
 
 			startTimeRef.current = cycleStartTime;
-			durationRef.current = FIVE_MINUTES_MS;
-			setShowProgressBar(true);
+			durationRef.current = getPeriodDuration();
+			
+			// Only show progress bar for 5-minute ponds or when other ponds have 5 minutes or less
+			if (pondInfo.period === PondPeriod.FIVE_MIN) {
+				setShowProgressBar(true);
+			} else {
+				const now = Date.now();
+				const timeRemaining = nextEndTime - now;
+				setShowProgressBar(timeRemaining <= FIVE_MINUTES_MS && timeRemaining > 0);
+			}
+			
 			setEndTimeMs(nextEndTime);
 
 			// Track this cycle
 			currentCycleEndTimeRef.current = nextEndTime;
 		} else {
-			// For other ponds, use the contract end time
+			// For custom ponds, use the contract end time
 			if (!pondInfo.endTime || Number(pondInfo.endTime) === 0) {
 				setProgressValue(0);
 				setShowProgressBar(false);
@@ -162,8 +261,8 @@ export default function PondTimer({ pondInfo, onTimerUpdate }: PondTimerProps) {
 
 		// Set interval for updates
 		intervalRef.current = setInterval(() => {
-			// For 5-minute ponds, check if we need to recalculate the cycle
-			if (pondInfo.period === PondPeriod.FIVE_MIN) {
+			// For standard pond periods (not custom), check if we need to recalculate the cycle
+			if (pondInfo.period !== PondPeriod.CUSTOM) {
 				const now = Date.now();
 				// If we've passed the current end time AND we haven't already handled this cycle
 				if (endTimeMs && now >= endTimeMs && !isHandlingCompletionRef.current) {
@@ -174,11 +273,12 @@ export default function PondTimer({ pondInfo, onTimerUpdate }: PondTimerProps) {
 						// Trigger immediate refetch when cycle completes
 						triggerDataRefresh();
 
-						const nextEndTime = getNext5MinuteEndTime();
-						const cycleStartTime = get5MinuteCycleStartTime(nextEndTime);
+						const nextEndTime = getNextEndTime();
+						const cycleStartTime = getCycleStartTime(nextEndTime);
 
 						// Update refs FIRST
 						startTimeRef.current = cycleStartTime;
+						durationRef.current = getPeriodDuration();
 						hasTriggeredRefetchRef.current = false; // Reset for new cycle
 
 						// Update current cycle tracking
@@ -197,18 +297,20 @@ export default function PondTimer({ pondInfo, onTimerUpdate }: PondTimerProps) {
 						setEndTimeMs(nextEndTime);
 
 						// Schedule additional refetch after timelock period
+						// Use different timelock durations based on pond period
+						const timelockDuration = pondInfo.period === PondPeriod.FIVE_MIN ? 25000 : 65000; // 25s for 5-min, 65s for others
 						setTimeout(() => {
 							triggerDataRefresh();
 							// Reset completion handling flag after post-timelock refresh
 							isHandlingCompletionRef.current = false;
-						}, 25000); // 25 seconds (20s timelock + 5s buffer)
+						}, timelockDuration);
 					}, 100); // Small delay to break execution context
 				}
 
-				// Always update progress for 5-minute ponds (this ensures continuous updates)
+				// Always update progress for standard ponds (this ensures continuous updates)
 				updateProgress();
 			} else {
-				// For other ponds, check if we should show progress and update accordingly
+				// For custom ponds, check if we should show progress and update accordingly
 				const endTimeSeconds = Number(pondInfo.endTime);
 				const endTimeMilliseconds = endTimeSeconds * 1000;
 				const now = Date.now();
@@ -273,13 +375,8 @@ export default function PondTimer({ pondInfo, onTimerUpdate }: PondTimerProps) {
 			// Reset cycle counter for fresh start
 			setCycleCounter(0);
 
-			// Set up the timer and progress bar
-			if (pondInfo.period === PondPeriod.FIVE_MIN) {
-				setupProgressBar(); // This handles 5-minute cycle calculation
-			} else {
-				updateEndTime(); // Use contract time for other ponds
-				setupProgressBar();
-			}
+			// Set up the timer and progress bar for all pond types
+			setupProgressBar(); // This now handles all pond types
 
 			// Set up update interval
 			setupInterval();
@@ -297,15 +394,7 @@ export default function PondTimer({ pondInfo, onTimerUpdate }: PondTimerProps) {
 		};
 	}, [pondInfo]);
 
-	// Function to update the end time for non-5-minute ponds
-	const updateEndTime = () => {
-		if (pondInfo?.endTime === undefined) return;
 
-		// Convert from seconds (blockchain timestamp) to milliseconds (JS timestamp)
-		const endTimeMilliseconds = Number(pondInfo.endTime) * 1000;
-
-		setEndTimeMs(endTimeMilliseconds);
-	};
 
 	// Handle completion
 	const handleComplete = () => {
@@ -314,18 +403,19 @@ export default function PondTimer({ pondInfo, onTimerUpdate }: PondTimerProps) {
 			return;
 		}
 
-		// For 5-minute ponds, immediately set up the next cycle
-		if (pondInfo.period === PondPeriod.FIVE_MIN) {
+		// For standard pond periods (not custom), immediately set up the next cycle
+		if (pondInfo.period !== PondPeriod.CUSTOM) {
 			isHandlingCompletionRef.current = true;
 
 			// Immediate refetch when timer completes
 			triggerDataRefresh();
 
-			const nextEndTime = getNext5MinuteEndTime();
-			const cycleStartTime = get5MinuteCycleStartTime(nextEndTime);
+			const nextEndTime = getNextEndTime();
+			const cycleStartTime = getCycleStartTime(nextEndTime);
 
 			// Update refs FIRST
 			startTimeRef.current = cycleStartTime;
+			durationRef.current = getPeriodDuration();
 			hasTriggeredRefetchRef.current = false; // Reset for new cycle
 
 			// Update cycle tracking AFTER refs are updated
@@ -344,13 +434,15 @@ export default function PondTimer({ pondInfo, onTimerUpdate }: PondTimerProps) {
 			setEndTimeMs(nextEndTime);
 
 			// Schedule additional refetch after timelock period ends
+			// Use different timelock durations based on pond period
+			const timelockDuration = pondInfo.period === PondPeriod.FIVE_MIN ? 25000 : 65000; // 25s for 5-min, 65s for others
 			setTimeout(() => {
 				triggerDataRefresh();
 				// Reset completion handling flag after refresh
 				isHandlingCompletionRef.current = false;
-			}, 25000); // 25 seconds (20s timelock + 5s buffer)
+			}, timelockDuration);
 		} else {
-			// For other ponds, immediate refetch when timer completes
+			// For custom ponds, immediate refetch when timer completes
 			triggerDataRefresh();
 
 			// Hide progress bar when completed

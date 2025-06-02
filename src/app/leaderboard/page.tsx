@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import {
 	Table,
 	TableBody,
@@ -23,6 +23,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { useAccount } from 'wagmi';
 import { Badge } from '@/components/ui/badge';
+import { useQuery, useInfiniteQuery } from '@tanstack/react-query';
 
 // Fetch leaderboard data
 const fetchLeaderboard = async (
@@ -71,51 +72,87 @@ const fetchUserData = async (address: string): Promise<UserData | null> => {
 export default function Leaderboard() {
 	const [sortBy, setSortBy] = useState<SortField>('total_points');
 	const [sortOrder, setSortOrder] = useState<SortOrder>('DESC');
-	const [items, setItems] = useState<LeaderboardEntry[]>([]);
-	const [hasMore, setHasMore] = useState(true);
-	const [isFetching, setIsFetching] = useState(false);
-	const [isSearching, setIsSearching] = useState(false);
-	const [totalUsers, setTotalUsers] = useState(0);
 	const [searchInput, setSearchInput] = useState('');
 	const [searchAddress, setSearchAddress] = useState('');
 	const [errorMessage, setErrorMessage] = useState('');
+	const [isSorting, setIsSorting] = useState(false);
 
 	const pageSize = 10;
 	const observerRef = useRef<HTMLDivElement | null>(null);
 	const { address } = useAccount();
 
-	// Fetch next page of leaderboard data
-	const fetchNextPage = useCallback(async () => {
-		if (isFetching || !hasMore || searchAddress) return;
-		setIsFetching(true);
-		try {
-			const newOffset = items.length;
-			const newData = await fetchLeaderboard(
-				sortBy,
-				sortOrder,
-				pageSize,
-				newOffset,
-			);
-			setItems((prev) => [...prev, ...newData.leaderboard]);
-			setTotalUsers(newData.total_users);
-			setHasMore(newOffset + newData.leaderboard.length < newData.total_users);
-		} catch (e) {
-			console.error(e);
-			setErrorMessage(
-				e instanceof Error
-					? e.message
-					: 'An error occurred loading more results',
-			);
-		} finally {
-			setIsFetching(false);
+	// Query key factory
+	const queryKeys = {
+		leaderboard: (sortBy: SortField, sortOrder: SortOrder) => 
+			['leaderboard', sortBy, sortOrder] as const,
+		user: (address: string) => ['user', address] as const,
+	};
+
+	// React Query for leaderboard data with infinite scrolling
+	const {
+		data: leaderboardData,
+		fetchNextPage,
+		hasNextPage,
+		isFetching,
+		isFetchingNextPage,
+		error: leaderboardError,
+	} = useInfiniteQuery<LeaderboardData, Error>({
+		queryKey: queryKeys.leaderboard(sortBy, sortOrder),
+		queryFn: async ({ pageParam = 0 }) => {
+			return await fetchLeaderboard(sortBy, sortOrder, pageSize, pageParam as number);
+		},
+		getNextPageParam: (lastPage: LeaderboardData, allPages: LeaderboardData[]) => {
+			const totalFetched = allPages.reduce((acc, page) => acc + page.leaderboard.length, 0);
+			return totalFetched < lastPage.total_users ? totalFetched : undefined;
+		},
+		enabled: !searchAddress, // Only fetch when not searching for specific user
+		staleTime: 1000 * 60 * 2, // 2 minutes
+		gcTime: 1000 * 60 * 5, // 5 minutes
+		initialPageParam: 0,
+	});
+
+	// React Query for user search
+	const {
+		data: userData,
+		isFetching: isSearching,
+		error: searchError,
+	} = useQuery<UserData | null, Error>({
+		queryKey: queryKeys.user(searchAddress),
+		queryFn: () => fetchUserData(searchAddress),
+		enabled: !!searchAddress && searchAddress.length === 42, // Only fetch if valid address
+		staleTime: 1000 * 60 * 5, // 5 minutes
+		retry: 1, // Only retry once for user searches
+	});
+
+	// Flatten leaderboard data for display
+	const items: LeaderboardEntry[] = useMemo(() => {
+		if (searchAddress && userData) {
+			// Show user data when searching
+			return [
+				{
+					address: userData.address,
+					total_points: userData.total_points,
+					toss_points: userData.toss_points,
+					winner_points: userData.winner_points,
+					referral_points: userData.referral_points,
+					rank: userData.rank,
+					total_tosses: userData.total_tosses,
+					total_wins: userData.total_wins,
+					total_value_spent: userData.total_value_spent,
+				},
+			];
 		}
-	}, [items.length, sortBy, sortOrder, hasMore, isFetching, searchAddress]);
+		return leaderboardData?.pages.flatMap(page => page.leaderboard) || [];
+	}, [leaderboardData, searchAddress, userData]);
+
+	const totalUsers = (leaderboardData?.pages[0] as LeaderboardData)?.total_users || 0;
+	const hasMore = hasNextPage;
 
 	// Set up infinite scroll
 	useEffect(() => {
 		const observer = new IntersectionObserver(
 			(entries) => {
-				if (entries[0].isIntersecting && hasMore && !searchAddress) {
+				if (entries[0].isIntersecting && hasMore && !searchAddress && !isFetching) {
 					fetchNextPage();
 				}
 			},
@@ -123,115 +160,69 @@ export default function Leaderboard() {
 		);
 		if (observerRef.current) observer.observe(observerRef.current);
 		return () => observer.disconnect();
-	}, [fetchNextPage, hasMore, searchAddress]);
-
-	// Refetch on sort changes
-	useEffect(() => {
-		// Don't refetch if we're in search mode
-		if (searchAddress) return;
-
-		const loadInitial = async () => {
-			setIsFetching(true);
-			setErrorMessage('');
-			try {
-				const data = await fetchLeaderboard(sortBy, sortOrder, pageSize, 0);
-				setItems(data.leaderboard);
-				setTotalUsers(data.total_users);
-				setHasMore(data.leaderboard.length < data.total_users);
-			} catch (e) {
-				console.error(e);
-				setErrorMessage(
-					e instanceof Error ? e.message : 'Failed to load leaderboard data',
-				);
-			} finally {
-				setIsFetching(false);
-			}
-		};
-		loadInitial();
-	}, [sortBy, sortOrder, searchAddress]);
+	}, [fetchNextPage, hasMore, searchAddress, isFetching]);
 
 	// Handle searching for a specific user
 	const handleSearch = async (addressToSearch: string) => {
 		if (!addressToSearch) return;
 
-		setIsSearching(true);
 		setErrorMessage('');
-		try {
-			const data = await fetchUserData(addressToSearch);
-			if (data) {
-				setSearchAddress(addressToSearch);
-				// Convert to LeaderboardEntry format to display in the table
-				setItems([
-					{
-						address: data.address,
-						total_points: data.total_points,
-						toss_points: data.toss_points,
-						winner_points: data.winner_points,
-						referral_points: data.referral_points,
-						rank: data.rank,
-						total_tosses: data.total_tosses,
-						total_wins: data.total_wins,
-						total_value_spent: data.total_value_spent,
-					},
-				]);
-				setHasMore(false);
-			} else {
-				setErrorMessage(
-					`No data found for address ${formatAddress(addressToSearch)}`,
-				);
-				setSearchAddress('');
-				// Reload general leaderboard
-				const data = await fetchLeaderboard(sortBy, sortOrder, pageSize, 0);
-				setItems(data.leaderboard);
-				setTotalUsers(data.total_users);
-				setHasMore(data.leaderboard.length < data.total_users);
-			}
-		} catch (e) {
-			console.error(e);
-			setErrorMessage(
-				e instanceof Error ? e.message : 'Error searching for user',
-			);
-			setSearchAddress('');
-		} finally {
-			setIsSearching(false);
-		}
+		setSearchAddress(addressToSearch);
 	};
 
 	// Handle clearing the search and restoring leaderboard
-	const clearSearch = async () => {
+	const clearSearch = () => {
 		setSearchInput('');
 		setSearchAddress('');
 		setErrorMessage('');
-
-		// Reload general leaderboard
-		setIsFetching(true);
-		try {
-			const data = await fetchLeaderboard(sortBy, sortOrder, pageSize, 0);
-			setItems(data.leaderboard);
-			setTotalUsers(data.total_users);
-			setHasMore(data.leaderboard.length < data.total_users);
-		} catch (e) {
-			console.error(e);
-			setErrorMessage(
-				e instanceof Error ? e.message : 'Failed to load leaderboard data',
-			);
-		} finally {
-			setIsFetching(false);
-		}
 	};
 
-	// Sorting functions
-	const handleSort = (field: SortField) => {
+	// Update error handling for React Query errors
+	useEffect(() => {
+		if (leaderboardError) {
+			setErrorMessage(
+				leaderboardError instanceof Error 
+					? leaderboardError.message 
+					: 'Failed to load leaderboard data'
+			);
+		} else if (searchError) {
+			setErrorMessage(
+				searchError instanceof Error 
+					? searchError.message 
+					: 'Error searching for user'
+			);
+		} else if (searchAddress && userData === null) {
+			setErrorMessage(
+				`No data found for address ${formatAddress(searchAddress)}`
+			);
+		}
+	}, [leaderboardError, searchError, searchAddress, userData]);
+
+	// Sorting functions with React Query state management
+	const handleSort = useCallback((field: SortField) => {
+		// Prevent rapid clicking while data is fetching
+		if (isFetching || isFetchingNextPage) return;
+		
+		setIsSorting(true);
+		
+		// Use a single state update to prevent multiple re-renders
 		if (field === sortBy) {
-			setSortOrder(sortOrder === 'ASC' ? 'DESC' : 'ASC');
+			setSortOrder(prevOrder => prevOrder === 'ASC' ? 'DESC' : 'ASC');
 		} else {
+			// Batch the state updates using functional updates
 			setSortBy(field);
 			setSortOrder('DESC');
 		}
-	};
+		
+		// Reset sorting state after a short delay
+		setTimeout(() => {
+			setIsSorting(false);
+		}, 300);
+	}, [sortBy, isFetching, isFetchingNextPage]);
 
 	const getSortIndicator = (field: SortField) => {
 		if (sortBy !== field) return null;
+		if (isSorting || isFetching) return ' ⟳'; // Loading spinner character
 		return sortOrder === 'ASC' ? ' ↑' : ' ↓';
 	};
 
@@ -339,8 +330,12 @@ export default function Leaderboard() {
 								{['total_points', 'referral_points'].map((field) => (
 									<TableHead
 										key={field}
-										className="min-w-48 cursor-pointer font-bold text-primary-200 hover:text-drip-300"
-										onClick={() => handleSort(field as SortField)}
+										className={`min-w-48 font-bold text-primary-200 ${
+											isSorting || isFetching
+												? 'cursor-wait opacity-50' 
+												: 'cursor-pointer hover:text-drip-300'
+										}`}
+										onClick={() => !(isSorting || isFetching) && handleSort(field as SortField)}
 									>
 										<div className="flex items-center gap-1">
 											<span>
