@@ -5,7 +5,7 @@ import XIcon from './ui/icons/xIcon';
 import DiscordIcon from './ui/icons/discordIcon';
 import Link from 'next/link';
 import { Badge } from './ui/badge';
-import { Menu } from 'lucide-react';
+import { Menu, Volume2, VolumeX } from 'lucide-react';
 import {
 	Sheet,
 	SheetContent,
@@ -19,11 +19,13 @@ import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import ReferDialogMobile from './ReferDialogMobile';
 import { useSearchParams } from 'next/navigation';
+import { useAppStore } from '@/stores/appStore';
 
 export default function Header() {
 	const [isMobile, setIsMobile] = useState(false);
 	const searchParams = useSearchParams();
 	const referrerCode = searchParams.get('ref');
+	const { isSoundEnabled, setSoundEnabled } = useAppStore();
 
 	// Check if we're on mobile on client side
 	useEffect(() => {
@@ -74,6 +76,17 @@ export default function Header() {
 
 						<div className="flex items-center justify-end gap-8">
 							<nav className="flex gap-6">
+								<button
+									onClick={() => setSoundEnabled(!isSoundEnabled)}
+									className="hover:text-primary-200 text-drip-300"
+									title={isSoundEnabled ? 'Disable sound' : 'Enable sound'}
+								>
+									{isSoundEnabled ? (
+										<Volume2 className="size-6" />
+									) : (
+										<VolumeX className="size-6" />
+									)}
+								</button>
 								<a
 									href="https://discord.gg/pXHSuqCvbm"
 									target="_blank"
@@ -139,8 +152,19 @@ export default function Header() {
 									</SheetClose>
 								</nav>
 
-								{/* Social Links */}
+								{/* Social Links and Sound Control */}
 								<div className="flex gap-6 px-4">
+									<button
+										onClick={() => setSoundEnabled(!isSoundEnabled)}
+										className="hover:text-primary-200 text-drip-300"
+										title={isSoundEnabled ? 'Disable sound' : 'Enable sound'}
+									>
+										{isSoundEnabled ? (
+											<Volume2 className="size-6" />
+										) : (
+											<VolumeX className="size-6" />
+										)}
+									</button>
 									<a
 										href="https://discord.gg/pXHSuqCvbm"
 										target="_blank"

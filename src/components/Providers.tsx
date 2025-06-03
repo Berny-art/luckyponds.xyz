@@ -18,6 +18,7 @@ import { config } from '@/lib/wagmiConfig';
 
 import FloatingAnimationRenderer from './FloatingAnimationRenderer';
 import EventWatcher from './EventWatcher';
+import SoundProvider from './SoundProvider';
 
 const frogTheme = merge(darkTheme(), {
 	colors: {
@@ -81,9 +82,11 @@ export default function Providers({ children }: { children: React.ReactNode }) {
 						getSiweMessageOptions={getSiweMessageOptions}
 					>
 						<RainbowKitProvider modalSize="compact" theme={frogTheme}>
-							<EventWatcher />
-							{children}
-							<FloatingAnimationRenderer />
+							<SoundProvider>
+								<EventWatcher />
+								{children}
+								<FloatingAnimationRenderer />
+							</SoundProvider>
 						</RainbowKitProvider>
 					</RainbowKitSiweNextAuthProvider>
 				</QueryClientProvider>

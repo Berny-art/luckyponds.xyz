@@ -95,6 +95,12 @@ interface AppState {
 	addEvent: (event: ContractEvent) => void;
 	setPondInfo: (pondInfo: PondComprehensiveInfo) => void;
 	clearEvents: () => void;
+
+	// Sound state
+	isSoundEnabled: boolean;
+	hasFirstClicked: boolean;
+	setSoundEnabled: (enabled: boolean) => void;
+	setFirstClicked: () => void;
 }
 
 // Animation text options
@@ -204,11 +210,19 @@ export const useAppStore = create<AppState>()(
 
 			setPondInfo: (pondInfo) => set({ pondInfo }),
 			clearEvents: () => set({ events: [], latestEvent: null }),
+
+			// Sound state
+			isSoundEnabled: false,
+			hasFirstClicked: false,
+			setSoundEnabled: (enabled) => set({ isSoundEnabled: enabled }),
+			setFirstClicked: () => set({ hasFirstClicked: true }),
 		}),
 		{
 			name: 'app-storage',
 			partialize: (state) => ({
 				selectedToken: state.selectedToken,
+				isSoundEnabled: state.isSoundEnabled,
+				hasFirstClicked: state.hasFirstClicked,
 			}),
 		},
 	),

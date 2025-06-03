@@ -13,6 +13,10 @@ import { Button } from './ui/button';
 import { useAllPondWinners } from '@/hooks/useAllPondWinners';
 import { useAppStore } from '@/stores/appStore';
 import PondWinnerCard from './PondWinnerCard';
+import { usePartyHorn } from '@/hooks/usePartyHorn';
+import { triggerFullConfetti } from '@/lib/confetti';
+import { useState, useEffect } from 'react';
+import { PondPeriod } from '@/lib/types';
 
 /**
  * Mobile-friendly component for displaying pond winners
@@ -22,6 +26,7 @@ export default function PondWinnerDialog({
 	classNames,
 }: { classNames?: string }) {
 	const { selectedToken } = useAppStore();
+	const triggerPartyHorn = usePartyHorn();
 
 	// Fetch winners for all pond periods using the dedicated hook
 	const { winners, isLoading, isError } = useAllPondWinners(
@@ -51,6 +56,11 @@ export default function PondWinnerDialog({
 						'!bg-drip-300/10 flex w-24 justify-start border-2 border-drip-300 px-4 py-[21px] hover:bg-primary-200/10',
 						classNames,
 					)}
+					onClick={() => {
+						// Trigger confetti and party horn when opening the dialog
+						triggerFullConfetti(PondPeriod.WEEKLY);
+						triggerPartyHorn();
+					}}
 				>
 					<Trophy className="h-5 w-5 text-primary-200" />
 				</Button>

@@ -14,6 +14,7 @@ import { toast } from 'sonner';
 import { PondStatus } from '@/functions/getPondStatus';
 import { usePondStatus } from '@/hooks/usePondStatus';
 import { PondPeriod } from '@/lib/types';
+import { triggerFullConfetti } from '@/lib/confetti';
 
 interface CoinTossButtonProps {
 	amount: string;
@@ -43,9 +44,20 @@ export default function CoinTossButton({
 	const { tossCoin, isLoading: tossLoading, lastTxResult } = useTossCoin();
 	const [isProcessing, setIsProcessing] = useState(false);
 	const { writeContractAsync, isPending: isWritePending } = useWriteContract();
+	const [isMobile, setIsMobile] = useState(false);
 
 	// Ref to track which transaction hash we've already processed
 	const processedTxHashRef = useRef<string | null>(null);
+
+	// Check if we're on mobile
+	useEffect(() => {
+		const checkIsMobile = () => {
+			setIsMobile(window.innerWidth < 768);
+		};
+		checkIsMobile();
+		window.addEventListener('resize', checkIsMobile);
+		return () => window.removeEventListener('resize', checkIsMobile);
+	}, []);
 
 	// Get pond status with accurate timelock information
 	const { status: pondStatus } = usePondStatus(pondInfo);
@@ -64,7 +76,7 @@ export default function CoinTossButton({
 			// Transaction was confirmed successfully, trigger callback
 			onTransactionSuccess();
 		}
-	}, [lastTxResult, onTransactionSuccess]);
+	}, [lastTxResult, onTransactionSuccess, isMobile]);
 
 	// Effect to handle SelectWinner status and trigger data refresh
 	useEffect(() => {
