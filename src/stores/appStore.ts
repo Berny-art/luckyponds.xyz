@@ -53,14 +53,14 @@ const DEFAULT_TOKENS: Token[] = [
 		decimals: 18,
 		isNative: true,
 	},
-	{
-		symbol: 'BUDDY',
-		address: '0x0000000000000000000000000000000000000000',
-		name: 'Alright Buddy',
-		logo: 'https://assets.coingecko.com/coins/images/54657/standard/alright_buddy_pfp.png?1740895394',
-		decimals: 18,
-		isNative: true,
-	},
+	// {
+	// 	symbol: 'BUDDY',
+	// 	address: '0x0000000000000000000000000000000000000000',
+	// 	name: 'Alright Buddy',
+	// 	logo: 'https://assets.coingecko.com/coins/images/54657/standard/alright_buddy_pfp.png?1740895394',
+	// 	decimals: 18,
+	// 	isNative: true,
+	// },
 	{
 		symbol: 'PURR',
 		address: '0xC003D79B8a489703b1753711E3ae9fFDFC8d1a82',

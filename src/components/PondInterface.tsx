@@ -34,6 +34,7 @@ interface PondInterfaceProps {
 export default function PondInterface({ tokenAddress, initialReferrerCode }: PondInterfaceProps) {
 	const {
 		selectedToken,
+		availableTokens,
 		setSelectedToken,
 		getTokenByAddress,
 		selectedPond,
@@ -120,9 +121,16 @@ export default function PondInterface({ tokenAddress, initialReferrerCode }: Pon
 	// Set token based on tokenAddress prop (for dynamic routes)
 	useEffect(() => {
 		if (tokenAddress) {
+			// Dynamic route: set token based on URL parameter
 			const token = getTokenByAddress(tokenAddress);
 			if (token && token.address !== selectedToken.address) {
 				setSelectedToken(token);
+			}
+		} else {
+			// Home page: ensure we're using the default native token (HYPE)
+			const nativeToken = availableTokens.find(token => token.isNative);
+			if (nativeToken && nativeToken.address !== selectedToken.address) {
+				setSelectedToken(nativeToken);
 			}
 		}
 	}, [
@@ -130,6 +138,7 @@ export default function PondInterface({ tokenAddress, initialReferrerCode }: Pon
 		selectedToken.address,
 		setSelectedToken,
 		getTokenByAddress,
+		availableTokens,
 	]);
 
 	// Use the current token address for pond fetching
