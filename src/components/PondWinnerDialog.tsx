@@ -15,13 +15,8 @@ import { useAppStore } from '@/stores/appStore';
 import PondWinnerCard from './PondWinnerCard';
 import { usePartyHorn } from '@/hooks/usePartyHorn';
 import { triggerFullConfetti } from '@/lib/confetti';
-import { useState, useEffect } from 'react';
 import { PondPeriod } from '@/lib/types';
 
-/**
- * Mobile-friendly component for displaying pond winners
- * Shows a trophy button that opens a dialog with all winners
- */
 export default function PondWinnerDialog({
 	classNames,
 }: { classNames?: string }) {
