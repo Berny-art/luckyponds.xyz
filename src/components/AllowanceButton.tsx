@@ -9,6 +9,7 @@ import { useAppStore } from '@/stores/appStore';
 import type { Token } from '@/stores/appStore';
 import type { PondComprehensiveInfo } from '@/lib/types';
 import { useAllowance } from '@/hooks/useAllowance';
+import { useCallback } from 'react';
 
 interface AllowanceButtonProps {
   token: Token;
@@ -32,7 +33,7 @@ export default function AllowanceButton({
   const { isApprovalNeeded, isApproving, approveToken } = useAllowance(token, amount, pondInfo);
 
   // Handle the connect wallet action with RainbowKit
-  const handleConnect = (e: React.MouseEvent) => {
+  const handleConnect = useCallback((e: React.MouseEvent) => {
     const x = e.clientX;
     const y = e.clientY;
     if (x && y) {
@@ -46,10 +47,10 @@ export default function AllowanceButton({
         description: 'Wallet connection is not available right now',
       });
     }
-  };
+  }, [showAnimation, openConnectModal]);
 
   // Handle the approval action
-  const handleApproval = async (e: React.MouseEvent) => {
+  const handleApproval = useCallback(async (e: React.MouseEvent) => {
     const x = e.clientX;
     const y = e.clientY;
     if (x && y) {
@@ -63,7 +64,7 @@ export default function AllowanceButton({
         onApprovalComplete?.();
       }, 1000);
     }
-  };
+  }, [showAnimation, approveToken, onApprovalComplete]);
 
   // Get the button text based on connection and approval status
   const getButtonText = () => {
@@ -87,13 +88,13 @@ export default function AllowanceButton({
   };
 
   // Handle the click action based on connection status
-  const handleClick = (e: React.MouseEvent) => {
+  const handleClick = useCallback((e: React.MouseEvent) => {
     if (!isConnected) {
       handleConnect(e);
     } else {
       handleApproval(e);
     }
-  };
+  }, [isConnected, handleConnect, handleApproval]);
 
   // Don't render if approval is not needed
   if (!isApprovalNeeded) {

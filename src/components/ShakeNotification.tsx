@@ -3,12 +3,13 @@
 
 import { formatAddress, formatValue } from '@/lib/utils';
 import { useAppStore } from '@/stores/appStore';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, memo } from 'react';
+
 interface ShakeNotificationProps {
 	className?: string;
 }
 
-export default function ShakeNotification({
+function ShakeNotification({
 	className = '',
 }: ShakeNotificationProps) {
 	// Get latest event from store
@@ -21,7 +22,7 @@ export default function ShakeNotification({
 		if (latestEvent && latestEvent.id !== eventKey) {
 			setEventKey(latestEvent.id);
 		}
-	}, [latestEvent, eventKey]);
+	}, [latestEvent?.id]); // Only depend on the ID, not the entire event object
 
 	return (
 		<div
@@ -48,3 +49,6 @@ export default function ShakeNotification({
 		</div>
 	);
 }
+
+// Memoize to prevent unnecessary re-renders
+export default memo(ShakeNotification);

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useWriteContract, useWaitForTransactionReceipt, useReadContract, useAccount, useBalance } from 'wagmi';
 import { useQueryClient } from '@tanstack/react-query';
 import { parseEther, formatEther } from 'viem';
@@ -34,8 +34,8 @@ export function useAllowance(token?: Token, maxTossAmount?: string, pondInfo?: P
 		token: token?.isNative ? undefined : token?.address as `0x${string}`
 	});
 
-	// Calculate max toss amount based on CoinTossInput logic
-	const getMaxTossAmount = () => {
+	// Calculate max toss amount based on CoinTossInput logic - memoized to prevent excessive recalculation
+	const getMaxTossAmount = useMemo(() => {
 		if (!balance || !pondInfo || !token) return maxTossAmount || '0';
 
 		const minTossPrice = pondInfo.minTossPrice || parseEther('0.01');
@@ -67,9 +67,9 @@ export function useAllowance(token?: Token, maxTossAmount?: string, pondInfo?: P
 		// Calculate total amount for max tosses
 		const calculatedMaxTossAmount = BigInt(maxTosses) * minTossPrice;
 		return formatEther(calculatedMaxTossAmount);
-	};
+	}, [balance?.value, pondInfo?.minTossPrice, pondInfo?.remainingTossAmount, pondInfo?.maxTotalTossAmount, token?.address, maxTossAmount]);
 
-	const effectiveMaxTossAmount = maxTossAmount || getMaxTossAmount();
+	const effectiveMaxTossAmount = maxTossAmount || getMaxTossAmount;
 
 	// Check current allowance for ERC20 tokens
 	const { data: currentAllowance, isLoading: isLoadingAllowance } = useReadContract({
@@ -131,42 +131,26 @@ export function useAllowance(token?: Token, maxTossAmount?: string, pondInfo?: P
 		}
 	}, [approvalHash, approvalSuccess, approvalError, approvalErrorDetails]);
 
-	// Check if approval is needed
-	const isApprovalNeeded = () => {
+	// Check if approval is needed - memoized to prevent excessive recalculation
+	const isApprovalNeeded = useMemo(() => {
 		if (!token || !effectiveMaxTossAmount || token.isNative || !requiresApproval(token)) {
-			console.log('🔍 Approval not needed:', { 
-				hasToken: !!token, 
-				hasAmount: !!effectiveMaxTossAmount, 
-				isNative: token?.isNative, 
-				requiresApproval: token ? requiresApproval(token) : false 
-			});
 			return false;
 		}
 
 		// If approval was completed locally, don't show approval needed anymore
 		if (approvalCompleted) {
-			console.log('🔍 Approval completed locally, no approval needed');
 			return false;
 		}
 
 		if (currentAllowance === undefined || isLoadingAllowance) {
-			console.log('🔍 Allowance loading or undefined:', { currentAllowance, isLoadingAllowance });
 			return false; // Don't show approval needed while loading
 		}
 
 		const requiredAmount = parseEther(effectiveMaxTossAmount);
 		const needsApprovalResult = needsApproval(currentAllowance || 0n, requiredAmount);
 		
-		console.log('🔍 Checking approval need:', {
-			currentAllowance: currentAllowance?.toString(),
-			requiredAmount: requiredAmount.toString(),
-			effectiveMaxTossAmount,
-			needsApprovalResult,
-			approvalCompleted
-		});
-		
 		return needsApprovalResult;
-	};
+	}, [token?.address, token?.isNative, effectiveMaxTossAmount, approvalCompleted, currentAllowance, isLoadingAllowance]);
 
 	// Function to approve ERC20 token spending
 	const approveToken = async () => {
@@ -215,7 +199,7 @@ export function useAllowance(token?: Token, maxTossAmount?: string, pondInfo?: P
 	};
 
 	return {
-		isApprovalNeeded: isApprovalNeeded(),
+		isApprovalNeeded,
 		isApproving,
 		isLoadingAllowance,
 		currentAllowance,

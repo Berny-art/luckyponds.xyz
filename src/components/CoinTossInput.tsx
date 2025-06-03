@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useMemo, type ChangeEvent } from 'react';
+import { useState, useEffect, useMemo, useCallback, memo, type ChangeEvent } from 'react';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { formatEther, parseEther } from 'viem';
@@ -69,18 +69,18 @@ export default function CoinTossInput({
 
 		// Ensure at least 1 toss is possible, unless user can't afford any
 		return maxPossible > 0 ? maxPossible : Number(maxFromBalance) >= 1 ? 1 : 0;
-	}, [balance, pondInfo, minTossPrice, remainingAmount, maxTotalAmount]);
+	}, [balance?.value, minTossPrice, remainingAmount, maxTotalAmount]);
 
 	// Update toss amount when number of tosses changes
 	useEffect(() => {
-		if (pondInfo) {
+		if (pondInfo && minTossPrice) {
 			const newAmount = (BigInt(numberOfTosses) * minTossPrice).toString();
 			setTossAmount(newAmount);
 		}
-	}, [numberOfTosses, minTossPrice, pondInfo]);
+	}, [numberOfTosses, minTossPrice]);
 
-	// Handle increment/decrement buttons
-	const increment = (e: React.MouseEvent) => {
+	// Handle increment/decrement buttons - memoized to prevent unnecessary re-renders
+	const increment = useCallback((e: React.MouseEvent) => {
 		if (numberOfTosses < maxTosses) {
 			setNumberOfTosses((prev) => prev + 1);
 
@@ -95,16 +95,16 @@ export default function CoinTossInput({
 				}
 			}, 10);
 		}
-	};
+	}, [numberOfTosses, maxTosses, showAnimation]);
 
-	const decrement = () => {
+	const decrement = useCallback(() => {
 		if (numberOfTosses > 1) {
 			setNumberOfTosses((prev) => prev - 1);
 		}
-	};
+	}, [numberOfTosses]);
 
 	// Set to maximum possible tosses
-	const setMaximum = (e: React.MouseEvent) => {
+	const setMaximum = useCallback((e: React.MouseEvent) => {
 		const oldValue = numberOfTosses;
 
 		// Only update if the max is greater than current value
@@ -120,10 +120,10 @@ export default function CoinTossInput({
 				}
 			}, 10);
 		}
-	};
+	}, [numberOfTosses, maxTosses, showAnimation]);
 
 	// Handle direct input change
-	const handleInputChange = (e: ChangeEvent<HTMLInputElement>) => {
+	const handleInputChange = useCallback((e: ChangeEvent<HTMLInputElement>) => {
 		const value = Number.parseInt(e.target.value, 10);
 
 		// Validate input
@@ -136,7 +136,7 @@ export default function CoinTossInput({
 		} else {
 			setNumberOfTosses(value);
 		}
-	};
+	}, [maxTosses]);
 
 	const tokenSymbol = selectedToken?.symbol || 'UNKNOWN';
 	const canToss = balance && balance.value >= minTossPrice;
