@@ -15,33 +15,15 @@ import {
 	SheetClose,
 } from './ui/sheet';
 import { Button } from './ui/button';
-import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import ReferDialogMobile from './ReferDialogMobile';
 import { useSearchParams } from 'next/navigation';
 import { useAppStore } from '@/stores/appStore';
 
 export default function Header() {
-	const [isMobile, setIsMobile] = useState(false);
 	const searchParams = useSearchParams();
 	const referrerCode = searchParams.get('ref');
 	const { isSoundEnabled, setSoundEnabled } = useAppStore();
-
-	// Check if we're on mobile on client side
-	useEffect(() => {
-		const checkIsMobile = () => {
-			setIsMobile(window.innerWidth < 768); // md breakpoint in Tailwind
-		};
-
-		// Initial check
-		checkIsMobile();
-
-		// Listen for resize events
-		window.addEventListener('resize', checkIsMobile);
-
-		// Cleanup
-		return () => window.removeEventListener('resize', checkIsMobile);
-	}, []);
 
 	return (
 		<header className="w-full px-2 py-2 lg:px-6">
@@ -184,13 +166,11 @@ export default function Header() {
 								{/* Connect Wallet Button */}
 								<SheetClose asChild>
 									<div className="px-4">
-										{isMobile && (
 											<ConnectButton
 												showBalance={true}
 												chainStatus="name"
 												accountStatus="address"
 											/>
-										)}
 									</div>
 								</SheetClose>
 							</div>

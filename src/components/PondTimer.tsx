@@ -305,10 +305,12 @@ export default function PondTimer({ pondInfo, onTimerUpdate }: PondTimerProps) {
 							isHandlingCompletionRef.current = false;
 						}, timelockDuration);
 					}, 100); // Small delay to break execution context
+				} else {
+					// Only update progress if we're not in a transition state and have valid timing data
+					if (!isHandlingCompletionRef.current && endTimeMs && startTimeRef.current) {
+						updateProgress();
+					}
 				}
-
-				// Always update progress for standard ponds (this ensures continuous updates)
-				updateProgress();
 			} else {
 				// For custom ponds, check if we should show progress and update accordingly
 				const endTimeSeconds = Number(pondInfo.endTime);
@@ -331,8 +333,8 @@ export default function PondTimer({ pondInfo, onTimerUpdate }: PondTimerProps) {
 				}
 			}
 
-			// Force countdown to update
-			if (countdownRef.current) {
+			// Force countdown to update only if not in transition
+			if (countdownRef.current && !isHandlingCompletionRef.current) {
 				countdownRef.current.forceUpdate();
 			}
 		}, updateFrequency);
@@ -353,7 +355,12 @@ export default function PondTimer({ pondInfo, onTimerUpdate }: PondTimerProps) {
 
 		// Calculate time remaining for callback
 		const timeRemaining = Math.max(0, endTimeMs ? endTimeMs - now : 0);
-		const isAboutToEnd = timeRemaining > 0 && timeRemaining <= 5000; // 5 seconds
+		
+		// Simplified and more reliable isAboutToEnd calculation
+		// Only trigger when we have valid time remaining and it's within 5 seconds
+		const isAboutToEnd = timeRemaining > 0 && 
+							  timeRemaining <= 5000 && // 5 seconds
+							  !isHandlingCompletionRef.current; // Not during cycle transitions
 
 		// Call the callback if provided
 		if (onTimerUpdate) {

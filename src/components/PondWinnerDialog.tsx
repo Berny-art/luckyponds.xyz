@@ -58,16 +58,16 @@ export default function PondWinnerDialog({
 					}}
 				>
 					<Trophy className="h-5 w-5 text-primary-200" />
-				</Button>
-			</DialogTrigger>
-			<DialogContent className="max-h-screen max-w-[95vw] overflow-y-scroll border-2 border-priamry-200 rounded-lg bg-primary-950/90 px-8 text-primary-200 backdrop-blur-sm">
-				<DialogHeader>
-					<DialogTitle className="pt-8 text-center font-bold font-mono text-3xl">
-						<span className="flex items-center justify-center gap-2">
-							Recent Winners
-						</span>
-					</DialogTitle>
-				</DialogHeader>
+		</Button>
+		</DialogTrigger>
+		<DialogContent className="max-h-screen max-w-[95vw] overflow-y-scroll border-2 border-primary-200 rounded-lg bg-primary-950/90 px-8 text-primary-200 backdrop-blur-sm">
+			<DialogHeader>
+				<DialogTitle className="pt-8 text-center font-bold font-mono text-3xl">
+					<span className="flex items-center justify-center gap-2">
+						Recent Winners
+					</span>
+				</DialogTitle>
+			</DialogHeader>
 
 				{isLoading ? (
 					<div className="py-2 text-center">Loading winners...</div>

@@ -11,13 +11,13 @@ interface ReferDialogProps {
 
 export default function ReferDialog({ initialReferrerCode, showLabel }: ReferDialogProps) {
   const { isLg } = useResponsiveBreakpoints();
-  
+
   return (
     <Dialog>
       <DialogTrigger asChild>
         <div
           className={cn(
-            'flex cursor-pointer items-center justify-end gap-2 rounded-md border-2 border-drip-300',
+            'flex cursor-pointer items-center justify-end gap-2 rounded-md border-2 border-primary-200',
             'bg-primary-200/10 text-primary-200 hover:bg-primary-200/20',
             'p-3 text-xs lg:pl-12 uppercase',
           )}

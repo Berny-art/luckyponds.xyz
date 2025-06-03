@@ -11,7 +11,7 @@ import { cn, formatValue } from '@/lib/utils';
 import PondWinners from '@/components/PondWinners';
 import PondWinnerDialog from '@/components/PondWinnerDialog';
 import PondTimer from '@/components/PondTimer';
-import { Clock, Zap } from 'lucide-react';
+import { Clock, ExternalLink, Zap } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import FloatingEvents from '@/components/FloatingEvents';
 import ShakeNotification from '@/components/ShakeNotification';
@@ -24,6 +24,7 @@ import ReferDialog from './ReferDialog';
 import { useReferralCode } from '@/hooks/useReferralCode';
 import { useAccount } from 'wagmi';
 import { toast } from 'sonner';
+import Link from 'next/link';
 
 interface PondInterfaceProps {
 	tokenAddress?: string;
@@ -61,7 +62,7 @@ export default function PondInterface({ tokenAddress, initialReferrerCode }: Pon
 	// State for timer information
 	const [timeRemaining, setTimeRemaining] = useState<number>(0);
 	const [isAboutToEnd, setIsAboutToEnd] = useState<boolean>(false);
-	
+
 	// State to track if we've processed the referral
 	const [hasProcessedReferral, setHasProcessedReferral] = useState(false);
 
@@ -79,7 +80,7 @@ export default function PondInterface({ tokenAddress, initialReferrerCode }: Pon
 				try {
 					// First fetch the user's own referral code to prevent self-referral
 					await fetchReferralCode();
-					
+
 					// Then apply the referrer's code
 					const success = await applyReferralCode(referrerCode);
 					if (success) {
@@ -299,7 +300,7 @@ export default function PondInterface({ tokenAddress, initialReferrerCode }: Pon
 									'flex cursor-pointer items-center justify-end gap-2 rounded-md border-2 border-drip-300',
 									lightningMode
 										? 'bg-drip-300 text-secondary-950'
-										: 'bg-primary-200/10 text-primary-200',
+										: 'bg-primary-200/10 text-drip-300',
 									'p-3 text-xs lg:pl-12 uppercase',
 								)}
 								onClick={() => {
@@ -309,11 +310,11 @@ export default function PondInterface({ tokenAddress, initialReferrerCode }: Pon
 									// Find appropriate pond for new mode
 									const targetPond = newLightningMode
 										? pondTypes.find(
-												(pond) => pond.period === PondPeriod.FIVE_MIN,
-											)
+											(pond) => pond.period === PondPeriod.FIVE_MIN,
+										)
 										: pondTypes.find(
-												(pond) => pond.period === PondPeriod.DAILY,
-											);
+											(pond) => pond.period === PondPeriod.DAILY,
+										);
 
 									if (targetPond) {
 										setSelectedPond(targetPond.type);
@@ -330,6 +331,20 @@ export default function PondInterface({ tokenAddress, initialReferrerCode }: Pon
 							{isSm && (
 								<ReferDialog initialReferrerCode={referrerCode} />
 							)}
+							<Link
+								href='https://drip.trade/collections/hyper-frogs'
+								target="_blank">
+								<div
+									className={cn(
+										'flex cursor-pointer items-center justify-end gap-2 rounded-md border-2 border-primary-200',
+										'bg-primary-200/10 text-primary-200 hover:bg-primary-200/20',
+										'p-3 text-xs lg:pl-12 uppercase',
+									)}
+								>
+									Get a Hyper Frog
+									<ExternalLink size={18} />
+								</div>
+							</Link>
 						</>
 					)}
 				</div>
