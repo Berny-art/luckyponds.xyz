@@ -43,7 +43,7 @@ export default function PondWinnerCard({
 			triggerFullConfetti(period);
 			triggerPartyHorn();
 		}
-	}, [open, hasWinner, period, triggerPartyHorn]);
+	}, [open, hasWinner, period]); //eslint-disable-line react-hooks/exhaustive-deps
 
 	// Get button color based on period
 	const getButtonColor = () => {

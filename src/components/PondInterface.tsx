@@ -300,7 +300,7 @@ export default function PondInterface({ tokenAddress, initialReferrerCode }: Pon
 									'flex cursor-pointer items-center justify-end gap-2 rounded-md border-2 border-drip-300',
 									lightningMode
 										? 'bg-drip-300 text-secondary-950'
-										: 'bg-primary-200/10 text-drip-300',
+										: 'bg-primary-200/10 hover:bg-primary-200/20 text-drip-300',
 									'p-3 text-xs lg:pl-12 uppercase',
 								)}
 								onClick={() => {
@@ -325,7 +325,7 @@ export default function PondInterface({ tokenAddress, initialReferrerCode }: Pon
 								}
 								aria-label="Toggle fast mode"
 							>
-								{isLg ? `Turn Fast Mode ${lightningMode ? 'OFF' : 'ON'}` : ''}
+								{isLg ? `Hyper Mode ${lightningMode ? 'ON' : 'OFF'}` : ''}
 								<Zap size={18} />
 							</div>
 							{isSm && (
