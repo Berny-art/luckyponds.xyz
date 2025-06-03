@@ -156,7 +156,7 @@ export default function PondInterface({ tokenAddress, initialReferrerCode }: Pon
 	});
 
 	// Use simplified hook to fetch pond types - updates store
-	useStandardPondsForUI(currentTokenAddress);
+	const { hasHyperModePonds } = useStandardPondsForUI(currentTokenAddress);
 
 	// Refs for event management
 	const initialEventsAddedRef = useRef(false);
@@ -328,13 +328,18 @@ export default function PondInterface({ tokenAddress, initialReferrerCode }: Pon
 							<ShakeNotification />
 							<div
 								className={cn(
-									'flex cursor-pointer items-center justify-end gap-2 rounded-md border-2 border-drip-300',
+									'flex items-center justify-end gap-2 rounded-md border-2 border-drip-300',
 									lightningMode
 										? 'bg-drip-300 text-secondary-950'
 										: 'bg-primary-200/10 hover:bg-primary-200/20 text-drip-300',
 									'p-3 text-xs lg:pl-12 uppercase',
+									hasHyperModePonds
+										? 'cursor-pointer'
+										: 'cursor-not-allowed opacity-50',
 								)}
 								onClick={() => {
+									if (!hasHyperModePonds) return;
+
 									const newLightningMode = !lightningMode;
 									setLightningMode(newLightningMode);
 
@@ -352,9 +357,10 @@ export default function PondInterface({ tokenAddress, initialReferrerCode }: Pon
 									}
 								}}
 								onKeyDown={(e) =>
-									e.key === 'f' && setLightningMode(!lightningMode)
+									e.key === 'f' && hasHyperModePonds && setLightningMode(!lightningMode)
 								}
 								aria-label="Toggle fast mode"
+								aria-disabled={!hasHyperModePonds}
 							>
 								{isLg ? `Hyper Mode ${lightningMode ? 'ON' : 'OFF'}` : ''}
 								<Zap size={18} />

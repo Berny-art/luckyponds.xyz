@@ -3,7 +3,7 @@
 
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useReadContract } from 'wagmi';
 import { pondCoreConfig } from '@/contracts/PondCore';
 import { PondPeriod, type PondDisplayInfo } from '@/lib/types';
@@ -18,7 +18,8 @@ export function useStandardPondsForUI(
 ) {
 	const { setPondTypes, setIsLoadingPondTypes, setSelectedPond, selectedPond } =
 		useAppStore();
-	const [lightningMode] = useLocalStorage('lightningMode', false);
+	const [lightningMode, setLightningMode] = useLocalStorage('lightningMode', false);
+	const [hasHyperModePonds, setHasHyperModePonds] = useState(false);
 
 	// Convert to 0x-prefixed address for wagmi
 	const formattedAddress = tokenAddress as `0x${string}`;
@@ -60,15 +61,26 @@ export function useStandardPondsForUI(
 				// Update the store
 				if (enhancedPonds.length > 0) {
 					setPondTypes(enhancedPonds);
-
+					
+					// if pond types 5 min and hourly are not available set const
+					const hyperModePonds = enhancedPonds.some(
+						(pond) => pond.period === PondPeriod.FIVE_MIN || pond.period === PondPeriod.HOURLY,
+					);
+					setHasHyperModePonds(hyperModePonds);
+					
 					// Set first pond as selected if none is selected OR if token changed
-					if (!selectedPond) {
+					if (!selectedPond && hyperModePonds) {
 						setSelectedPond(
-							lightningMode ? enhancedPonds[0]?.type : enhancedPonds[2]?.type,
+							lightningMode && hyperModePonds ? enhancedPonds[0]?.type : enhancedPonds[2]?.type,
 						);
+					}
+					if (lightningMode && !hyperModePonds) {
+						// If lightning mode is on but no hyper mode ponds, reset to default
+						setLightningMode(false);
 					}
 				} else {
 					// No valid pond types found
+					setHasHyperModePonds(false);
 				}
 			} catch (processingError) {
 				// Error processing pond data
@@ -102,6 +114,7 @@ export function useStandardPondsForUI(
 					(pond: PondDisplayInfo) => pond.exists,
 				)
 			: [],
+		hasHyperModePonds,
 		isLoading,
 		isError,
 		error,
