@@ -24,9 +24,9 @@ export function requiresApproval(token: Token): boolean {
 export function getTossFunctionName(tokenType: TokenType): string {
 	switch (tokenType) {
 		case TokenType.NATIVE:
-			return 'toss'; // Current payable function
+			return 'toss'; // Payable function for native tokens
 		case TokenType.ERC20:
-			return 'tossERC20'; // Future non-payable function (not yet implemented in contract)
+			return 'toss'; // Same function, but requires approval first
 		default:
 			throw new Error(`Unsupported token type: ${tokenType}`);
 	}
@@ -38,17 +38,8 @@ export function getTossFunctionName(tokenType: TokenType): string {
  * @returns true if supported, false otherwise
  */
 export function isTokenTypeSupported(tokenType: TokenType): boolean {
-	// Currently only native tokens are supported
-	return tokenType === TokenType.NATIVE;
-}
-
-/**
- * Gets the TokenType enum value from a Token object
- * @param token The token object
- * @returns The corresponding TokenType enum value
- */
-export function getTokenType(token: Token): TokenType {
-	return token.isNative ? TokenType.NATIVE : TokenType.ERC20;
+	// Both native and ERC20 tokens are supported
+	return tokenType === TokenType.NATIVE || tokenType === TokenType.ERC20;
 }
 
 /**
@@ -89,8 +80,42 @@ export const ERC20_ABI = [
  * Error messages for ERC20 operations
  */
 export const ERC20_ERROR_MESSAGES = {
-	NOT_SUPPORTED: 'ERC20 token tossing requires contract updates. Please use HYPE token for now.',
 	INSUFFICIENT_ALLOWANCE: 'Insufficient token allowance. Please approve the contract to spend your tokens.',
 	INSUFFICIENT_BALANCE: 'Insufficient token balance for this transaction.',
 	APPROVAL_FAILED: 'Token approval failed. Please try again.',
+	APPROVAL_CANCELLED: 'Token approval was cancelled.',
 } as const;
+
+/**
+ * Gets user-friendly error message for approval operations
+ * @param errorMessage The raw error message
+ * @returns A user-friendly error message
+ */
+export function getApprovalErrorMessage(errorMessage: string): string {
+	if (
+		errorMessage.includes('User rejected the request') ||
+		errorMessage.includes('rejected') ||
+		errorMessage.includes('denied')
+	) {
+		return ERC20_ERROR_MESSAGES.APPROVAL_CANCELLED;
+	}
+
+	if (
+		errorMessage.includes('insufficient funds') ||
+		errorMessage.includes('Insufficient funds')
+	) {
+		return 'Insufficient ETH for approval transaction fees';
+	}
+
+	return ERC20_ERROR_MESSAGES.APPROVAL_FAILED;
+}
+
+/**
+ * Determines if approval is needed for a specific token and amount
+ * @param currentAllowance The current allowance amount
+ * @param requiredAmount The amount needed for the transaction
+ * @returns true if approval is needed, false if current allowance is sufficient
+ */
+export function needsApproval(currentAllowance: bigint, requiredAmount: bigint): boolean {
+	return currentAllowance < requiredAmount;
+}

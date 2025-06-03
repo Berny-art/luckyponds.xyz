@@ -4,6 +4,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { Button } from './ui/button';
 import { useTossCoin } from '@/hooks/useTossCoin';
+import { useAllowance } from '@/hooks/useAllowance';
 import { useAppStore } from '@/stores/appStore';
 import { Loader2, Wallet } from 'lucide-react';
 import type { PondComprehensiveInfo } from '@/lib/types';
@@ -14,8 +15,8 @@ import { toast } from 'sonner';
 import { PondStatus } from '@/functions/getPondStatus';
 import { usePondStatus } from '@/hooks/usePondStatus';
 import { PondPeriod } from '@/lib/types';
-import { triggerFullConfetti } from '@/lib/confetti';
 import { formatValue } from '@/lib/utils';
+import AllowanceButton from './AllowanceButton';
 
 interface CoinTossButtonProps {
 	amount: string;
@@ -25,7 +26,8 @@ interface CoinTossButtonProps {
 	onTransactionSuccess?: () => void; // New callback prop
 	timeRemaining?: number; // Time remaining in milliseconds
 	isAboutToEnd?: boolean; // Whether timer is about to end (5 seconds)
-	canToss?: boolean; // Optional prop to control toss availability
+	canToss?: boolean;
+	maxTossAmount?: string; // Maximum possible toss amount for approvals
 }
 
 export default function CoinTossButton({
@@ -36,15 +38,26 @@ export default function CoinTossButton({
 	onTransactionSuccess, // Add the new prop
 	timeRemaining,
 	isAboutToEnd,
-	canToss = true, // Optional prop to control toss availability
+	canToss = true,
+	maxTossAmount, // Add maxTossAmount prop
 }: CoinTossButtonProps) {
 	const { address } = useAccount();
 	const isConnected = !!address;
 	const { openConnectModal } = useConnectModal();
 	const { selectedPond, selectedToken, showAnimation } = useAppStore();
 	const { tossCoin, isLoading: tossLoading, lastTxResult } = useTossCoin();
+	const { isApprovalNeeded } = useAllowance(selectedToken, maxTossAmount || amount, pondInfo);
 	const [isProcessing, setIsProcessing] = useState(false);
 	const { writeContractAsync, isPending: isWritePending } = useWriteContract();
+
+	// Debug logging for button switching
+	console.log('🔄 CoinTossButton render:', {
+		selectedToken: selectedToken?.symbol,
+		amount,
+		maxTossAmount,
+		isApprovalNeeded,
+		isConnected
+	});
 
 	// Ref to track which transaction hash we've already processed
 	const processedTxHashRef = useRef<string | null>(null);
@@ -199,7 +212,7 @@ export default function CoinTossButton({
 			}
 
 			// Proceed with the toss (standard or after selection)
-			await tossCoin(selectedPond, amount, pondInfo.tokenType);
+			await tossCoin(selectedPond, amount, pondInfo.tokenType, selectedToken);
 
 			// The callback will be triggered by the useEffect when lastTxResult is updated
 		} catch (error) {
@@ -260,7 +273,7 @@ export default function CoinTossButton({
 			);
 		}
 
-		// Connected - show standard toss message (same for all cases)
+		// Connected - show standard toss message
 		return `Toss ${formatValue(amount)} ${selectedToken.symbol} in ${displayPondName} pond`;
 	};
 
@@ -300,12 +313,30 @@ export default function CoinTossButton({
 	};
 
 	return (
-		<Button
-			onClick={handleClick}
-			disabled={isButtonDisabled}
-			className={`w-full py-6 font-bold text-xl ${getButtonStyling()}`}
-		>
-			{getButtonText()}
-		</Button>
+		<>
+			{/* Show allowance button if approval is needed */}
+			{isApprovalNeeded && selectedToken && (
+				<AllowanceButton
+					token={selectedToken}
+					amount={maxTossAmount || amount}
+					disabled={disabled}
+					pondInfo={pondInfo}
+					onApprovalComplete={() => {
+						// Refresh allowance check - the button will automatically hide when approval is complete
+					}}
+				/>
+			)}
+
+			{/* Show toss button if approval is not needed or already given */}
+			{!isApprovalNeeded && (
+				<Button
+					onClick={handleClick}
+					disabled={isButtonDisabled}
+					className={`w-full py-6 font-bold text-xl ${getButtonStyling()}`}
+				>
+					{getButtonText()}
+				</Button>
+			)}
+		</>
 	);
 }

@@ -223,6 +223,7 @@ export default function CoinTossInput({
 						timeRemaining={timeRemaining}
 						isAboutToEnd={isAboutToEnd}
 						canToss={canToss}
+						maxTossAmount={formatEther(maxTotalAmount)}
 					/>
 				)
 			}

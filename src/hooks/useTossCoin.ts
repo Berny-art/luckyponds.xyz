@@ -7,6 +7,11 @@ import { pondCoreConfig } from '@/contracts/PondCore';
 import { parseEther } from 'viem';
 import { toast } from 'sonner';
 import { TokenType } from '@/lib/types';
+import { 
+	isTokenTypeSupported, 
+	getTossFunctionName
+} from '@/utils/tokenUtils';
+import type { Token } from '@/stores/appStore';
 
 /**
  * Maps technical blockchain errors to user-friendly messages
@@ -161,12 +166,21 @@ export function useTossCoin() {
 		pondType: string,
 		amount: string,
 		tokenType: TokenType = TokenType.NATIVE,
+		token?: Token
 	) => {
 		if (!pondType || amount === '0') {
 			toast.error('Invalid toss parameters', {
 				description: 'Please select a pond and enter a valid amount.',
 			});
 			return { success: false, error: new Error('Invalid parameters') };
+		}
+
+		// Validate token type support
+		if (!isTokenTypeSupported(tokenType)) {
+			toast.error('Unsupported token type', {
+				description: 'This token type is not currently supported.',
+			});
+			return { success: false, error: new Error('Unsupported token type') };
 		}
 
 		try {
@@ -180,13 +194,17 @@ export function useTossCoin() {
 			const pondTypeFormatted = pondType as `0x${string}`;
 			const amountFormatted = parseEther(amount);
 
-			// Handle native or ERC20 tokens differently
+			// Get the function name to call
+			const functionName = getTossFunctionName(tokenType);
+
+			// Handle native or ERC20 tokens - both use the same function signature
+			// The contract determines the token type from the pond type itself
 			if (tokenType === TokenType.NATIVE) {
-				// Native token (ETH/HYPE) transaction
+				// Native token (ETH/HYPE) transaction - includes value field
 				const hash = await writeContractAsync({
 					...pondCoreConfig,
 					address: pondCoreConfig.address as `0x${string}`,
-					functionName: 'toss', // PondCore uses 'toss' instead of 'tossCoin'
+					functionName,
 					args: [pondTypeFormatted, amountFormatted],
 					value: amountFormatted,
 					type: 'legacy',
@@ -197,16 +215,30 @@ export function useTossCoin() {
 					id: 'toss-loading',
 				});
 
-				// Return the transaction hash immediately
 				return { success: true, hash, pending: true };
+			} else if (tokenType === TokenType.ERC20 && token) {
+				// ERC20 token transaction - no value field, tokens must be pre-approved
+				const hash = await writeContractAsync({
+					...pondCoreConfig,
+					address: pondCoreConfig.address as `0x${string}`,
+					functionName,
+					args: [pondTypeFormatted, amountFormatted],
+					type: 'legacy',
+				});
+
+				setTxHash(hash);
+				toast.loading('Transaction submitted, waiting for confirmation...', {
+					id: 'toss-loading',
+				});
+
+				return { success: true, hash, pending: true };
+			} else {
+				toast.error('Missing token information', {
+					description: 'Token details are required for ERC20 transactions.',
+				});
+				setIsLoading(false);
+				return { success: false, error: new Error('Missing token information') };
 			}
-			// For ERC20 token transactions, would need approval first
-			toast.error('ERC20 token tossing not supported yet', {
-				description: 'Please use native HYPE token for now.',
-			});
-			setIsLoading(false);
-			return { success: false, error: new Error('ERC20 not supported') };
-			// biome-ignore lint/suspicious/noExplicitAny: <explanation>
 		} catch (error: any) {
 			setIsLoading(false);
 			toast.dismiss('toss-loading');
@@ -231,5 +263,10 @@ export function useTossCoin() {
 		}
 	};
 
-	return { tossCoin, isLoading, txHash, lastTxResult };
+	return { 
+		tossCoin, 
+		isLoading, 
+		txHash, 
+		lastTxResult 
+	};
 }
