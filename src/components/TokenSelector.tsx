@@ -63,7 +63,7 @@ export default function TokenSelector({
 
 		// Navigate to token-specific route (only if not native)
 		if (!token.isNative) {
-			router.push(`/ponds/${token.address}`);
+			router.push(`/ponds/${token.symbol}`);
 		} else {
 			// For native token, go to home
 			router.push('/');

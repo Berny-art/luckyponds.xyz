@@ -79,6 +79,7 @@ interface AppState {
 	setSelectedToken: (token: Token) => void;
 	getTokenByAddress: (address: string) => Token | undefined;
 	getTokenBySymbol: (symbol: string) => Token | undefined;
+	getTokenAddressBySymbol: (symbol: string) => string | undefined;
 
 	// Pond management
 	selectedPond: string | null;
@@ -147,6 +148,13 @@ export const useAppStore = create<AppState>()(
 				return get().availableTokens.find(
 					(token) => token.symbol.toLowerCase() === symbol.toLowerCase(),
 				);
+			},
+
+			getTokenAddressBySymbol: (symbol) => {
+				const token = get().availableTokens.find(
+					(token) => token.symbol.toLowerCase() === symbol.toLowerCase(),
+				);
+				return token?.address;
 			},
 
 			// Pond state

@@ -12,28 +12,36 @@ export default function TokenPondPage() {
 
 	const { getTokenBySymbol, getTokenByAddress } = useAppStore();
 
-	// Validate token exists
-	useEffect(() => {
-		if (!tokenParam) {
-			notFound();
-			return;
-		}
+	// Resolve token and get the address
+	const resolveTokenAddress = (param: string): string | null => {
+		if (!param) return null;
 
 		// Try to find token by symbol first, then by address
-		let targetToken = getTokenBySymbol(tokenParam.toUpperCase());
+		let targetToken = getTokenBySymbol(param.toUpperCase());
 
 		if (!targetToken) {
 			// If not found by symbol, try by address
-			targetToken = getTokenByAddress(tokenParam);
+			targetToken = getTokenByAddress(param);
 		}
 
-		if (!targetToken) {
-			// Token not found, redirect to 404
+		return targetToken ? targetToken.address : null;
+	};
+
+	const tokenAddress = resolveTokenAddress(tokenParam);
+
+	// Validate token exists
+	useEffect(() => {
+		if (!tokenParam || !tokenAddress) {
 			notFound();
 			return;
 		}
-	}, [tokenParam, getTokenBySymbol, getTokenByAddress]);
+	}, [tokenParam, tokenAddress]);
 
-	// Pass the token address to PondInterface
-	return <PondInterface tokenAddress={tokenParam} />;
+	// If tokenAddress is null, don't render anything (notFound will be called)
+	if (!tokenAddress) {
+		return null;
+	}
+
+	// Pass the resolved token address to PondInterface
+	return <PondInterface tokenAddress={tokenAddress} />;
 }
