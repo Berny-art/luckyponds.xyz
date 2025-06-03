@@ -7,7 +7,6 @@ import { useWriteContract } from 'wagmi';
 import { pondCoreConfig } from '@/contracts/PondCore';
 import type { PondComprehensiveInfo } from '@/lib/types';
 import { PondStatus } from '@/functions/getPondStatus';
-import { toast } from 'sonner';
 
 interface UseWinnerSelectionProps {
 	pondInfo: PondComprehensiveInfo;

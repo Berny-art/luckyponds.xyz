@@ -1,6 +1,5 @@
 // src/components/CoinTossButtonImproved.tsx
 'use client';
-
 import { useCallback, useMemo } from 'react';
 import { Button } from './ui/button';
 import { useTossCoin } from '@/hooks/useTossCoin';
@@ -114,10 +113,11 @@ export default function CoinTossButton({
           await selectWinner();
           // Small delay to ensure transactions are processed in order
           await new Promise((resolve) => setTimeout(resolve, 500));
-        } catch (error: unknown) {
+        } catch (err: unknown) {
           toast.error('Transaction failed', {
             id: 'toss-loading',
           });
+          console.error('Error selecting winner:', err);
           return;
         }
       }

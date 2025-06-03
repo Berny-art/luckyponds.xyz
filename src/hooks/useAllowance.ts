@@ -67,7 +67,7 @@ export function useAllowance(token?: Token, maxTossAmount?: string, pondInfo?: P
 		// Calculate total amount for max tosses
 		const calculatedMaxTossAmount = BigInt(maxTosses) * minTossPrice;
 		return formatEther(calculatedMaxTossAmount);
-	}, [balance?.value, pondInfo?.minTossPrice, pondInfo?.remainingTossAmount, pondInfo?.maxTotalTossAmount, token?.address, maxTossAmount]);
+	}, [balance, pondInfo, token, maxTossAmount]);
 
 	const effectiveMaxTossAmount = maxTossAmount || getMaxTossAmount;
 
@@ -129,7 +129,7 @@ export function useAllowance(token?: Token, maxTossAmount?: string, pondInfo?: P
 			setIsApproving(false);
 			setApprovalCompleted(false); // Reset approval completed state on error
 		}
-	}, [approvalHash, approvalSuccess, approvalError, approvalErrorDetails]);
+	}, [approvalHash, approvalSuccess, approvalError, approvalErrorDetails, queryClient]);
 
 	// Check if approval is needed - memoized to prevent excessive recalculation
 	const isApprovalNeeded = useMemo(() => {
@@ -150,7 +150,7 @@ export function useAllowance(token?: Token, maxTossAmount?: string, pondInfo?: P
 		const needsApprovalResult = needsApproval(currentAllowance || 0n, requiredAmount);
 		
 		return needsApprovalResult;
-	}, [token?.address, token?.isNative, effectiveMaxTossAmount, approvalCompleted, currentAllowance, isLoadingAllowance]);
+	}, [token, effectiveMaxTossAmount, approvalCompleted, currentAllowance, isLoadingAllowance]);
 
 	// Function to approve ERC20 token spending
 	const approveToken = async () => {
@@ -183,6 +183,7 @@ export function useAllowance(token?: Token, maxTossAmount?: string, pondInfo?: P
 			});
 
 			return { success: true, hash, pending: true };
+			//eslint-disable-next-line @typescript-eslint/no-explicit-any
 		} catch (error: any) {
 			setIsApproving(false);
 			toast.dismiss('approval-loading');

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useMemo, useCallback, memo, type ChangeEvent } from 'react';
+import { useState, useEffect, useMemo, useCallback, type ChangeEvent } from 'react';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { formatEther, parseEther } from 'viem';
@@ -69,7 +69,7 @@ export default function CoinTossInput({
 
 		// Ensure at least 1 toss is possible, unless user can't afford any
 		return maxPossible > 0 ? maxPossible : Number(maxFromBalance) >= 1 ? 1 : 0;
-	}, [balance?.value, minTossPrice, remainingAmount, maxTotalAmount]);
+	}, [balance, pondInfo, minTossPrice, remainingAmount, maxTotalAmount]);
 
 	// Update toss amount when number of tosses changes
 	useEffect(() => {
@@ -77,7 +77,7 @@ export default function CoinTossInput({
 			const newAmount = (BigInt(numberOfTosses) * minTossPrice).toString();
 			setTossAmount(newAmount);
 		}
-	}, [numberOfTosses, minTossPrice]);
+	}, [numberOfTosses, minTossPrice, pondInfo]);
 
 	// Handle increment/decrement buttons - memoized to prevent unnecessary re-renders
 	const increment = useCallback((e: React.MouseEvent) => {

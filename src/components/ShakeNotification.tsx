@@ -22,7 +22,7 @@ function ShakeNotification({
 		if (latestEvent && latestEvent.id !== eventKey) {
 			setEventKey(latestEvent.id);
 		}
-	}, [latestEvent?.id]); // Only depend on the ID, not the entire event object
+	}, [latestEvent?.id, eventKey, latestEvent]); // Only depend on the ID, not the entire event object
 
 	return (
 		<div

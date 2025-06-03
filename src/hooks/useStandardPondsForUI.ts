@@ -98,7 +98,8 @@ export function useStandardPondsForUI(
 		setSelectedPond,
 		selectedPond,
 		tokenAddress,
-		lightningMode, // Add tokenAddress as dependency
+		lightningMode,
+		setLightningMode,
 	]);
 
 	// Reset selected pond when token changes

@@ -2,7 +2,7 @@
 'use client';
 
 import { formatValue } from '@/lib/utils';
-import { useAccount, useBalance } from 'wagmi';
+import { useAccount } from 'wagmi';
 import { Skeleton } from './ui/skeleton';
 import type { PondComprehensiveInfo } from '@/lib/types';
 import { useAppStore } from '@/stores/appStore';
@@ -19,7 +19,6 @@ export default function PondInfo({
 	const { address } = useAccount();
 	const isConnected = !!address;
 	const { selectedToken } = useAppStore();
-	const balance = useBalance({ address, token: selectedToken.address as `0x${string}` });
 
 	// Loading state
 	if (isLoading) {
