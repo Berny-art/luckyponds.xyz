@@ -36,9 +36,28 @@ export default function TokenSelector({
 }: TokenSelectorProps) {
 	const [open, setOpen] = useState(false);
 	const router = useRouter();
-	const { selectedToken, availableTokens, setSelectedToken } = useAppStore();
+	const {
+		selectedToken,
+		availableTokens,
+		setSelectedToken,
+		setSelectedPond,
+		clearEvents,
+		setPondTypes
+	} = useAppStore();
 
 	const handleTokenSelect = (token: Token) => {
+		// Only proceed if it's a different token
+		if (token.address === selectedToken.address) {
+			setOpen(false);
+			return;
+		}
+
+		// Clear existing data when switching tokens
+		clearEvents(); // Clear events from previous token
+		setSelectedPond(''); // Reset selected pond
+		setPondTypes([]); // Clear pond types to trigger fresh fetch
+
+		// Set the new token
 		setSelectedToken(token);
 		setOpen(false);
 

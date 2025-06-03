@@ -210,6 +210,28 @@ export default function PondInterface({ tokenAddress, initialReferrerCode }: Pon
 		isPondDataFetching,
 	]);
 
+	// Enhanced token change handler to ensure proper data refresh
+	useEffect(() => {
+		// When the current token address changes, force a complete data refresh
+		if (currentTokenAddress) {
+			// Clear timer states
+			setTimeRemaining(0);
+			setIsAboutToEnd(false);
+
+			// Clear event management refs
+			initialEventsAddedRef.current = false;
+			if (eventsTimeoutRef.current) {
+				clearTimeout(eventsTimeoutRef.current);
+				eventsTimeoutRef.current = null;
+			}
+
+			// Force data refresh after a short delay to ensure hooks are updated
+			setTimeout(() => {
+				refetchAll();
+			}, 200);
+		}
+	}, [currentTokenAddress, refetchAll]);
+
 	// Combined loading state
 	const isLoading = isLoadingPondTypes || isPondDataLoading;
 
