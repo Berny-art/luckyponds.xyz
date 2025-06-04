@@ -1,6 +1,4 @@
 // src/hooks/useStandardPondsForUI.ts
-// REPLACE your existing useStandardPondsForUI hook with this updated version:
-
 'use client';
 
 import { useEffect, useState } from 'react';
@@ -67,17 +65,30 @@ export function useStandardPondsForUI(
 						(pond) => pond.period === PondPeriod.FIVE_MIN || pond.period === PondPeriod.HOURLY,
 					);
 					setHasHyperModePonds(hyperModePonds);
-					
-					// Set first pond as selected if none is selected OR if token changed
-					if (!selectedPond && hyperModePonds) {
-						setSelectedPond(
-							lightningMode && hyperModePonds ? enhancedPonds[0]?.type : enhancedPonds[2]?.type,
-						);
-					}
 					if (lightningMode && !hyperModePonds) {
 						// If lightning mode is on but no hyper mode ponds, reset to default
 						setLightningMode(false);
 					}
+					// Set first pond as selected if none is selected OR if token changed
+					// Check if the selectedPond exists in the current enhancedPonds
+					const pondExists = enhancedPonds.some(pond => pond.type === selectedPond);
+
+					if (!selectedPond || !pondExists) {
+						if (lightningMode && hyperModePonds) {
+							// Lightning mode: select 5-minute pond or first available hyper mode pond
+							const fiveMinPond = enhancedPonds.find(pond => pond.period === PondPeriod.FIVE_MIN);
+							const hourlyPond = enhancedPonds.find(pond => pond.period === PondPeriod.HOURLY);
+							setSelectedPond(fiveMinPond?.type || hourlyPond?.type || enhancedPonds[0]?.type);
+						} else if (!lightningMode && hyperModePonds) {
+							// Normal mode with hyper ponds available: select daily pond
+							const dailyPond = enhancedPonds.find(pond => pond.period === PondPeriod.DAILY);
+							setSelectedPond(dailyPond?.type || enhancedPonds[0]?.type);
+						} else {
+							// No hyper mode ponds: select first available pond
+							setSelectedPond(enhancedPonds[0]?.type);
+						}
+					}
+
 				} else {
 					// No valid pond types found
 					setHasHyperModePonds(false);

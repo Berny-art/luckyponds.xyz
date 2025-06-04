@@ -227,13 +227,6 @@ export default function PondInterface({ tokenAddress, initialReferrerCode }: Pon
 			setTimeRemaining(0);
 			setIsAboutToEnd(false);
 
-			// Clear event management refs
-			initialEventsAddedRef.current = false;
-			if (eventsTimeoutRef.current) {
-				clearTimeout(eventsTimeoutRef.current);
-				eventsTimeoutRef.current = null;
-			}
-
 			// Force data refresh after a short delay to ensure hooks are updated
 			setTimeout(() => {
 				refetchAll();
