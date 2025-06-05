@@ -61,14 +61,14 @@ const DEFAULT_TOKENS: Token[] = [
 	// 	decimals: 18,
 	// 	isNative: true,
 	// },
-	{
-		symbol: 'PURR',
-		address: '0xC003D79B8a489703b1753711E3ae9fFDFC8d1a82',
-		name: 'Purr',
-		logo: 'https://assets.coingecko.com/coins/images/37125/standard/PURR_CG.png',	
-		decimals: 18,
-		isNative: false,
-	},
+	// {
+	// 	symbol: 'PURR',
+	// 	address: '0xC003D79B8a489703b1753711E3ae9fFDFC8d1a82',
+	// 	name: 'Purr',
+	// 	logo: 'https://assets.coingecko.com/coins/images/37125/standard/PURR_CG.png',	
+	// 	decimals: 18,
+	// 	isNative: false,
+	// },
 ];
 
 // Consolidated app state interface

@@ -12,7 +12,7 @@ export default function ReferDialogMobile({ initialReferrerCode }: ReferDialogMo
       <SheetClose asChild>
         <DialogTrigger asChild>
           <div
-            className="flex items-center bg-secondary-900/30 p-4 transition-colors hover:text-drip-300 cursor-pointer"
+            className="flex items-center bg-secondary-900/50 p-4 transition-colors hover:text-drip-300 cursor-pointer"
           >
             Refer Friend
           </div>

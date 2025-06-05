@@ -50,10 +50,12 @@ export default function Header() {
 
 					{/* Desktop Navigation */}
 					<div className="hidden lg:flex lg:w-full lg:items-center lg:justify-between">
-						<nav className="ml-10 flex justify-center gap-6 font-mono text-primary-200 hover:[&>a]:text-drip-300">
+						<nav className="ml-10 flex justify-center gap-4 font-mono text-primary-200 hover:[&>a]:text-drip-300">
 							<Link href="/">Home</Link>
 							<span className="text-drip-300">/</span>
 							<Link href="/leaderboard">Leaderboard</Link>
+							<span className="text-drip-300">/</span>
+							<Link href="/stats">Stats</Link>
 						</nav>
 
 						<div className="flex items-center justify-end gap-8">
@@ -106,7 +108,7 @@ export default function Header() {
 							</Button>
 						</SheetTrigger>
 						<SheetContent className="border-drip-300 border-l-2 bg-secondary-950 px-0 text-primary-200">
-							<SheetHeader className="mb-6">
+							<SheetHeader className="mb-6 px-4">
 								<SheetTitle className="text-drip-300">Menu</SheetTitle>
 							</SheetHeader>
 
@@ -127,6 +129,14 @@ export default function Header() {
 											className="flex items-center bg-secondary-900/50 p-4 transition-colors hover:text-drip-300"
 										>
 											Leaderboard
+										</Link>
+									</SheetClose>
+									<SheetClose asChild>
+										<Link
+											href="/stats"
+											className="flex items-center bg-secondary-900/50 p-4 transition-colors hover:text-drip-300"
+										>
+											Stats
 										</Link>
 									</SheetClose>
 									<SheetClose asChild>
@@ -166,11 +176,11 @@ export default function Header() {
 								{/* Connect Wallet Button */}
 								<SheetClose asChild>
 									<div className="px-4">
-											<ConnectButton
-												showBalance={true}
-												chainStatus="name"
-												accountStatus="address"
-											/>
+										<ConnectButton
+											showBalance={true}
+											chainStatus="name"
+											accountStatus="address"
+										/>
 									</div>
 								</SheetClose>
 							</div>

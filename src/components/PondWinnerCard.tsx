@@ -14,6 +14,7 @@ import Link from 'next/link';
 import { PondPeriod } from '@/lib/types';
 import { usePartyHorn } from '@/hooks/usePartyHorn';
 import { triggerFullConfetti } from '@/lib/confetti';
+import { useAppStore } from '@/stores/appStore';
 
 interface PondWinnerCardProps {
 	title: string;
@@ -32,10 +33,12 @@ export default function PondWinnerCard({
 }: PondWinnerCardProps) {
 	const [open, setOpen] = useState(false);
 	const triggerPartyHorn = usePartyHorn();
+	const { selectedToken } = useAppStore();
+	const symbol = selectedToken?.symbol || 'HYPE';
 	const tweetText = encodeURIComponent(
-		`I Just Won ${amount} HYPE Playing Lucky Ponds on`,
+		`I Just Won ${amount} ${symbol} Playing Lucky Ponds on`,
 	);
-	const tweetUrl = encodeURIComponent('https://luckyponds.xyz');
+	const tweetUrl = encodeURIComponent(`https://luckyponds.xyz/ponds/${symbol}`);
 
 	// Fire confetti and party horn when dialog opens
 	useEffect(() => {
@@ -110,7 +113,7 @@ export default function PondWinnerCard({
 				>
 					<div className="font-mono">{title}</div>
 					<div className={cn('font-bold font-mono text-xl', getTextColor())}>
-						{amount} HYPE
+						{amount} {symbol}
 					</div>
 					<div className="font-mono text-sm opacity-70">{winner}</div>
 				</div>
@@ -130,7 +133,7 @@ export default function PondWinnerCard({
 						</DialogTitle>
 					</DialogHeader>
 					<p className="text">🎉 {formatAddress(winner)} 🎉</p>
-					<p className={cn('text-5xl', getTextColor())}>{amount} HYPE</p>
+					<p className={cn('text-5xl', getTextColor())}>{amount} {symbol}</p>
 					<Link
 						href={`https://x.com/intent/tweet?text=${tweetText}&url=${tweetUrl}`}
 						target="_blank"
