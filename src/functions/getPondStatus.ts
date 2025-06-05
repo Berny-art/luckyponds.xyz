@@ -34,11 +34,61 @@ export function getPondStatus(
 		return PondStatus.NotStarted;
 	}
 
-	// Check if pond has ended and prize has been distributed
+	// Special handling for 5-minute ponds (prioritize over general completion check)
+	if (pondInfo.period === PondPeriod.FIVE_MIN) {
+		// 5-minute ponds cycle continuously based on UTC 5-minute boundaries
+		// The pond is "Open" during the 5-minute countdown, then "TimeLocked" for 20 seconds after the timer hits zero
+
+		const nowMs = Date.now();
+		const now = new Date(nowMs);
+		const currentUTCMinutes = now.getUTCMinutes();
+
+		// Calculate the NEXT 5-minute boundary (where the timer is counting down to)
+		const currentFiveMinuteMark = Math.floor(currentUTCMinutes / 5) * 5;
+		let nextFiveMinuteMark = currentFiveMinuteMark + 5;
+
+		const nextBoundary = new Date(now);
+
+		// Handle hour rollover
+		if (nextFiveMinuteMark >= 60) {
+			nextBoundary.setUTCHours(nextBoundary.getUTCHours() + 1);
+			nextFiveMinuteMark = 0;
+		}
+
+		nextBoundary.setUTCMinutes(nextFiveMinuteMark, 0, 0);
+
+		// Calculate time until the next boundary
+		const timeUntilBoundaryMs = nextBoundary.getTime() - nowMs;
+		const timeUntilBoundarySeconds = Math.floor(timeUntilBoundaryMs / 1000);
+
+		// Get timelock duration in seconds (20 seconds for 5-min ponds)
+		const timelockDuration =
+			timelockSeconds || getEstimatedTimelock(pondInfo.period);
+		const timelockDurationSeconds = Number(timelockDuration);
+
+		// If we've passed the boundary (timer hit zero), check if we're in timelock
+		if (timeUntilBoundarySeconds < 0) {
+			const timePastBoundarySeconds = -timeUntilBoundarySeconds;
+
+			// Timelock for the first N seconds after crossing the boundary
+			if (timePastBoundarySeconds < timelockDurationSeconds) {
+				return PondStatus.TimeLocked;
+			}
+
+			// After timelock expires, pond needs winner selection before next cycle
+			return PondStatus.SelectWinner;
+		}
+
+		// During countdown (before boundary), pond is Open
+		return PondStatus.Open;
+	}
+
+	// General completion check for non-5-minute ponds
 	if (now > pondInfo.endTime && pondInfo.prizeDistributed) {
 		return PondStatus.Completed;
 	}
 
+	// Standard logic for non-5-minute ponds
 	// Check if pond has ended but prize hasn't been distributed
 	if (now > pondInfo.endTime) {
 		// Use the provided timelock or a period-based estimate
@@ -69,7 +119,7 @@ function getEstimatedTimelock(period: PondPeriod | undefined): bigint {
 	// Determine timelock based on pond period
 	switch (period) {
 		case PondPeriod.FIVE_MIN:
-			return BigInt(20); // 30 seconds for 5-minute ponds
+			return BigInt(20); // 20 seconds for 5-minute ponds
 		case PondPeriod.HOURLY:
 			return BigInt(60); // 1 minute for other ponds
 		case PondPeriod.DAILY:

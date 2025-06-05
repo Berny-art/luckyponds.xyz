@@ -2,18 +2,17 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { Badge } from './ui/badge';
-import { useAnimationStore } from '@/stores/animationStore';
+import { useAppStore } from '@/stores/appStore';
 import { cn } from '@/lib/utils';
 
 export default function FloatingAnimationRenderer() {
 	const {
-		isVisible,
-		position,
-		text,
-		textColor,
+		isAnimationVisible: isVisible,
+		animationPosition: position,
+		animationText: text,
+		animationTimestamp: timestamp,
 		hideAnimation,
-		timestamp, // Add timestamp to detect new animation triggers
-	} = useAnimationStore();
+	} = useAppStore();
 
 	// Use a ref to track animation timers for cleanup
 	const animationTimers = useRef<{
@@ -100,22 +99,18 @@ export default function FloatingAnimationRenderer() {
 	// Don't render if no active animation or missing essential props
 	if (!animationState.isActive || !text) return null;
 
-	// Get the correct gradient class based on fromColor and toColor
+	// Get a random gradient class from available options
 	const getGradientClass = () => {
-		// For "Higher" animation (default)
-		if (text === 'HIGHER') {
-			return 'bg-gradient-to-r from-drip-300 to-drip-600';
-		}
-		// For "DEGEN" animation
-		if (text === 'DEGEN') {
-			return 'bg-gradient-to-r from-purple-600 to-purple-400';
-		}
-		// For "LFG" animation
-		if (text === 'LFG') {
-			return 'bg-gradient-to-r from-orange-300 to-orange-600';
-		}
-		// Fallback to a default gradient if none matches
-		return 'bg-gradient-to-r from-green-300 to-green-600';
+		const gradients = [
+			'bg-gradient-to-r from-drip-300 to-drip-600',
+			'bg-gradient-to-r from-secondary-600 to-secondary-400',
+			'bg-gradient-to-r from-purple-600 to-purple-400',
+			'bg-gradient-to-r from-orange-300 to-orange-600',
+			'bg-gradient-to-r from-blue-300 to-blue-600',
+			'bg-gradient-to-r from-green-600 to-green-300',
+		];
+		
+		return gradients[Math.floor(Math.random() * gradients.length)];
 	};
 
 	return (
@@ -137,7 +132,7 @@ export default function FloatingAnimationRenderer() {
 					variant={'secondary'}
 					className={cn(
 						getGradientClass(),
-						textColor || 'text-primary-foreground',
+						'text-primary-foreground',
 						'px-4 py-1 font-bold uppercase shadow-md',
 					)}
 				>

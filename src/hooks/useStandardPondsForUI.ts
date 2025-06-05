@@ -1,21 +1,23 @@
 // src/hooks/useStandardPondsForUI.ts
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useReadContract } from 'wagmi';
 import { pondCoreConfig } from '@/contracts/PondCore';
 import { PondPeriod, type PondDisplayInfo } from '@/lib/types';
-import { usePondStore, type EnhancedPond } from '@/stores/pondStore';
+import { useAppStore, type EnhancedPond } from '@/stores/appStore';
+import useLocalStorage from 'use-local-storage';
 
 /**
- * Enhanced hook for fetching standard pond types with better error handling,
- * automatic store updates, and no placeholder data
+ * Enhanced hook for fetching standard pond types with token address parameter
  */
 export function useStandardPondsForUI(
-	tokenAddress = '0x0000000000000000000000000000000000000000',
+	tokenAddress = '0x0000000000000000000000000000000000000000', // Default to native
 ) {
 	const { setPondTypes, setIsLoadingPondTypes, setSelectedPond, selectedPond } =
-		usePondStore();
+		useAppStore();
+	const [lightningMode, setLightningMode] = useLocalStorage('lightningMode', false);
+	const [hasHyperModePonds, setHasHyperModePonds] = useState(false);
 
 	// Convert to 0x-prefixed address for wagmi
 	const formattedAddress = tokenAddress as `0x${string}`;
@@ -35,6 +37,7 @@ export function useStandardPondsForUI(
 	});
 
 	// Process data and update store in one effect
+	// biome-ignore lint/correctness/useExhaustiveDependencies: <explanation>
 	useEffect(() => {
 		// Always update loading state
 		setIsLoadingPondTypes(isLoading);
@@ -56,16 +59,43 @@ export function useStandardPondsForUI(
 				// Update the store
 				if (enhancedPonds.length > 0) {
 					setPondTypes(enhancedPonds);
-
-					// Set first pond as selected if none is selected
-					if (!selectedPond) {
-						setSelectedPond(enhancedPonds[2].type);
+					
+					// if pond types 5 min and hourly are not available set const
+					const hyperModePonds = enhancedPonds.some(
+						(pond) => pond.period === PondPeriod.FIVE_MIN || pond.period === PondPeriod.HOURLY,
+					);
+					setHasHyperModePonds(hyperModePonds);
+					if (lightningMode && !hyperModePonds) {
+						// If lightning mode is on but no hyper mode ponds, reset to default
+						setLightningMode(false);
 					}
+					// Set first pond as selected if none is selected OR if token changed
+					// Check if the selectedPond exists in the current enhancedPonds
+					const pondExists = enhancedPonds.some(pond => pond.type === selectedPond);
+
+					if (!selectedPond || !pondExists) {
+						if (lightningMode && hyperModePonds) {
+							// Lightning mode: select 5-minute pond or first available hyper mode pond
+							const fiveMinPond = enhancedPonds.find(pond => pond.period === PondPeriod.FIVE_MIN);
+							const hourlyPond = enhancedPonds.find(pond => pond.period === PondPeriod.HOURLY);
+							setSelectedPond(fiveMinPond?.type || hourlyPond?.type || enhancedPonds[0]?.type);
+						} else if (!lightningMode && hyperModePonds) {
+							// Normal mode with hyper ponds available: select daily pond
+							const dailyPond = enhancedPonds.find(pond => pond.period === PondPeriod.DAILY);
+							setSelectedPond(dailyPond?.type || enhancedPonds[0]?.type);
+						} else {
+							// No hyper mode ponds: select first available pond
+							setSelectedPond(enhancedPonds[0]?.type);
+						}
+					}
+
 				} else {
-					console.warn('No valid pond types found after filtering');
+					// No valid pond types found
+					setHasHyperModePonds(false);
 				}
 			} catch (processingError) {
-				console.error('Error processing pond data:', processingError);
+				// Error processing pond data
+				console.error('Error processing pond types:', processingError);
 			} finally {
 				// Ensure loading state is set to false even if processing fails
 				setIsLoadingPondTypes(false);
@@ -78,7 +108,16 @@ export function useStandardPondsForUI(
 		setIsLoadingPondTypes,
 		setSelectedPond,
 		selectedPond,
+		tokenAddress,
+		lightningMode,
+		setLightningMode,
 	]);
+
+	// Reset selected pond when token changes
+	// biome-ignore lint/correctness/useExhaustiveDependencies: <explanation>
+	useEffect(() => {
+		setSelectedPond('');
+	}, [tokenAddress, setSelectedPond]);
 
 	// Return the processed data along with loading/error states
 	return {
@@ -87,6 +126,7 @@ export function useStandardPondsForUI(
 					(pond: PondDisplayInfo) => pond.exists,
 				)
 			: [],
+		hasHyperModePonds,
 		isLoading,
 		isError,
 		error,

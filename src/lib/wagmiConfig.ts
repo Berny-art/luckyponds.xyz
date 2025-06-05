@@ -1,6 +1,13 @@
 // lib/wagmiConfig.ts
 import { getDefaultConfig, type Chain } from '@rainbow-me/rainbowkit';
 import { http } from 'wagmi';
+import {
+	metaMaskWallet,
+	coinbaseWallet,
+	trustWallet,
+	rabbyWallet,
+	walletConnectWallet,
+} from '@rainbow-me/rainbowkit/wallets';
 
 export const hyperliquid = {
 	id: Number(process.env.NEXT_PUBLIC_CHAIN_ID) || 999,
@@ -24,11 +31,23 @@ export const hyperliquid = {
 } as const satisfies Chain;
 
 export const config = getDefaultConfig({
-	appName: 'Hyper Frogs',
-	projectId: process.env.WC_PROJECT_ID ?? 'ID',
+	appName: 'Lucky',
+	projectId: process.env.NEXT_PUBLIC_WC_PROJECT_ID ?? 'ID',
 	chains: [hyperliquid],
 	ssr: true,
 	transports: {
 		[hyperliquid.id]: http(),
 	},
+	wallets: [
+		{
+			groupName: 'Recommended',
+			wallets: [
+				metaMaskWallet,
+				rabbyWallet,
+				coinbaseWallet,
+				trustWallet,
+				walletConnectWallet,
+			],
+		},
+	],
 });

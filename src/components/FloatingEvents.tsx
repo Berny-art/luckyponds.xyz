@@ -1,9 +1,8 @@
 // components/FloatingEvents.tsx
 'use client';
 
-import { useEventsStore } from '@/stores/eventsStore';
+import { useAppStore } from '@/stores/appStore';
 import FloatingEventBadge from './FloatingEventBadge';
-import { useEffect } from 'react';
 import type { PondComprehensiveInfo } from '@/lib/types';
 
 interface FloatingEventsProps {
@@ -19,12 +18,7 @@ export default function FloatingEvents({
 	className = '',
 }: FloatingEventsProps) {
 	// Get events from store
-	const { events, setPondInfo } = useEventsStore();
-
-	// Update pond info in store
-	useEffect(() => {
-		setPondInfo(pondInfo);
-	}, [pondInfo, setPondInfo]);
+	const { events } = useAppStore();
 
 	return (
 		<div

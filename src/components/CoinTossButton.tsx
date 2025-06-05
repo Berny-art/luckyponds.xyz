@@ -1,190 +1,271 @@
+// src/components/CoinTossButtonImproved.tsx
 'use client';
-
-import { useState } from 'react';
+import { useCallback, useMemo } from 'react';
 import { Button } from './ui/button';
 import { useTossCoin } from '@/hooks/useTossCoin';
-import { usePondStore } from '@/stores/pondStore';
+import { useAllowance } from '@/hooks/useAllowance';
+import { useAppStore } from '@/stores/appStore';
 import { Loader2, Wallet } from 'lucide-react';
 import type { PondComprehensiveInfo } from '@/lib/types';
-import { useAccount, useWriteContract } from 'wagmi';
+import { useAccount } from 'wagmi';
 import { useConnectModal } from '@rainbow-me/rainbowkit';
-import { pondCoreConfig } from '@/contracts/PondCore';
 import { toast } from 'sonner';
 import { PondStatus } from '@/functions/getPondStatus';
-import { usePondStatus } from '@/hooks/usePondStatus';
-import { useAnimationStore } from '@/stores/animationStore';
+import { formatValue } from '@/lib/utils';
+import AllowanceButton from './AllowanceButton';
+import { useTransactionMonitor } from '@/hooks/useTransactionMonitor';
+import { usePondTimers } from '@/hooks/usePondTimers';
+import { useWinnerSelection } from '@/hooks/useWinnerSelection';
 
 interface CoinTossButtonProps {
-	amount: string;
-	numberOfTosses: number;
-	pondInfo: PondComprehensiveInfo;
-	disabled?: boolean;
+  amount: string;
+  numberOfTosses: number;
+  pondInfo: PondComprehensiveInfo;
+  disabled?: boolean;
+  onTransactionSuccess?: () => void;
+  timeRemaining?: number;
+  isAboutToEnd?: boolean;
+  canToss?: boolean;
+  maxTossAmount?: string;
 }
 
 export default function CoinTossButton({
-	amount,
-	numberOfTosses,
-	pondInfo,
-	disabled = false,
+  amount,
+  numberOfTosses,
+  pondInfo,
+  disabled = false,
+  onTransactionSuccess,
+  timeRemaining,
+  isAboutToEnd,
+  canToss = true,
+  maxTossAmount,
 }: CoinTossButtonProps) {
-	const { address } = useAccount();
-	const isConnected = !!address;
-	const { openConnectModal } = useConnectModal();
-	const { selectedPond } = usePondStore();
-	const { tossCoin, isLoading: tossLoading } = useTossCoin();
-	const [isProcessing, setIsProcessing] = useState(false);
-	const { writeContractAsync, isPending: isWritePending } = useWriteContract();
-	const { showLFG } = useAnimationStore();
+  const { address } = useAccount();
+  const isConnected = !!address;
+  const { openConnectModal } = useConnectModal();
+  const { selectedPond, selectedToken, showAnimation } = useAppStore();
 
-	// Get pond status with accurate timelock information
-	const { status: pondStatus } = usePondStatus(pondInfo);
+  // Use improved hooks
+  const { tossCoin, isLoading: tossLoading, txHash } = useTossCoin();
+  const { isApprovalNeeded } = useAllowance(selectedToken, maxTossAmount || amount, pondInfo);
 
-	// Check if the component is in a loading state
-	const isLoading = tossLoading || isProcessing || isWritePending;
+  // Use React Query-based transaction monitoring
+  const { isMonitoring } = useTransactionMonitor({
+    txHash,
+    onSuccess: onTransactionSuccess,
+    enabled: !!txHash,
+  });
 
-	// Function to select a winner for the pond (hidden from user)
-	const selectWinner = async () => {
-		if (!selectedPond) return;
+  // Use React Query-based timer management
+  const {
+    isPondAboutToEnd,
+    is5MinutePondInTimelock,
+    isTimeLocked,
+    pondStatus,
+  } = usePondTimers({ pondInfo, isAboutToEnd });
 
-		try {
-			// No toast notification for this step - we keep it hidden
-			const hash = await writeContractAsync({
-				...pondCoreConfig,
-				address: pondCoreConfig.address as `0x${string}`,
-				functionName: 'selectLuckyWinner',
-				args: [selectedPond as `0x${string}`],
-			});
+  // Use React Query-based winner selection
+  const { selectWinner, needsWinnerSelection } = useWinnerSelection({
+    pondInfo,
+    selectedPond,
+    pondStatus,
+    onTransactionSuccess,
+  });
 
-			console.log('Silent winner selection transaction:', hash);
-			return hash;
-		} catch (error: unknown) {
-			console.error('Silent winner selection error:', error);
-			throw error;
-		}
-	};
+  // Combine all loading states
+  const isLoading = tossLoading || isMonitoring;
 
-	// Handle the connect wallet action with RainbowKit
-	const handleConnect = (e: React.MouseEvent) => {
-		const x = e.clientX;
-		const y = e.clientY;
-		if (x && y) {
-			showLFG({ x, y });
-		}
+  // Handle the connect wallet action with RainbowKit
+  const handleConnect = useCallback((e: React.MouseEvent) => {
+    const x = e.clientX;
+    const y = e.clientY;
+    if (x && y) {
+      showAnimation({ x, y });
+    }
 
-		if (openConnectModal) {
-			openConnectModal();
-		} else {
-			toast.error('Connection unavailable', {
-				description: 'Wallet connection is not available right now',
-			});
-		}
-	};
+    if (openConnectModal) {
+      openConnectModal();
+    } else {
+      toast.error('Connection unavailable', {
+        description: 'Wallet connection is not available right now',
+      });
+    }
+  }, [showAnimation, openConnectModal]);
 
-	// Handle the toss (with seamless winner selection if needed)
-	const handleToss = async (e: React.MouseEvent) => {
-		if (!selectedPond || !pondInfo) {
-			return;
-		}
+  // Handle the toss (with seamless winner selection if needed)
+  const handleToss = useCallback(async (e: React.MouseEvent) => {
+    if (!selectedPond || !pondInfo) {
+      return;
+    }
 
-		const x = e.clientX;
-		const y = e.clientY;
-		if (x && y) {
-			showLFG({ x, y });
-		}
+    const x = e.clientX;
+    const y = e.clientY;
+    if (x && y) {
+      showAnimation({ x, y });
+    }
 
-		setIsProcessing(true);
+    try {
+      // If pond is ready for winner selection, do it silently
+      if (needsWinnerSelection()) {
+        toast.loading('Processing transaction...', { id: 'toss-loading' });
+        try {
+          // Silently trigger winner selection
+          await selectWinner();
+          // Small delay to ensure transactions are processed in order
+          await new Promise((resolve) => setTimeout(resolve, 500));
+        } catch (err: unknown) {
+          toast.error('Transaction failed', {
+            id: 'toss-loading',
+          });
+          console.error('Error selecting winner:', err);
+          return;
+        }
+      }
 
-		try {
-			// If pond is ready for winner selection, do it silently
-			if (pondStatus === PondStatus.SelectWinner) {
-				toast.loading('Processing transaction...', { id: 'toss-loading' });
-				try {
-					// Silently trigger winner selection
-					await selectWinner();
-					// Small delay to ensure transactions are processed in order
-					await new Promise((resolve) => setTimeout(resolve, 500));
-				} catch (error: unknown) {
-					toast.error('Transaction failed', {
-						id: 'toss-loading',
-						description: 'There was an error processing your transaction.',
-					});
-					console.error('Error in silent winner selection:', error);
-					setIsProcessing(false);
-					return;
-				}
-			}
+      // Proceed with the toss (standard or after selection)
+      await tossCoin(selectedPond, amount, pondInfo.tokenType, selectedToken);
+    } catch (error) {
+      // Error is handled by the tossCoin function
+      console.error('Error tossing coin:', error);
+    }
+  }, [selectedPond, pondInfo, showAnimation, selectWinner, tossCoin, amount, selectedToken, needsWinnerSelection]);
 
-			// Proceed with the toss (standard or after selection)
-			await tossCoin(selectedPond, amount, pondInfo.tokenType);
-		} catch (error) {
-			console.error('Toss process error:', error);
-		} finally {
-			setIsProcessing(false);
-		}
-	};
+  // Get pond name for display - memoized to prevent recalculation
+  const displayPondName = useMemo(() => {
+    const pondName = pondInfo?.name.replace('ETH', '') || 'pond';
+    return pondName.includes('Pond')
+      ? pondName.replace('Pond', '').trim()
+      : pondName;
+  }, [pondInfo?.name]);
 
-	// Get pond name for display
-	const pondName = pondInfo?.name || 'pond';
-	const displayPondName = pondName.includes('Pond')
-		? pondName.replace('Pond', '').trim()
-		: pondName;
+  // Get the button text based on connection, loading, and pond status - memoized
+  const buttonText = useMemo(() => {
+    // Not connected - show connect wallet button
+    if (!isConnected) {
+      return (
+        <>
+          <Wallet className="mr-2 h-5 w-5" /> Connect Wallet
+        </>
+      );
+    }
 
-	// Get the button text based on connection, loading, and pond status
-	const getButtonText = () => {
-		if (isLoading) {
-			return (
-				<>
-					<Loader2 className="mr-2 h-5 w-5 animate-spin" /> Processing...
-				</>
-			);
-		}
+    if (isLoading) {
+      return (
+        <>
+          <Loader2 className="mr-2 h-5 w-5 animate-spin" /> Processing...
+        </>
+      );
+    }
 
-		// Not connected - show connect wallet button
-		if (!isConnected) {
-			return (
-				<>
-					<Wallet className="mr-2 h-5 w-5" /> Connect Wallet
-				</>
-			);
-		}
+    if (isTimeLocked || is5MinutePondInTimelock) {
+      return (
+        <>
+          <Loader2 className="mr-2 h-5 w-5 animate-spin" /> Selecting winner...
+        </>
+      );
+    }
 
-		// Connected - show standard toss message
-		return numberOfTosses === 1
-			? `Toss ${numberOfTosses} coin in ${displayPondName} pond`
-			: `Toss ${numberOfTosses} coins in ${displayPondName} pond`;
-	};
+    // Pond about to end warning
+    if (isPondAboutToEnd) {
+      const secondsRemaining = timeRemaining
+        ? Math.ceil(timeRemaining / 1000)
+        : 0;
+      return (
+        <>
+          {secondsRemaining > 0
+            ? `Pond ending in ${secondsRemaining}s - Tosses disabled`
+            : 'Pond ending soon - Tosses disabled'}
+        </>
+      );
+    }
 
-	// Handle the click action based on connection status
-	const handleClick = (e: React.MouseEvent) => {
-		if (!isConnected) {
-			handleConnect(e);
-		} else {
-			handleToss(e);
-		}
-	};
+    // Connected - show standard toss message
+    return `Toss ${formatValue(amount)} ${selectedToken.symbol} in ${displayPondName} pond`;
+  }, [
+    isConnected,
+    isLoading,
+    isTimeLocked,
+    is5MinutePondInTimelock,
+    isPondAboutToEnd,
+    timeRemaining,
+    amount,
+    selectedToken?.symbol,
+    displayPondName,
+  ]);
 
-	// Apply correct timelock duration based on pond period (shorter for 5-min ponds)
-	const isTimeLocked = pondStatus === PondStatus.TimeLocked;
+  // Handle the click action based on connection status
+  const handleClick = useCallback((e: React.MouseEvent) => {
+    if (!isConnected) {
+      handleConnect(e);
+    } else {
+      handleToss(e);
+    }
+  }, [isConnected, handleConnect, handleToss]);
 
-	// Determine if button should be disabled
-	const isButtonDisabled =
-		disabled ||
-		isLoading ||
-		(isConnected &&
-			(!selectedPond ||
-				amount === '0' ||
-				numberOfTosses < 1 ||
-				pondStatus === PondStatus.NotStarted ||
-				isTimeLocked ||
-				pondStatus === PondStatus.Completed));
+  // Determine if button should be disabled - memoized
+  const isButtonDisabled = useMemo(() => {
+    return disabled ||
+      isLoading ||
+      (isConnected &&
+        (!selectedPond ||
+          amount === '0' ||
+          !canToss ||
+          numberOfTosses < 1 ||
+          pondStatus === PondStatus.NotStarted ||
+          pondStatus === PondStatus.Completed ||
+          isPondAboutToEnd ||
+          isTimeLocked ||
+          is5MinutePondInTimelock));
+  }, [
+    disabled,
+    isLoading,
+    isConnected,
+    selectedPond,
+    amount,
+    canToss,
+    numberOfTosses,
+    pondStatus,
+    isPondAboutToEnd,
+    isTimeLocked,
+    is5MinutePondInTimelock,
+  ]);
 
-	return (
-		<Button
-			onClick={handleClick}
-			disabled={isButtonDisabled}
-			className="w-full bg-drip-300 py-6 font-bold text-secondary-950 text-xl hover:bg-drip-300/90"
-		>
-			{getButtonText()}
-		</Button>
-	);
+  // Enhanced styling based on state - memoized
+  const buttonStyling = useMemo(() => {
+    if (isPondAboutToEnd) {
+      return 'bg-red-500 text-white hover:bg-red-500'; // Warning styling for ending soon
+    }
+    if (isTimeLocked || is5MinutePondInTimelock) {
+      return 'bg-orange-500 text-white hover:bg-orange-500'; // Orange for timelock/selecting winner
+    }
+    return 'text-white animate-gradient bg-[linear-gradient(90deg,#F2E718_0%,#80E8A9_20%,#9353ED_50%,#ED5353_75%,#EDA553_100%)]'; // Default styling
+  }, [isPondAboutToEnd, isTimeLocked, is5MinutePondInTimelock]);
+
+  return (
+    <>
+      {/* Show allowance button if approval is needed */}
+      {isApprovalNeeded && selectedToken && (
+        <AllowanceButton
+          token={selectedToken}
+          amount={maxTossAmount || amount}
+          disabled={disabled}
+          pondInfo={pondInfo}
+          onApprovalComplete={() => {
+            // Refresh allowance check - the button will automatically hide when approval is complete
+          }}
+        />
+      )}
+
+      {/* Show toss button if approval is not needed or already given */}
+      {!isApprovalNeeded && (
+        <Button
+          onClick={handleClick}
+          disabled={isButtonDisabled}
+          className={`w-full py-6 font-bold text-xl ${buttonStyling}`}
+        >
+          {buttonText}
+        </Button>
+      )}
+    </>
+  );
 }

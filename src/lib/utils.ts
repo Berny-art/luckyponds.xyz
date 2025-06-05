@@ -13,13 +13,25 @@ export function formatNextDrawTime(endTime: bigint) {
 }
 
 // Format the ether values for display
-export function formatValue(value: bigint | undefined) {
-	const numValue = Number(formatEther(value ?? 0));
+export function formatValue(value: bigint | string | undefined) {
+	let numValue = 0;
+	// if is string convert to bigint
+	if (typeof value === 'string') {
+		numValue = Number(value);
+	}
+	if (typeof value === 'bigint') {
+		numValue = Number(formatEther(value));
+	}
+	// For undefined, use 0
+	if (value === undefined) {
+		numValue = 0;
+	}
+
 	let decimalPlaces = 4;
 	if (numValue < 0.001) decimalPlaces = 4;
 	if (numValue > 0.01) decimalPlaces = 2;
 	if (numValue >= 1) decimalPlaces = 0;
-	return Number.parseFloat(formatEther(value ?? 0)).toFixed(decimalPlaces);
+	return numValue.toFixed(decimalPlaces);
 }
 
 type Params = {
@@ -41,16 +53,24 @@ const closing = {
 };
 
 export function formatAddress(
-	address: string,
+	address: string | null | undefined,
 	{ nPrefix, nSuffix, separator }: Params = {},
 ) {
-	const match = address.match(/^(0x[a-zA-Z0-9])[a-zA-Z0-9]+([a-zA-Z0-9])$/);
+	// Handle null or undefined addresses
+	if (!address) {
+		return 'N/A';
+	}
+
+	// Ensure address is a string
+	const addressStr = String(address);
+
+	const match = addressStr.match(/^(0x[a-zA-Z0-9])[a-zA-Z0-9]+([a-zA-Z0-9])$/);
 	const nTotalIsLongerThanAddress =
-		(nPrefix || 0) + (nSuffix || 0) > address.length;
+		(nPrefix || 0) + (nSuffix || 0) > addressStr.length;
 
 	return match && !nTotalIsLongerThanAddress
-		? `0x${address.slice(2, 2 + (nPrefix || 4))}${separator ? opening[separator] : ''}…${
+		? `0x${addressStr.slice(2, 2 + (nPrefix || 4))}${separator ? opening[separator] : ''}…${
 				separator ? closing[separator] : ''
-			}${address.slice(address.length - (nSuffix || 4))}`
-		: address;
+			}${addressStr.slice(addressStr.length - (nSuffix || 4))}`
+		: addressStr;
 }

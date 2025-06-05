@@ -1,7 +1,7 @@
 // components/FloatingEventBadge.tsx
 'use client';
 
-import { formatAddress } from '@/lib/utils';
+import { formatAddress, formatValue } from '@/lib/utils';
 import {
 	OneCoin,
 	TwoCoins,
@@ -13,7 +13,7 @@ import {
 import { Badge } from './ui/badge';
 import { formatEther } from 'ethers';
 import { useEffect, useState, useRef } from 'react';
-import type { ContractEvent } from '@/stores/eventsStore';
+import type { ContractEvent } from '@/stores/appStore';
 
 function getCoinIcon(multiplier: number) {
 	if (multiplier >= 6) return <MultipleCoins />;
@@ -112,7 +112,9 @@ function FloatingEventBadge({ event, minTossAmount }: FloatingEventBadgeProps) {
 					variant="default"
 					className="flex items-center gap-2 bg-primary-200/30 text-primary-200 text-xs"
 				>
-					<span className="text-nowrap font-bold">{event.amount} HYPE</span>
+					<span className="text-nowrap font-bold">
+						{formatValue(event.amount)} HYPE
+					</span>
 					<span className="text-nowrap font-bold">/</span>
 					<span className="text-nowrap font-mono">
 						{formatAddress(event.address)}

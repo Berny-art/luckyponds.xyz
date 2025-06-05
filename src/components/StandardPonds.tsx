@@ -3,11 +3,12 @@
 
 import { cn } from '@/lib/utils';
 import { Button } from './ui/button';
-import { useAnimationStore } from '@/stores/animationStore';
+import { useAppStore } from '@/stores/appStore';
 import { PondPeriod } from '@/lib/types';
 import { Skeleton } from './ui/skeleton';
-import { usePondStore, type EnhancedPond } from '@/stores/pondStore';
+import type { EnhancedPond } from '@/stores/appStore';
 import { useState, useEffect } from 'react';
+import useLocalStorage from 'use-local-storage';
 
 interface StandardPondsProps {
 	pondTypes: EnhancedPond[];
@@ -22,8 +23,8 @@ export default function StandardPonds({
 	selectedPond,
 	onPondSelect,
 }: StandardPondsProps) {
-	const { showRandom } = useAnimationStore();
-	const { lightningMode } = usePondStore();
+	const { showAnimation } = useAppStore();
+	const [lightningMode] = useLocalStorage('lightningMode', false);
 	const [displayPonds, setDisplayPonds] = useState<EnhancedPond[]>([]);
 
 	// Update display ponds when pond types change
@@ -68,7 +69,7 @@ export default function StandardPonds({
 
 			if (x && y) {
 				// Trigger animation at click position
-				showRandom({ x, y });
+				showAnimation({ x, y });
 			}
 
 			// Set the selected pond

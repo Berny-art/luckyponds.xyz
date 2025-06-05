@@ -10,47 +10,23 @@ import {
 	DialogTrigger,
 } from './ui/dialog';
 import { Button } from './ui/button';
-import usePondInfo from '@/hooks/usePondInfo';
+import { useAllPondWinners } from '@/hooks/useAllPondWinners';
+import { useAppStore } from '@/stores/appStore';
+import PondWinnerCard from './PondWinnerCard';
+import { usePartyHorn } from '@/hooks/usePartyHorn';
+import { triggerFullConfetti } from '@/lib/confetti';
 import { PondPeriod } from '@/lib/types';
-import { usePondStore } from '@/stores/pondStore';
 
-/**
- * Mobile-friendly component for displaying pond winners
- * Shows a trophy button that opens a dialog with all winners
- */
 export default function PondWinnerDialog({
 	classNames,
 }: { classNames?: string }) {
-	// Get pond types directly from the store
-	const { pondTypes, isLoadingPondTypes } = usePondStore();
+	const { selectedToken } = useAppStore();
+	const triggerPartyHorn = usePartyHorn();
 
-	// Extract pond types if available
-	const fiveMinPondType = pondTypes.find(
-		(p) => p.period === PondPeriod.FIVE_MIN,
-	)?.type;
-
-	const hourlyPondType = pondTypes.find(
-		(p) => p.period === PondPeriod.HOURLY,
-	)?.type;
-
-	const dailyPondType = pondTypes.find(
-		(p) => p.period === PondPeriod.DAILY,
-	)?.type;
-
-	const weeklyPondType = pondTypes.find(
-		(p) => p.period === PondPeriod.WEEKLY,
-	)?.type;
-
-	const monthlyPondType = pondTypes.find(
-		(p) => p.period === PondPeriod.MONTHLY,
-	)?.type;
-
-	// Use our usePondInfo hook to get info for each pond
-	const { data: fiveMinInfo } = usePondInfo(fiveMinPondType || '');
-	const { data: hourlyInfo } = usePondInfo(hourlyPondType || '');
-	const { data: dailyInfo } = usePondInfo(dailyPondType || '');
-	const { data: weeklyInfo } = usePondInfo(weeklyPondType || '');
-	const { data: monthlyInfo } = usePondInfo(monthlyPondType || '');
+	// Fetch winners for all pond periods using the dedicated hook
+	const { winners, isLoading, isError } = useAllPondWinners(
+		selectedToken.address,
+	);
 
 	// Check if there's a winner (address is not zero)
 	const hasWinner = (address: string | undefined) => {
@@ -65,48 +41,6 @@ export default function PondWinnerDialog({
 		return 'No winner yet';
 	};
 
-	const isLoading =
-		isLoadingPondTypes || !dailyPondType || !weeklyPondType || !monthlyPondType;
-
-	// Define display configuration for all pond types
-	const pondsConfig = [
-		{
-			pondInfo: fiveMinInfo,
-			title: '5 Min Winner',
-			colorClass: 'text-purple-400',
-			bgClass: 'bg-purple-400/10',
-			borderClass: 'border-purple-400',
-		},
-		{
-			pondInfo: hourlyInfo,
-			title: 'Hourly Winner',
-			colorClass: 'text-blue-400',
-			bgClass: 'bg-blue-400/10',
-			borderClass: 'border-blue-400',
-		},
-		{
-			pondInfo: dailyInfo,
-			title: 'Daily Winner',
-			colorClass: 'text-primary-200',
-			bgClass: 'bg-primary-200/10',
-			borderClass: 'border-primary-200',
-		},
-		{
-			pondInfo: weeklyInfo,
-			title: 'Weekly Winner',
-			colorClass: 'text-orange-400',
-			bgClass: 'bg-orange-400/10',
-			borderClass: 'border-orange-400',
-		},
-		{
-			pondInfo: monthlyInfo,
-			title: 'Monthly Winner',
-			colorClass: 'text-drip-300',
-			bgClass: 'bg-drip-300/10',
-			borderClass: 'border-drip-300',
-		},
-	];
-
 	return (
 		<Dialog>
 			<DialogTrigger asChild>
@@ -117,46 +51,41 @@ export default function PondWinnerDialog({
 						'!bg-drip-300/10 flex w-24 justify-start border-2 border-drip-300 px-4 py-[21px] hover:bg-primary-200/10',
 						classNames,
 					)}
+					onClick={() => {
+						// Trigger confetti and party horn when opening the dialog
+						triggerFullConfetti(PondPeriod.WEEKLY);
+						triggerPartyHorn();
+					}}
 				>
 					<Trophy className="h-5 w-5 text-primary-200" />
-				</Button>
-			</DialogTrigger>
-			<DialogContent className="max-h-screen max-w-md overflow-y-scroll border-none bg-primary-950/90 px-8 text-primary-200 backdrop-blur-sm">
-				<DialogHeader>
-					<DialogTitle className="pt-8 text-center font-bold font-mono text-3xl">
-						<span className="flex items-center justify-center gap-2">
-							Recent Winners
-						</span>
-					</DialogTitle>
-				</DialogHeader>
+		</Button>
+		</DialogTrigger>
+		<DialogContent className="max-h-screen max-w-[95vw] overflow-y-scroll border-2 border-primary-200 rounded-lg bg-primary-950/90 px-8 text-primary-200 backdrop-blur-sm">
+			<DialogHeader>
+				<DialogTitle className="pt-8 text-center font-bold font-mono text-3xl">
+					<span className="flex items-center justify-center gap-2">
+						Recent Winners
+					</span>
+				</DialogTitle>
+			</DialogHeader>
 
 				{isLoading ? (
 					<div className="py-2 text-center">Loading winners...</div>
+				) : isError ? (
+					<div className="py-2 text-center text-red-400">
+						Error loading winners
+					</div>
 				) : (
 					<div className="flex flex-col gap-2">
-						{pondsConfig.map((pond) => (
-							<div
-								key={pond.title}
-								className={cn(
-									'flex flex-col items-center justify-center rounded-lg border-2 p-2 text-center',
-									pond.bgClass,
-									pond.borderClass,
-								)}
-							>
-								<h3 className="font-bold font-mono text-lg">{pond.title}</h3>
-								<p className={cn('mt-1 font-bold text-2xl', pond.colorClass)}>
-									{formatValue(pond.pondInfo?.lastPondPrize)} HYPE
-								</p>
-								<div className="mt-2 font-mono text-primary-200 text-sm">
-									{hasWinner(pond.pondInfo?.lastPondWinner) ? (
-										<div className="flex flex-col items-center gap-1">
-											<p>{formatWinner(pond.pondInfo?.lastPondWinner)}</p>
-										</div>
-									) : (
-										'No winner yet'
-									)}
-								</div>
-							</div>
+						{winners.map((winner) => (
+							<PondWinnerCard
+								key={winner.title}
+								title={winner.title}
+								amount={formatValue(winner.lastPrize)}
+								winner={formatWinner(winner.lastWinner)}
+								hasWinner={!!hasWinner(winner.lastWinner)}
+								period={winner.period}
+							/>
 						))}
 					</div>
 				)}
