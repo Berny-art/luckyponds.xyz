@@ -22,15 +22,17 @@ import {
 } from '@/components/ui/popover';
 import { useAppStore, type Token } from '@/stores/appStore';
 import { Skeleton } from './ui/skeleton';
+import { getPondStatus, PondStatus } from '@/functions/getPondStatus';
+import { PondComprehensiveInfo } from '@/lib/types';
 
 interface TokenSelectorProps {
-	totalValue?: bigint;
+	pondInfo: PondComprehensiveInfo;
 	isLoading?: boolean;
 	className?: string;
 }
 
 export default function TokenSelector({
-	totalValue,
+	pondInfo,
 	isLoading = false,
 	className,
 }: TokenSelectorProps) {
@@ -44,6 +46,11 @@ export default function TokenSelector({
 		clearEvents,
 		setPondTypes
 	} = useAppStore();
+
+	const pondStatus = getPondStatus(pondInfo);
+	const isSelectWinner = pondStatus === PondStatus.SelectWinner;
+
+	const totalValue = isSelectWinner ? 0n : pondInfo?.totalValue || 0n;
 
 	const handleTokenSelect = (token: Token) => {
 		// Only proceed if it's a different token

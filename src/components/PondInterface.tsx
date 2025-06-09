@@ -232,11 +232,13 @@ export default function PondInterface({ tokenAddress, initialReferrerCode }: Pon
 						<h1 className="font-bold font-mono text-3xl text-primary-200 uppercase md:text-5xl">
 							WIN
 						</h1>
-						<TokenSelector
-							totalValue={pondInfo?.totalValue}
-							isLoading={isLoading}
-							className="justify-center"
-						/>
+						{pondInfo && (
+							<TokenSelector
+								pondInfo={pondInfo}
+								isLoading={isLoading}
+								className="justify-center"
+							/>
+						)}
 					</div>
 
 					{/* Countdown Timer */}
