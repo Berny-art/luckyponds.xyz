@@ -60,10 +60,6 @@ export default function PondInterface({ tokenAddress, initialReferrerCode }: Pon
 		applyReferralCode,
 	} = useReferralCode({ initialReferrerCode });
 
-	// State for timer information
-	const [timeRemaining, setTimeRemaining] = useState<number>(0);
-	const [isAboutToEnd, setIsAboutToEnd] = useState<boolean>(false);
-
 	// State to track if we've processed the referral
 	const [hasProcessedReferral, setHasProcessedReferral] = useState(false);
 
@@ -162,12 +158,6 @@ export default function PondInterface({ tokenAddress, initialReferrerCode }: Pon
 	const initialEventsAddedRef = useRef(false);
 	const eventsTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-	// Handler for timer updates
-	const handleTimerUpdate = (remaining: number, aboutToEnd: boolean) => {
-		setTimeRemaining(remaining);
-		setIsAboutToEnd(aboutToEnd);
-	};
-
 	// Handler for pond selection changes
 	const handlePondSelect = (newPondId: string) => {
 		setSelectedPond(newPondId);
@@ -223,10 +213,6 @@ export default function PondInterface({ tokenAddress, initialReferrerCode }: Pon
 	useEffect(() => {
 		// When the current token address changes, force a complete data refresh
 		if (currentTokenAddress) {
-			// Clear timer states
-			setTimeRemaining(0);
-			setIsAboutToEnd(false);
-
 			// Force data refresh after a short delay to ensure hooks are updated
 			setTimeout(() => {
 				refetchAll();
@@ -264,7 +250,6 @@ export default function PondInterface({ tokenAddress, initialReferrerCode }: Pon
 							pondInfo && (
 								<PondTimer
 									pondInfo={pondInfo}
-									onTimerUpdate={handleTimerUpdate}
 									key={`timer-${selectedPond}-${pondInfo.endTime}-${pondInfo.period}`}
 								/>
 							)
@@ -302,8 +287,6 @@ export default function PondInterface({ tokenAddress, initialReferrerCode }: Pon
 							<CoinTossInput
 								pondInfo={pondInfo}
 								onTransactionSuccess={handleTransactionSuccess} // Use enhanced handler
-								timeRemaining={timeRemaining}
-								isAboutToEnd={isAboutToEnd}
 							/>
 						)
 					)}

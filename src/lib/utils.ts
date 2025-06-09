@@ -13,7 +13,7 @@ export function formatNextDrawTime(endTime: bigint) {
 }
 
 // Format the ether values for display
-export function formatValue(value: bigint | string | undefined) {
+export function formatValue(value: bigint | string | undefined, decimals?: number) {
 	let numValue = 0;
 	// if is string convert to bigint
 	if (typeof value === 'string') {
@@ -30,7 +30,11 @@ export function formatValue(value: bigint | string | undefined) {
 	let decimalPlaces = 4;
 	if (numValue < 0.001) decimalPlaces = 4;
 	if (numValue > 0.01) decimalPlaces = 2;
+	if (numValue === 0) decimalPlaces = 0;
 	if (numValue >= 1) decimalPlaces = 0;
+	if (decimals !== undefined) {
+		decimalPlaces = decimals;
+	}
 	return numValue.toFixed(decimalPlaces);
 }
 

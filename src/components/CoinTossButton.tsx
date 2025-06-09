@@ -10,12 +10,10 @@ import type { PondComprehensiveInfo } from '@/lib/types';
 import { useAccount } from 'wagmi';
 import { useConnectModal } from '@rainbow-me/rainbowkit';
 import { toast } from 'sonner';
-import { PondStatus } from '@/functions/getPondStatus';
 import { formatValue } from '@/lib/utils';
 import AllowanceButton from './AllowanceButton';
 import { useTransactionMonitor } from '@/hooks/useTransactionMonitor';
-import { usePondTimers } from '@/hooks/usePondTimers';
-import { useWinnerSelection } from '@/hooks/useWinnerSelection';
+import { isPondDisabledByTiming, getNextPondEndTime } from '@/lib/timeUtils';
 
 interface CoinTossButtonProps {
   amount: string;
@@ -23,8 +21,6 @@ interface CoinTossButtonProps {
   pondInfo: PondComprehensiveInfo;
   disabled?: boolean;
   onTransactionSuccess?: () => void;
-  timeRemaining?: number;
-  isAboutToEnd?: boolean;
   canToss?: boolean;
   maxTossAmount?: string;
 }
@@ -35,8 +31,6 @@ export default function CoinTossButton({
   pondInfo,
   disabled = false,
   onTransactionSuccess,
-  timeRemaining,
-  isAboutToEnd,
   canToss = true,
   maxTossAmount,
 }: CoinTossButtonProps) {
@@ -56,21 +50,12 @@ export default function CoinTossButton({
     enabled: !!txHash,
   });
 
-  // Use React Query-based timer management
-  const {
-    isPondAboutToEnd,
-    is5MinutePondInTimelock,
-    isTimeLocked,
-    pondStatus,
-  } = usePondTimers({ pondInfo, isAboutToEnd });
-
-  // Use React Query-based winner selection
-  const { selectWinner, needsWinnerSelection } = useWinnerSelection({
-    pondInfo,
-    selectedPond,
-    pondStatus,
-    onTransactionSuccess,
-  });
+  // Calculate simple timing states using UTC-based timing (not contract endTime)
+  // This ensures frontend handles winner selection timing correctly
+  const isPondDisabled = isPondDisabledByTiming(pondInfo.period, Number(pondInfo.endTime));
+  const nextEndTime = getNextPondEndTime(pondInfo.period, Number(pondInfo.endTime));
+  const currentTime = Date.now();
+  const timeUntilEnd = Math.floor((nextEndTime - currentTime) / 1000);
 
   // Combine all loading states
   const isLoading = tossLoading || isMonitoring;
@@ -92,7 +77,7 @@ export default function CoinTossButton({
     }
   }, [showAnimation, openConnectModal]);
 
-  // Handle the toss (with seamless winner selection if needed)
+  // Handle the toss action
   const handleToss = useCallback(async (e: React.MouseEvent) => {
     if (!selectedPond || !pondInfo) {
       return;
@@ -105,30 +90,13 @@ export default function CoinTossButton({
     }
 
     try {
-      // If pond is ready for winner selection, do it silently
-      if (needsWinnerSelection()) {
-        toast.loading('Processing transaction...', { id: 'toss-loading' });
-        try {
-          // Silently trigger winner selection
-          await selectWinner();
-          // Small delay to ensure transactions are processed in order
-          await new Promise((resolve) => setTimeout(resolve, 500));
-        } catch (err: unknown) {
-          toast.error('Transaction failed', {
-            id: 'toss-loading',
-          });
-          console.error('Error selecting winner:', err);
-          return;
-        }
-      }
-
-      // Proceed with the toss (standard or after selection)
+      // Proceed with the toss
       await tossCoin(selectedPond, amount, pondInfo.tokenType, selectedToken);
     } catch (error) {
       // Error is handled by the tossCoin function
       console.error('Error tossing coin:', error);
     }
-  }, [selectedPond, pondInfo, showAnimation, selectWinner, tossCoin, amount, selectedToken, needsWinnerSelection]);
+  }, [selectedPond, pondInfo, showAnimation, tossCoin, amount, selectedToken]);
 
   // Get pond name for display - memoized to prevent recalculation
   const displayPondName = useMemo(() => {
@@ -138,7 +106,7 @@ export default function CoinTossButton({
       : pondName;
   }, [pondInfo?.name]);
 
-  // Get the button text based on connection, loading, and pond status - memoized
+  // Get the button text based on connection, loading, and timing - memoized
   const buttonText = useMemo(() => {
     // Not connected - show connect wallet button
     if (!isConnected) {
@@ -157,37 +125,26 @@ export default function CoinTossButton({
       );
     }
 
-    if (isTimeLocked || is5MinutePondInTimelock) {
-      return (
-        <>
-          <Loader2 className="mr-2 h-5 w-5 animate-spin" /> Selecting winner...
-        </>
-      );
-    }
-
-    // Pond about to end warning
-    if (isPondAboutToEnd) {
-      const secondsRemaining = timeRemaining
-        ? Math.ceil(timeRemaining / 1000)
-        : 0;
-      return (
-        <>
-          {secondsRemaining > 0
-            ? `Pond ending in ${secondsRemaining}s - Tosses disabled`
-            : 'Pond ending soon - Tosses disabled'}
-        </>
-      );
+    // Pond disabled during critical timing window
+    if (isPondDisabled) {
+      if (timeUntilEnd > 0) {
+        return `Tosses disabled`;
+      } else if (timeUntilEnd >= -25) {
+        return (
+          <>
+            <Loader2 className="mr-2 h-5 w-5 animate-spin" /> Selecting Winner...
+          </>
+        );
+      }
     }
 
     // Connected - show standard toss message
-    return `Toss ${formatValue(amount)} ${selectedToken.symbol} in ${displayPondName} pond`;
+    return `Toss ${formatValue(amount, 1)} ${selectedToken.symbol} in ${displayPondName} pond`;
   }, [
     isConnected,
     isLoading,
-    isTimeLocked,
-    is5MinutePondInTimelock,
-    isPondAboutToEnd,
-    timeRemaining,
+    isPondDisabled,
+    timeUntilEnd,
     amount,
     selectedToken?.symbol,
     displayPondName,
@@ -211,11 +168,7 @@ export default function CoinTossButton({
           amount === '0' ||
           !canToss ||
           numberOfTosses < 1 ||
-          pondStatus === PondStatus.NotStarted ||
-          pondStatus === PondStatus.Completed ||
-          isPondAboutToEnd ||
-          isTimeLocked ||
-          is5MinutePondInTimelock));
+          isPondDisabled));
   }, [
     disabled,
     isLoading,
@@ -224,22 +177,16 @@ export default function CoinTossButton({
     amount,
     canToss,
     numberOfTosses,
-    pondStatus,
-    isPondAboutToEnd,
-    isTimeLocked,
-    is5MinutePondInTimelock,
+    isPondDisabled,
   ]);
 
-  // Enhanced styling based on state - memoized
+  // Simplified styling based on state - memoized
   const buttonStyling = useMemo(() => {
-    if (isPondAboutToEnd) {
-      return 'bg-red-500 text-white hover:bg-red-500'; // Warning styling for ending soon
-    }
-    if (isTimeLocked || is5MinutePondInTimelock) {
-      return 'bg-orange-500 text-white hover:bg-orange-500'; // Orange for timelock/selecting winner
+    if (isPondDisabled) {
+      return 'bg-red-500 text-white hover:bg-red-500'; // Warning styling for disabled
     }
     return 'text-white animate-gradient bg-[linear-gradient(90deg,#F2E718_0%,#80E8A9_20%,#9353ED_50%,#ED5353_75%,#EDA553_100%)]'; // Default styling
-  }, [isPondAboutToEnd, isTimeLocked, is5MinutePondInTimelock]);
+  }, [isPondDisabled]);
 
   return (
     <>

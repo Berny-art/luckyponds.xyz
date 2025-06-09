@@ -6,6 +6,7 @@ import { useAccount } from 'wagmi';
 import { Skeleton } from './ui/skeleton';
 import type { PondComprehensiveInfo } from '@/lib/types';
 import { useAppStore } from '@/stores/appStore';
+import { getPondStatus, PondStatus } from '@/functions/getPondStatus';
 
 type PondInfoProps = {
 	pondInfo: PondComprehensiveInfo;
@@ -19,6 +20,9 @@ export default function PondInfo({
 	const { address } = useAccount();
 	const isConnected = !!address;
 	const { selectedToken } = useAppStore();
+
+	const pondStatus = getPondStatus(pondInfo);
+	const isSelectWinner = pondStatus === PondStatus.SelectWinner;
 
 	// Loading state
 	if (isLoading) {
@@ -71,13 +75,13 @@ export default function PondInfo({
 				<div className="flex items-center justify-between">
 					<span className="font-bold text-sm">Participants:</span>
 					<span className="font-mono text-sm">
-						{pondInfo.totalParticipants.toString()}
+						{isSelectWinner ? 0 : pondInfo.totalParticipants.toString()}
 					</span>
 				</div>
 				<div className="flex items-center justify-between">
 					<span className="font-bold text-sm">Prize Pool:</span>
 					<span className="font-mono text-drip-300 text-sm">
-						{formatValue(pondInfo.totalValue)} {selectedToken.symbol}
+						{isSelectWinner ? 0 : formatValue(pondInfo.totalValue)} {selectedToken.symbol}
 					</span>
 				</div>
 
@@ -85,7 +89,7 @@ export default function PondInfo({
 					<div className="flex items-center justify-between">
 						<span className="font-bold text-sm">Your Stake:</span>
 						<span className="font-mono text-sm">
-							{formatValue(pondInfo.userTossAmount)} {selectedToken.symbol}
+							{isSelectWinner ? 0 : formatValue(pondInfo.userTossAmount)} {selectedToken.symbol}
 						</span>
 					</div>
 				)}

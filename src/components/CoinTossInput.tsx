@@ -13,13 +13,9 @@ import { formatValue } from '@/lib/utils';
 export default function CoinTossInput({
 	pondInfo,
 	onTransactionSuccess,
-	timeRemaining,
-	isAboutToEnd,
 }: {
 	pondInfo: PondComprehensiveInfo;
 	onTransactionSuccess?: () => void;
-	timeRemaining?: number;
-	isAboutToEnd?: boolean;
 }) {
 	const { address } = useAccount();
 	const { selectedToken, showAnimation } = useAppStore();
@@ -220,8 +216,6 @@ export default function CoinTossInput({
 						numberOfTosses={numberOfTosses}
 						pondInfo={pondInfo}
 						onTransactionSuccess={onTransactionSuccess}
-						timeRemaining={timeRemaining}
-						isAboutToEnd={isAboutToEnd}
 						canToss={canToss}
 						maxTossAmount={formatEther(maxTotalAmount)}
 					/>

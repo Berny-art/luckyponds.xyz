@@ -83,7 +83,7 @@ export default function Leaderboard() {
 
 	// Query key factory
 	const queryKeys = {
-		leaderboard: (sortBy: SortField, sortOrder: SortOrder) => 
+		leaderboard: (sortBy: SortField, sortOrder: SortOrder) =>
 			['leaderboard', sortBy, sortOrder] as const,
 		user: (address: string) => ['user', address] as const,
 	};
@@ -181,14 +181,14 @@ export default function Leaderboard() {
 	useEffect(() => {
 		if (leaderboardError) {
 			setErrorMessage(
-				leaderboardError instanceof Error 
-					? leaderboardError.message 
+				leaderboardError instanceof Error
+					? leaderboardError.message
 					: 'Failed to load leaderboard data'
 			);
 		} else if (searchError) {
 			setErrorMessage(
-				searchError instanceof Error 
-					? searchError.message 
+				searchError instanceof Error
+					? searchError.message
 					: 'Error searching for user'
 			);
 		} else if (searchAddress && userData === null) {
@@ -202,9 +202,9 @@ export default function Leaderboard() {
 	const handleSort = useCallback((field: SortField) => {
 		// Prevent rapid clicking while data is fetching
 		if (isFetching || isFetchingNextPage) return;
-		
+
 		setIsSorting(true);
-		
+
 		// Use a single state update to prevent multiple re-renders
 		if (field === sortBy) {
 			setSortOrder(prevOrder => prevOrder === 'ASC' ? 'DESC' : 'ASC');
@@ -213,7 +213,7 @@ export default function Leaderboard() {
 			setSortBy(field);
 			setSortOrder('DESC');
 		}
-		
+
 		// Reset sorting state after a short delay
 		setTimeout(() => {
 			setIsSorting(false);
@@ -308,7 +308,7 @@ export default function Leaderboard() {
 					</div>
 				)}
 
-				<div className="scrollbar-custom w-full overflow-y-scroll max-h-[60vh] overflow-x-auto rounded-lg bg-primary-200/5 p-4">
+				<div className="scrollbar-custom w-full overflow-y-scroll max-h-[70vh] overflow-x-auto rounded-lg bg-primary-200/5 backdrop-blur-lg p-4">
 					<Table>
 						<TableHeader>
 							<TableRow className="border-primary-200/20 border-b font-mono hover:bg-primary-200/5">
@@ -330,11 +330,10 @@ export default function Leaderboard() {
 								{['total_points', 'referral_points'].map((field) => (
 									<TableHead
 										key={field}
-										className={`min-w-48 font-bold text-primary-200 ${
-											isSorting || isFetching
-												? 'cursor-wait opacity-50' 
-												: 'cursor-pointer hover:text-drip-300'
-										}`}
+										className={`min-w-48 font-bold text-primary-200 ${isSorting || isFetching
+											? 'cursor-wait opacity-50'
+											: 'cursor-pointer hover:text-drip-300'
+											}`}
 										onClick={() => !(isSorting || isFetching) && handleSort(field as SortField)}
 									>
 										<div className="flex items-center gap-1">
@@ -357,12 +356,11 @@ export default function Leaderboard() {
 							{items.map((entry, index) => (
 								<TableRow
 									key={`${entry.address}-${index}`}
-									className={`border-primary-200/10 border-b text-primary-200 hover:bg-primary-200/5 ${
-										searchAddress &&
+									className={`border-primary-200/10 border-b text-primary-200 hover:bg-primary-200/5 ${searchAddress &&
 										entry.address.toLowerCase() === searchAddress.toLowerCase()
-											? 'bg-drip-300/10'
-											: ''
-									}`}
+										? 'bg-drip-300/10'
+										: ''
+										}`}
 								>
 									<TableCell className="font-bold">
 										{getMedal(entry.rank || index + 1)}
@@ -399,7 +397,7 @@ export default function Leaderboard() {
 											key={`skeleton-${
 												// biome-ignore lint/suspicious/noArrayIndexKey: <explanation>
 												i
-											}`}
+												}`}
 										>
 											{Array(7)
 												.fill(0)
@@ -408,7 +406,7 @@ export default function Leaderboard() {
 														key={`cell-${i}-${
 															// biome-ignore lint/suspicious/noArrayIndexKey: <explanation>
 															j
-														}`}
+															}`}
 													>
 														<Skeleton className="h-6 w-full bg-primary-200/10" />
 													</TableCell>

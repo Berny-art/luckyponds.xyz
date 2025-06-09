@@ -5,6 +5,7 @@ import Providers from '@/components/Providers';
 import HeaderWrapper from '@/components/HeaderWrapper';
 import { Toaster } from '@/components/ui/sonner';
 import Image from 'next/image';
+import { Analytics } from "@vercel/analytics/next"
 
 const RobotoMono = Roboto_Mono({
 	variable: '--font-roboto-mono',
@@ -55,6 +56,16 @@ export default function RootLayout({
 				<Providers>
 					<HeaderWrapper />
 					{children}
+					<div className="hidden lg:block -bottom-[0] -z-10 pointer-events-none absolute w-full overflow-y-hidden xl:translate-y-32">
+						<Image
+							src="/decor.svg"
+							alt="decoration"
+							width={1920}
+							height={400}
+							className="w-full object-cover"
+							priority={false}
+						/>
+					</div>
 				</Providers>
 				<Toaster
 					expand={true}
@@ -67,17 +78,7 @@ export default function RootLayout({
 						},
 					}}
 				/>
-				{/* biome-ignore lint/nursery/useSortedClasses: <explanation> */}
-				<div className="hidden lg:block -bottom-[0] -z-10 pointer-events-none absolute w-full overflow-y-hidden xl:translate-y-32">
-					<Image
-						src="/decor.svg"
-						alt="decoration"
-						width={1920}
-						height={400}
-						className="w-full object-cover"
-						priority={false}
-					/>
-				</div>
+				<Analytics />
 			</body>
 		</html>
 	);

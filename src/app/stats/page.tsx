@@ -160,7 +160,7 @@ export default function Statistics() {
         {/* Statistics Summary Cards */}
         {statistics && (
           <div className="grid grid-cols-2 gap-4 md:grid-cols-4 lg:grid-cols-7">
-            <div className="rounded-lg bg-primary-200/5 p-4">
+            <div className="rounded-lg bg-primary-200/5 backdrop-blur-lg p-4">
               <div className="flex items-center gap-2">
                 <Coins className="size-5 text-blue-400" />
                 <span className="font-mono text-primary-200/70 text-sm">Total Tosses</span>
@@ -169,7 +169,7 @@ export default function Statistics() {
                 {statistics.totalTosses.toLocaleString()}
               </div>
             </div>
-            <div className="rounded-lg bg-primary-200/5 p-4">
+            <div className="rounded-lg bg-primary-200/5 backdrop-blur-lg p-4">
               <div className="flex items-center gap-2">
                 <Trophy className="size-5 text-yellow-400" />
                 <span className="font-mono text-primary-200/70 text-sm">Total Wins</span>
@@ -178,7 +178,7 @@ export default function Statistics() {
                 {statistics.totalWins.toLocaleString()}
               </div>
             </div>
-            <div className="rounded-lg bg-primary-200/5 p-4">
+            <div className="rounded-lg bg-primary-200/5 backdrop-blur-lg p-4">
               <div className="flex items-center gap-2">
                 <TrendingUp className="size-5 text-green-400" />
                 <span className="font-mono text-primary-200/70 text-sm">Win Rate</span>
@@ -187,7 +187,7 @@ export default function Statistics() {
                 {statistics.winRate.toFixed(1)}%
               </div>
             </div>
-            <div className="rounded-lg bg-primary-200/5 p-4">
+            <div className="rounded-lg bg-primary-200/5 backdrop-blur-lg p-4">
               <div className="flex items-center gap-2">
                 <BarChart3 className="size-5 text-purple-400" />
                 <span className="font-mono text-primary-200/70 text-sm">Tossed</span>
@@ -196,7 +196,7 @@ export default function Statistics() {
                 {formatValue(statistics.totalTossed)} HYPE
               </div>
             </div>
-            <div className="rounded-lg bg-primary-200/5 p-4">
+            <div className="rounded-lg bg-primary-200/5 backdrop-blur-lg p-4">
               <div className="flex items-center gap-2">
                 <Trophy className="size-5 text-drip-300" />
                 <span className="font-mono text-primary-200/70 text-sm">Won</span>
@@ -205,7 +205,7 @@ export default function Statistics() {
                 {formatValue(statistics.totalWon)} HYPE
               </div>
             </div>
-            <div className="rounded-lg bg-primary-200/5 p-4">
+            <div className="rounded-lg bg-primary-200/5 backdrop-blur-lg p-4">
               <div className="flex items-center gap-2">
                 <Coins className="size-5 text-blue-300" />
                 <span className="font-mono text-primary-200/70 text-sm">Avg Toss</span>
@@ -214,7 +214,7 @@ export default function Statistics() {
                 {formatValue(statistics.avgToss)} HYPE
               </div>
             </div>
-            <div className="rounded-lg bg-primary-200/5 p-4">
+            <div className="rounded-lg bg-primary-200/5 backdrop-blur-lg p-4">
               <div className="flex items-center gap-2">
                 <Trophy className="size-5 text-yellow-300" />
                 <span className="font-mono text-primary-200/70 text-sm">Avg Win</span>
@@ -241,7 +241,7 @@ export default function Statistics() {
               <Coins className="size-6 text-blue-400" />
               Recent Tosses
             </h2>
-            <div className="scrollbar-custom max-h-[60vh] overflow-y-auto overflow-x-auto rounded-lg bg-primary-200/5 p-4">
+            <div className="scrollbar-custom max-h-[60vh] overflow-y-auto overflow-x-auto rounded-lg bg-primary-200/5 backdrop-blur-lg p-4">
               <Table>
                 <TableHeader>
                   <TableRow className="border-primary-200/20 border-b font-mono hover:bg-primary-200/5">
@@ -324,7 +324,7 @@ export default function Statistics() {
               <Trophy className="size-6 text-yellow-400" />
               Recent Wins
             </h2>
-            <div className="scrollbar-custom max-h-[60vh] overflow-y-auto overflow-x-auto rounded-lg bg-primary-200/5 p-4">
+            <div className="scrollbar-custom max-h-[60vh] overflow-y-auto overflow-x-auto rounded-lg bg-primary-200/5 backdrop-blur-lg p-4">
               <Table>
                 <TableHeader>
                   <TableRow className="border-primary-200/20 border-b font-mono hover:bg-primary-200/5">
