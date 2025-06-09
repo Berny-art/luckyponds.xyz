@@ -218,17 +218,85 @@ export function getNextPondEndTime(period: PondPeriod, contractEndTime?: string 
 }
 
 /**
+ * Get the start time of the current pond period
+ * @param period The pond period type
+ * @param contractEndTime Fallback to contract end time for custom periods
+ * @returns Start time in milliseconds
+ */
+function getCurrentPondStartTime(period: PondPeriod, contractEndTime?: string | number): number {
+	const endTime = getNextPondEndTime(period, contractEndTime);
+	
+	switch (period) {
+		case PondPeriod.FIVE_MIN:
+			return endTime - (5 * 60 * 1000); // 5 minutes before end
+		case PondPeriod.HOURLY:
+			return endTime - (60 * 60 * 1000); // 1 hour before end
+		case PondPeriod.DAILY:
+			return endTime - (24 * 60 * 60 * 1000); // 1 day before end
+		case PondPeriod.WEEKLY:
+			return endTime - (7 * 24 * 60 * 60 * 1000); // 1 week before end
+		case PondPeriod.MONTHLY:
+			// For monthly, we need to calculate the previous month boundary
+			const endDate = new Date(endTime);
+			const startDate = new Date(endDate);
+			startDate.setUTCMonth(startDate.getUTCMonth() - 1);
+			return startDate.getTime();
+		default:
+			// For custom periods, assume we don't know the duration
+			return endTime - (60 * 60 * 1000); // Default to 1 hour
+	}
+}
+
+/**
  * Calculate if a pond should be disabled based on UTC timing
- * Ponds are disabled 10s before end and 25s after end
+ * Ponds are disabled 10s before end and 25s after start and end
  * @param period The pond period type
  * @param contractEndTime Fallback to contract end time for custom periods
  * @returns Boolean indicating if pond should be disabled
  */
 export function isPondDisabledByTiming(period: PondPeriod, contractEndTime?: string | number): boolean {
 	const nextEndTime = getNextPondEndTime(period, contractEndTime);
+	const startTime = getCurrentPondStartTime(period, contractEndTime);
 	const currentTime = Date.now();
+	
 	const timeUntilEnd = Math.floor((nextEndTime - currentTime) / 1000); // Convert to seconds
+	const timeSinceStart = Math.floor((currentTime - startTime) / 1000); // Convert to seconds
 
-	// Pond is disabled 10s before end and 25s after end
-	return timeUntilEnd <= 10 && timeUntilEnd >= -25;
+	// Pond is disabled during:
+	// 1. First 25 seconds after start
+	// 2. Last 10 seconds before end  
+	// 3. First 25 seconds after end
+	const isInFirstSecondsAfterStart = timeSinceStart >= 0 && timeSinceStart <= 25;
+	const isInLastSecondsBeforeEnd = timeUntilEnd <= 10 && timeUntilEnd > 0;
+	const isInFirstSecondsAfterEnd = timeUntilEnd <= 0 && timeUntilEnd >= -25;
+
+	return isInFirstSecondsAfterStart || isInLastSecondsBeforeEnd || isInFirstSecondsAfterEnd;
+}
+
+/**
+ * Get specific timing states for pond UI display
+ * @param period The pond period type
+ * @param contractEndTime Fallback to contract end time for custom periods
+ * @returns Object with timing states
+ */
+export function getPondTimingStates(period: PondPeriod, contractEndTime?: string | number) {
+	const nextEndTime = getNextPondEndTime(period, contractEndTime);
+	const startTime = getCurrentPondStartTime(period, contractEndTime);
+	const currentTime = Date.now();
+	
+	const timeUntilEnd = Math.floor((nextEndTime - currentTime) / 1000);
+	const timeSinceStart = Math.floor((currentTime - startTime) / 1000);
+
+	const isInFirstSecondsAfterStart = timeSinceStart >= 0 && timeSinceStart <= 25;
+	const isInLastSecondsBeforeEnd = timeUntilEnd <= 10 && timeUntilEnd > 0;
+	const isInFirstSecondsAfterEnd = timeUntilEnd <= 0 && timeUntilEnd >= -25;
+
+	return {
+		timeUntilEnd,
+		timeSinceStart,
+		isInFirstSecondsAfterStart,
+		isInLastSecondsBeforeEnd,
+		isInFirstSecondsAfterEnd,
+		isPondDisabled: isInFirstSecondsAfterStart || isInLastSecondsBeforeEnd || isInFirstSecondsAfterEnd
+	};
 }

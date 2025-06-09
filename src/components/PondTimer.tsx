@@ -56,7 +56,7 @@ export default function PondTimer({ pondInfo }: PondTimerProps) {
 		try {
 			await refetchAll();
 		} catch (error) {
-			// Silently handle error - could add user-facing error handling here if needed
+			console.error('Error refetching pond data:', error);
 		}
 	};
 
@@ -76,29 +76,6 @@ export default function PondTimer({ pondInfo }: PondTimerProps) {
 			default:
 				return FIVE_MINUTES_MS; // fallback
 		}
-	};
-
-	// Calculate progress based on current time and pond period
-	const calculateProgress = () => {
-		if (!endTimeMs) return 0;
-
-		const now = Date.now();
-		const timeRemaining = endTimeMs - now;
-
-		// For 5-minute ponds, show progress for the entire cycle
-		if (pondInfo.period === PondPeriod.FIVE_MIN) {
-			const cycleDuration = getPeriodDuration();
-			const elapsed = cycleDuration - timeRemaining;
-			return Math.max(0, Math.min(100, (elapsed / cycleDuration) * 100));
-		}
-
-		// For other ponds, only show progress in the final 5 minutes
-		if (timeRemaining <= FIVE_MINUTES_MS && timeRemaining > 0) {
-			const elapsed = FIVE_MINUTES_MS - timeRemaining;
-			return Math.max(0, Math.min(100, (elapsed / FIVE_MINUTES_MS) * 100));
-		}
-
-		return 0;
 	};
 
 	// Update progress and visibility
@@ -203,7 +180,7 @@ export default function PondTimer({ pondInfo }: PondTimerProps) {
 			isHandlingCompletionRef.current = false;
 			endTimeMsRef.current = null;
 		};
-	}, [pondInfo?.name, pondInfo?.period, pondInfo?.endTime, pondInfo?.tokenAddress]);
+	}, [pondInfo]); // eslint-disable-line react-hooks/exhaustive-deps
 
 	// Handle completion
 	const handleComplete = () => {

@@ -13,7 +13,7 @@ import { toast } from 'sonner';
 import { formatValue } from '@/lib/utils';
 import AllowanceButton from './AllowanceButton';
 import { useTransactionMonitor } from '@/hooks/useTransactionMonitor';
-import { isPondDisabledByTiming, getNextPondEndTime } from '@/lib/timeUtils';
+import { getPondTimingStates } from '@/lib/timeUtils';
 
 interface CoinTossButtonProps {
   amount: string;
@@ -50,12 +50,14 @@ export default function CoinTossButton({
     enabled: !!txHash,
   });
 
-  // Calculate simple timing states using UTC-based timing (not contract endTime)
+  // Calculate timing states using UTC-based timing (not contract endTime)
   // This ensures frontend handles winner selection timing correctly
-  const isPondDisabled = isPondDisabledByTiming(pondInfo.period, Number(pondInfo.endTime));
-  const nextEndTime = getNextPondEndTime(pondInfo.period, Number(pondInfo.endTime));
-  const currentTime = Date.now();
-  const timeUntilEnd = Math.floor((nextEndTime - currentTime) / 1000);
+  const timingStates = getPondTimingStates(pondInfo.period, Number(pondInfo.endTime));
+  const {
+    isInFirstSecondsAfterStart,
+    isInFirstSecondsAfterEnd,
+    isPondDisabled
+  } = timingStates;
 
   // Combine all loading states
   const isLoading = tossLoading || isMonitoring;
@@ -127,12 +129,22 @@ export default function CoinTossButton({
 
     // Pond disabled during critical timing window
     if (isPondDisabled) {
-      if (timeUntilEnd > 0) {
-        return `Tosses disabled`;
-      } else if (timeUntilEnd >= -25) {
+      if (isInFirstSecondsAfterStart) {
+        return (
+          <>
+            <Loader2 className="mr-2 h-5 w-5 animate-spin" /> New pond starting...
+          </>
+        );
+      } else if (isInFirstSecondsAfterEnd) {
         return (
           <>
             <Loader2 className="mr-2 h-5 w-5 animate-spin" /> Selecting Winner...
+          </>
+        );
+      } else {
+        return (
+          <>
+            <Loader2 className="mr-2 h-5 w-5 animate-spin" /> Closing Pond...
           </>
         );
       }
@@ -144,7 +156,8 @@ export default function CoinTossButton({
     isConnected,
     isLoading,
     isPondDisabled,
-    timeUntilEnd,
+    isInFirstSecondsAfterStart,
+    isInFirstSecondsAfterEnd,
     amount,
     selectedToken?.symbol,
     displayPondName,
@@ -183,7 +196,7 @@ export default function CoinTossButton({
   // Simplified styling based on state - memoized
   const buttonStyling = useMemo(() => {
     if (isPondDisabled) {
-      return 'bg-red-500 text-white hover:bg-red-500'; // Warning styling for disabled
+      return 'bg-orange-600 text-white'; // Warning styling for disabled
     }
     return 'text-white animate-gradient bg-[linear-gradient(90deg,#F2E718_0%,#80E8A9_20%,#9353ED_50%,#ED5353_75%,#EDA553_100%)]'; // Default styling
   }, [isPondDisabled]);
