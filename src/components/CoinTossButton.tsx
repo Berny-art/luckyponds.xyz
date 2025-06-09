@@ -93,7 +93,7 @@ export default function CoinTossButton({
 
     try {
       // Proceed with the toss
-      await tossCoin(selectedPond, amount, pondInfo.tokenType, selectedToken);
+      await tossCoin(selectedPond, amount, pondInfo.tokenType, selectedToken, pondInfo);
     } catch (error) {
       // Error is handled by the tossCoin function
       console.error('Error tossing coin:', error);

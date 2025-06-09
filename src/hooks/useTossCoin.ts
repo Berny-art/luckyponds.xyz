@@ -2,7 +2,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { useState, useEffect } from 'react';
-import { useWriteContract, useWaitForTransactionReceipt } from 'wagmi';
+import { useWriteContract, useWaitForTransactionReceipt, useAccount } from 'wagmi';
 import { pondCoreConfig } from '@/contracts/PondCore';
 import { parseEther } from 'viem';
 import { toast } from 'sonner';
@@ -11,7 +11,10 @@ import {
 	isTokenTypeSupported, 
 	getTossFunctionName
 } from '@/utils/tokenUtils';
+import { sendDiscordWebhook } from '@/utils/discordWebhook';
+import { formatValue } from '@/lib/utils';
 import type { Token } from '@/stores/appStore';
+import type { PondComprehensiveInfo } from '@/lib/types';
 
 /**
  * Maps technical blockchain errors to user-friendly messages
@@ -105,8 +108,17 @@ export function useTossCoin() {
 		hash?: `0x${string}`;
 		error?: Error;
 	} | null>(null);
+	
+	// Store additional data for Discord webhook
+	const [pendingWebhookData, setPendingWebhookData] = useState<{
+		userAddress: string;
+		amount: string;
+		selectedToken: Token;
+		pondInfo: PondComprehensiveInfo;
+	} | null>(null);
 
 	const { writeContractAsync } = useWriteContract();
+	const { address } = useAccount();
 
 	// Watch for transaction status
 	const { isSuccess, isError, error } = useWaitForTransactionReceipt({
@@ -130,6 +142,30 @@ export function useTossCoin() {
 				success: true,
 				hash: txHash,
 			});
+
+			// Send Discord webhook if we have pending data
+			if (pendingWebhookData && txHash) {
+				const { userAddress, amount, selectedToken, pondInfo } = pendingWebhookData;
+				
+				// Calculate new total value (existing + tossed amount)
+				const tossedAmount = parseEther(amount);
+				const newTotalValue = pondInfo.totalValue + tossedAmount;
+				
+				sendDiscordWebhook({
+					userAddress,
+					amount,
+					selectedToken,
+					pondName: pondInfo.name.replace('ETH', '').trim(), // Remove 'ETH' if present and trim
+					pondSymbol: selectedToken.symbol,
+					totalValue: formatValue(newTotalValue),
+					txHash,
+				}).catch(error => {
+					console.error('Discord webhook error:', error);
+				});
+				
+				// Clear pending webhook data
+				setPendingWebhookData(null);
+			}
 
 			setTxHash(null);
 			setIsLoading(false);
@@ -166,7 +202,8 @@ export function useTossCoin() {
 		pondType: string,
 		amount: string,
 		tokenType: TokenType = TokenType.NATIVE,
-		token?: Token
+		token?: Token,
+		pondInfo?: PondComprehensiveInfo
 	) => {
 		if (!pondType || amount === '0') {
 			toast.error('Invalid toss parameters', {
@@ -196,6 +233,16 @@ export function useTossCoin() {
 
 			// Get the function name to call
 			const functionName = getTossFunctionName(tokenType);
+
+			// Store data for Discord webhook (if user is connected and pond info is available)
+			if (address && pondInfo && token) {
+				setPendingWebhookData({
+					userAddress: address,
+					amount,
+					selectedToken: token,
+					pondInfo,
+				});
+			}
 
 			// Handle native or ERC20 tokens - both use the same function signature
 			// The contract determines the token type from the pond type itself
@@ -237,10 +284,12 @@ export function useTossCoin() {
 					description: 'Token details are required for ERC20 transactions.',
 				});
 				setIsLoading(false);
+				setPendingWebhookData(null); // Clear pending data on error
 				return { success: false, error: new Error('Missing token information') };
 			}
 		} catch (error: any) {
 			setIsLoading(false);
+			setPendingWebhookData(null); // Clear pending data on error
 			toast.dismiss('toss-loading');
 
 			// Get user-friendly error message
