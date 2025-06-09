@@ -1,5 +1,5 @@
 // utils/discordWebhook.ts
-import { formatValue, formatAddress } from '@/lib/utils';
+import { formatAddress } from '@/lib/utils';
 import type { Token } from '@/stores/appStore';
 
 interface WebhookPayload {
@@ -27,7 +27,7 @@ export async function sendDiscordWebhook(payload: WebhookPayload): Promise<void>
       url: `https://luckyponds.xyz/ponds/${payload.selectedToken.symbol}`,
       color: 15138645,
       author: {
-        name: `TX: ${payload.txHash.slice(0, 10)}...`,
+        name: `TX: ${payload.txHash.slice(0, 18)}...`,
         url: `https://hyperscan.com/tx/${payload.txHash}`
       },
       footer: {
