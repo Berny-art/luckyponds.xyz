@@ -143,10 +143,12 @@ export default function CoinTossInput({
 				<div className="flex w-full items-center gap-4 rounded-lg bg-primary-200 px-4 py-2 font-mono text-black">
 					<div className="flex flex-col md:w-full">
 						<div className='flex flex-col gap-0'>
-							<div className="flex items-center gap-2">
+							<div className="flex flex-col md:flex-row md:items-center md:gap-2">
 								<h3 className="font-bold text-lg">Tosses</h3>
-
-								<p className="text-nowrap text-xs opacity-60">
+								<p className="flex md:hidden text-nowrap text-xs opacity-60">
+									{formattedTossPrice} {tokenSymbol} / Toss
+								</p>
+								<p className="hidden md:flex text-nowrap text-xs opacity-60">
 									({formattedTossPrice} {tokenSymbol} / Toss)
 								</p>
 							</div>
@@ -155,7 +157,7 @@ export default function CoinTossInput({
 
 						{!canToss && isConnected && (
 							<p className="mt-1 text-red-600 text-xs">
-								Insufficient balance for tossing
+								Insufficient balance
 							</p>
 						)}
 					</div>
@@ -176,7 +178,7 @@ export default function CoinTossInput({
 							onChange={handleInputChange}
 							min={1}
 							max={maxTosses}
-							className="border-2 border-secondary-950 text-center font-bold text-xl shadow-none"
+							className="border-2 border-secondary-950 text-center font-bold md:text-xl shadow-none"
 							disabled={!canToss}
 							onBlur={() => {
 								// Ensure valid value on blur

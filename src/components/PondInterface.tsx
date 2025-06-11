@@ -336,7 +336,7 @@ export default function PondInterface({ tokenAddress, initialReferrerCode }: Pon
 									}
 								}}
 								onKeyDown={(e) =>
-									e.key === 'f' && hasHyperModePonds && setLightningMode(!lightningMode)
+									e.key === 'h' && hasHyperModePonds && setLightningMode(!lightningMode)
 								}
 								aria-label="Toggle fast mode"
 								aria-disabled={!hasHyperModePonds}

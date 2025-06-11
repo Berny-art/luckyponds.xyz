@@ -104,6 +104,13 @@ export default function TokenSelector({
 						<span className="font-bold text-3xl md:text-5xl">
 							{selectedToken.symbol}
 						</span>
+						<Image
+							src={selectedToken.logo ?? ''}
+							alt={`${selectedToken.symbol} logo`}
+							width={38}
+							height={38}
+							className="flex rounded-full mb-1"
+						/>
 						<ChevronDown className="!size-6 ml-2" />
 					</Button>
 				</PopoverTrigger>

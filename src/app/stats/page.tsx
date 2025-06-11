@@ -160,66 +160,66 @@ export default function Statistics() {
         {/* Statistics Summary Cards */}
         {statistics && (
           <div className="grid grid-cols-2 gap-4 md:grid-cols-4 lg:grid-cols-7">
-            <div className="rounded-lg bg-primary-200/5 backdrop-blur-lg p-4">
+            <div className="flex flex-col gap-2 rounded-lg bg-primary-200/5 backdrop-blur-lg p-4">
               <div className="flex items-center gap-2">
                 <Coins className="size-5 text-blue-400" />
                 <span className="font-mono text-primary-200/70 text-sm">Total Tosses</span>
               </div>
-              <div className="font-bold font-mono text-2xl text-primary-200">
+              <div className="font-bold font-mono md:text-2xl text-primary-200">
                 {statistics.totalTosses.toLocaleString()}
               </div>
             </div>
-            <div className="rounded-lg bg-primary-200/5 backdrop-blur-lg p-4">
+            <div className="flex flex-col rounded-lg bg-primary-200/5 backdrop-blur-lg p-4 gap-2">
               <div className="flex items-center gap-2">
                 <Trophy className="size-5 text-yellow-400" />
                 <span className="font-mono text-primary-200/70 text-sm">Total Wins</span>
               </div>
-              <div className="font-bold font-mono text-2xl text-primary-200">
+              <div className="font-bold font-mono md:text-2xl text-primary-200">
                 {statistics.totalWins.toLocaleString()}
               </div>
             </div>
-            <div className="rounded-lg bg-primary-200/5 backdrop-blur-lg p-4">
+            <div className="flex flex-col gap-2 rounded-lg bg-primary-200/5 backdrop-blur-lg p-4">
               <div className="flex items-center gap-2">
                 <TrendingUp className="size-5 text-green-400" />
                 <span className="font-mono text-primary-200/70 text-sm">Win Rate</span>
               </div>
-              <div className="font-bold font-mono text-2xl text-green-400">
+              <div className="font-bold font-mono md:text-2xl text-green-400">
                 {statistics.winRate.toFixed(1)}%
               </div>
             </div>
-            <div className="rounded-lg bg-primary-200/5 backdrop-blur-lg p-4">
+            <div className="flex flex-col gap-2 rounded-lg bg-primary-200/5 backdrop-blur-lg p-4">
               <div className="flex items-center gap-2">
                 <BarChart3 className="size-5 text-purple-400" />
                 <span className="font-mono text-primary-200/70 text-sm">Tossed</span>
               </div>
-              <div className="font-bold font-mono text-xl text-primary-200">
+              <div className="font-bold font-mono md:text-xl text-primary-200">
                 {formatValue(statistics.totalTossed)} HYPE
               </div>
             </div>
-            <div className="rounded-lg bg-primary-200/5 backdrop-blur-lg p-4">
+            <div className="flex flex-col gap-2 rounded-lg bg-primary-200/5 backdrop-blur-lg p-4">
               <div className="flex items-center gap-2">
                 <Trophy className="size-5 text-drip-300" />
                 <span className="font-mono text-primary-200/70 text-sm">Won</span>
               </div>
-              <div className="font-bold font-mono text-xl text-drip-300">
+              <div className="font-bold font-mono md:text-xl text-drip-300">
                 {formatValue(statistics.totalWon)} HYPE
               </div>
             </div>
-            <div className="rounded-lg bg-primary-200/5 backdrop-blur-lg p-4">
+            <div className="flex flex-col gap-2 rounded-lg bg-primary-200/5 backdrop-blur-lg p-4">
               <div className="flex items-center gap-2">
                 <Coins className="size-5 text-blue-300" />
                 <span className="font-mono text-primary-200/70 text-sm">Avg Toss</span>
               </div>
-              <div className="font-bold font-mono text-xl text-primary-200">
+              <div className="font-bold font-mono md:text-xl text-primary-200">
                 {formatValue(statistics.avgToss)} HYPE
               </div>
             </div>
-            <div className="rounded-lg bg-primary-200/5 backdrop-blur-lg p-4">
+            <div className="flex flex-col gap-2 rounded-lg bg-primary-200/5 backdrop-blur-lg p-4">
               <div className="flex items-center gap-2">
                 <Trophy className="size-5 text-yellow-300" />
                 <span className="font-mono text-primary-200/70 text-sm">Avg Win</span>
               </div>
-              <div className="font-bold font-mono text-xl text-primary-200">
+              <div className="font-bold font-mono md:text-xl text-primary-200">
                 {formatValue(statistics.avgWin)} HYPE
               </div>
             </div>
@@ -255,7 +255,7 @@ export default function Statistics() {
                   {tossesData?.tosses?.map((toss: TossEvent, index: number) => (
                     <TableRow
                       key={`${toss.tx_hash}-${index}`}
-                      className="border-primary-200/10 border-b text-primary-200 hover:bg-primary-200/5"
+                      className="border-primary-200/10 border-b text-primary-200 hover:bg-primary-200/5 text-nowrap custom-scrollbar"
                     >
                       <TableCell className="font-mono">
                         {toss.frog_address ? formatAddress(toss.frog_address) : 'You'}
@@ -338,7 +338,7 @@ export default function Statistics() {
                   {(winsData?.winners || winsData?.wins || []).map((win: WinEvent, index: number) => (
                     <TableRow
                       key={`${win.tx_hash}-${index}`}
-                      className="border-primary-200/10 border-b text-primary-200 hover:bg-primary-200/5"
+                      className="border-primary-200/10 border-b text-primary-200 hover:bg-primary-200/5 text-nowrap custom-scrollbar"
                     >
                       <TableCell className="font-mono">
                         {win.winner_address ? formatAddress(win.winner_address) : showPersonalStats ? 'You' : 'N/A'}
