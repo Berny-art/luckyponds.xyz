@@ -24,7 +24,7 @@ export function formatTokenAmount(amount: bigint, tokenDecimals: number = 18): s
 }
 
 // Format the ether values for display
-export function formatValue(value: bigint | string | undefined, tokenDecimals: number = 18) {
+export function formatValue(value: bigint | string | number | undefined, tokenDecimals: number = 18) {
 	let numValue = 0;
 	// if is string convert to bigint
 	if (typeof value === 'string') {
@@ -101,3 +101,10 @@ export const getTokenSymbolByAddress = (address: string): string | undefined => 
 	);
 	return token ? token.symbol : undefined;
 };
+
+export const getDecimalsByAddress = (address: string): number | undefined => {
+	const token = DEFAULT_TOKENS.find(
+		(token) => token.address.toLowerCase() === address.toLowerCase(),
+	);
+	return token ? token.decimals : undefined;
+}

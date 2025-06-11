@@ -51,7 +51,7 @@ export default function RootLayout({
 				<meta name="apple-mobile-web-app-title" content="Lucky Ponds" />
 			</head>
 			<body
-				className={`${RobotoMono.variable} relative h-screen w-full overflow-x-hidden bg-secondary-950 bg-top font-bold text-roboto-mono text-secondary-950 antialiased lg:overflow-y-hidden `}
+				className={`${RobotoMono.variable} relative h-screen w-full overflow-x-hidden bg-secondary-950 bg-top font-bold text-roboto-mono text-secondary-950 antialiased overflow-y-auto`}
 			>
 				<Providers>
 					<HeaderWrapper />
