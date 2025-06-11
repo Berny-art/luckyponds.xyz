@@ -64,13 +64,14 @@ export async function GET(
 			);
 		}
 
-		// Get query parameters for pagination
+		// Get query parameters for pagination and filtering
 		const { searchParams } = new URL(request.url);
 		const limit = searchParams.get('limit') || '50';
 		const offset = searchParams.get('offset') || '0';
+		const tokenAddress = searchParams.get('token_address');
 
-		// Create cache key
-		const cacheKey = `wins-${address}-${limit}-${offset}`;
+		// Create cache key including token address
+		const cacheKey = `wins-${address}-${limit}-${offset}-${tokenAddress || 'all'}`;
 
 		// Check cache first
 		const cached = cache[cacheKey];
@@ -82,6 +83,9 @@ export async function GET(
 		const url = new URL(`https://api.luckyponds.xyz/events/wins/${address}`);
 		url.searchParams.append('limit', limit);
 		url.searchParams.append('offset', offset);
+		if (tokenAddress) {
+			url.searchParams.append('token_address', tokenAddress);
+		}
 
 		// Make request to external API
 		const response = await fetch(url.toString(), {

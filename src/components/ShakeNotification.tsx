@@ -13,7 +13,7 @@ function ShakeNotification({
 	className = '',
 }: ShakeNotificationProps) {
 	// Get latest event from store
-	const { latestEvent } = useAppStore();
+	const { latestEvent, selectedToken } = useAppStore();
 	// Track the event ID to force re-renders for shake animation
 	const [eventKey, setEventKey] = useState('');
 
@@ -42,7 +42,7 @@ function ShakeNotification({
 						{latestEvent ? 'tossed' : ''}
 					</span>
 					<span className="font-bold font-mono text-primary-200 text-xs">
-						{latestEvent ? `${formatValue(latestEvent.amount)} HYPE` : '...'}
+						{latestEvent ? `${formatValue(latestEvent.amount, selectedToken?.decimals)} ${selectedToken?.symbol || 'HYPE'}` : '...'}
 					</span>
 				</div>
 			</div>

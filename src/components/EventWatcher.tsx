@@ -4,7 +4,7 @@
 import { useWatchContractEvent } from 'wagmi';
 import { type ContractEvent, useAppStore } from '@/stores/appStore';
 import { pondCoreConfig } from '@/contracts/PondCore';
-import { formatEther } from 'viem';
+import { formatUnits } from 'viem';
 
 // Define specific types for contract event logs
 interface CoinTossedLog {
@@ -25,7 +25,8 @@ interface CoinTossedLog {
  * This component doesn't render anything - it's just for event handling.
  */
 export default function EventWatcher() {
-	const { addEvent } = useAppStore();
+	const { addEvent, selectedToken } = useAppStore();
+	const tokenDecimals = selectedToken?.decimals || 18;
 
 	// Watch for CoinTossed events
 	useWatchContractEvent({
@@ -57,7 +58,7 @@ export default function EventWatcher() {
 				const event: Omit<ContractEvent, 'position'> = {
 					id: `${typedLog.transactionHash}-${typedLog.logIndex}`,
 					address: participant.toString(),
-					amount: formatEther(amount), // Format from wei to ether
+					amount: formatUnits(amount, tokenDecimals), // Format from wei to ether
 					timestamp: Number(timestamp || BigInt(Math.floor(Date.now() / 1000))),
 					type: 'CoinTossed',
 					pondType: pondType.toString(),

@@ -23,8 +23,8 @@ export const hyperliquid = {
 	},
 	blockExplorers: {
 		default: {
-			name: 'Blockscout',
-			url: 'https://hyperliquid.cloud.blockscout.com/',
+			name: 'Hyperscan',
+			url: 'https://hyperscan.com/',
 		},
 		purrsec: { name: 'Purrsec', url: 'https://purrsec.com/' },
 	},

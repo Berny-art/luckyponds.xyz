@@ -10,105 +10,156 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Skeleton } from '@/components/ui/skeleton';
-import { formatAddress } from '@/lib/utils';
+import { formatAddress, formatValue, getDecimalsByAddress, getTokenSymbolByAddress } from '@/lib/utils';
 import { BarChart3, TrendingUp, Trophy, Coins, User, ExternalLink } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
 import { useAccount } from 'wagmi';
 import { Badge } from '@/components/ui/badge';
-import { useQuery } from '@tanstack/react-query';
-import type { TossesResponse, WinsResponse, TossEvent, WinEvent } from '@/types/events';
+import type { TossEvent, WinEvent } from '@/types/events';
 import { BLOCKSCAN_BASE_URL } from '@/lib/constants';
-
-// Fetch tosses data
-const fetchTosses = async (address?: string): Promise<TossesResponse> => {
-  const url = address ? `/api/events/tosses/${address}` : '/api/events/tosses';
-  const response = await fetch(url);
-  if (!response.ok) {
-    const errorData = await response.json().catch(() => ({}));
-    throw new Error(errorData.error || 'Failed to fetch tosses data');
-  }
-  return await response.json();
-};
-
-// Fetch wins data
-const fetchWins = async (address?: string): Promise<WinsResponse> => {
-  const url = address ? `/api/events/wins/${address}` : '/api/events/wins';
-  const response = await fetch(url);
-  if (!response.ok) {
-    const errorData = await response.json().catch(() => ({}));
-    throw new Error(errorData.error || 'Failed to fetch wins data');
-  }
-  return await response.json();
-};
+import { DEFAULT_TOKENS } from '@/stores/appStore';
+import { useEventsData } from '@/hooks/useEventsData';
 
 export default function Statistics() {
   const [showPersonalStats, setShowPersonalStats] = useState(false);
+  const [selectedTokenFilter, setSelectedTokenFilter] = useState<string>('all');
   const { address } = useAccount();
 
-  // Query keys
-  const queryKeys = {
-    tosses: (address?: string) => ['tosses', address] as const,
-    wins: (address?: string) => ['wins', address] as const,
-  };
-
-  // Fetch tosses data
+  // Use the new events data hook
   const {
-    data: tossesData,
-    isFetching: isFetchingTosses,
-    error: tossesError,
-  } = useQuery<TossesResponse, Error>({
-    queryKey: queryKeys.tosses(showPersonalStats ? address : undefined),
-    queryFn: () => fetchTosses(showPersonalStats ? address : undefined),
-    enabled: !showPersonalStats || !!address,
-    staleTime: 1000 * 60 * 2, // 2 minutes
-    gcTime: 1000 * 60 * 5, // 5 minutes
-  });
-
-  // Fetch wins data
-  const {
-    data: winsData,
-    isFetching: isFetchingWins,
-    error: winsError,
-  } = useQuery<WinsResponse, Error>({
-    queryKey: queryKeys.wins(showPersonalStats ? address : undefined),
-    queryFn: () => fetchWins(showPersonalStats ? address : undefined),
-    enabled: !showPersonalStats || !!address,
-    staleTime: 1000 * 60 * 2, // 2 minutes
-    gcTime: 1000 * 60 * 5, // 5 minutes
+    tosses,
+    wins,
+    isFetchingTosses,
+    isFetchingWins,
+    tossesError,
+    winsError,
+    hasError,
+  } = useEventsData({
+    userAddress: showPersonalStats ? address : undefined,
+    tokenAddress: selectedTokenFilter,
   });
 
   // Calculate statistics
   const statistics = useMemo(() => {
-    if (!tossesData && !winsData) return null;
+    if (!tosses && !wins) return null;
 
-    const tosses = tossesData?.tosses || [];
-    // Handle both response formats for wins
-    const wins = winsData?.winners || winsData?.wins || [];
+    // Debug: Log the token addresses we're seeing in the data
+    console.log('DEBUG: Tosses data sample:', tosses?.slice(0, 3));
+    console.log('DEBUG: Wins data sample:', wins?.slice(0, 3));
+    console.log('DEBUG: DEFAULT_TOKENS addresses:', DEFAULT_TOKENS.map(t => t.address));
 
-    const totalTosses = tosses.length;
-    const totalWins = wins.length;
-    const totalTossed = tosses.reduce((sum, toss) => sum + Number(toss.amount) / 1e18, 0);
-    const totalWon = wins.reduce((sum, win) => sum + Number(win.prize) / 1e18, 0);
-    const winRate = totalTosses > 0 ? (totalWins / totalTosses) * 100 : 0;
-    const avgToss = totalTosses > 0 ? totalTossed / totalTosses : 0;
-    const avgWin = totalWins > 0 ? totalWon / totalWins : 0;
+    const uniqueTossTokens = [...new Set(tosses?.map(t => t.token_address) || [])];
+    const uniqueWinTokens = [...new Set(wins?.map(w => w.token_address) || [])];
+    console.log('DEBUG: Unique toss token addresses:', uniqueTossTokens);
+    console.log('DEBUG: Unique win token addresses:', uniqueWinTokens);
+
+    // When filtering by specific token, show simple totals
+    if (selectedTokenFilter !== 'all') {
+      const tokenInfo = DEFAULT_TOKENS.find(t => t.address === selectedTokenFilter);
+      if (!tokenInfo) return null;
+
+      const totalTossed = tosses.reduce((sum, toss) =>
+        sum + Number(toss.amount) / Math.pow(10, tokenInfo.decimals), 0);
+      const totalWon = wins.reduce((sum, win) =>
+        sum + Number(win.prize) / Math.pow(10, tokenInfo.decimals), 0);
+
+      return {
+        totalTosses: tosses.length,
+        totalWins: wins.length,
+        totalTossed,
+        totalWon,
+        winRate: tosses.length > 0 ? (wins.length / tosses.length) * 100 : 0,
+        avgToss: tosses.length > 0 ? totalTossed / tosses.length : 0,
+        avgWin: wins.length > 0 ? totalWon / wins.length : 0,
+        tokenSymbol: tokenInfo.symbol,
+        singleToken: true,
+      };
+    }
+
+    // When showing all tokens, show breakdown by token
+    const tokenStats: Record<string, {
+      symbol: string;
+      decimals: number;
+      totalTosses: number;
+      totalWins: number;
+      totalTossed: number;
+      totalWon: number;
+      winRate: number;
+      avgToss: number;
+      avgWin: number;
+    }> = {};
+
+    // Initialize stats for all available tokens
+    DEFAULT_TOKENS.forEach(token => {
+      tokenStats[token.address] = {
+        symbol: token.symbol,
+        decimals: token.decimals,
+        totalTosses: 0,
+        totalWins: 0,
+        totalTossed: 0,
+        totalWon: 0,
+        winRate: 0,
+        avgToss: 0,
+        avgWin: 0,
+      };
+    });
+
+    // Process tosses
+    tosses.forEach(toss => {
+      const tokenAddress = toss.token_address;
+      // Find token stats using case-insensitive comparison
+      const tokenStatsEntry = Object.entries(tokenStats).find(([address]) =>
+        address.toLowerCase() === tokenAddress.toLowerCase()
+      );
+
+      if (tokenStatsEntry) {
+        const [, stats] = tokenStatsEntry;
+        const decimals = stats.decimals;
+        stats.totalTosses += 1;
+        stats.totalTossed += Number(toss.amount) / Math.pow(10, decimals);
+      }
+    });
+
+    // Process wins
+    wins.forEach(win => {
+      const tokenAddress = win.token_address;
+      // Find token stats using case-insensitive comparison
+      const tokenStatsEntry = Object.entries(tokenStats).find(([address]) =>
+        address.toLowerCase() === tokenAddress.toLowerCase()
+      );
+
+      if (tokenStatsEntry) {
+        const [, stats] = tokenStatsEntry;
+        const decimals = stats.decimals;
+        stats.totalWins += 1;
+        stats.totalWon += Number(win.prize) / Math.pow(10, decimals);
+      }
+    });
+
+    // Calculate derived stats
+    Object.values(tokenStats).forEach(stats => {
+      stats.winRate = stats.totalTosses > 0 ? (stats.totalWins / stats.totalTosses) * 100 : 0;
+      stats.avgToss = stats.totalTosses > 0 ? stats.totalTossed / stats.totalTosses : 0;
+      stats.avgWin = stats.totalWins > 0 ? stats.totalWon / stats.totalWins : 0;
+    });
+
+    // Overall statistics
+    const overall = {
+      totalTosses: tosses.length,
+      totalWins: wins.length,
+      totalTossed: Object.values(tokenStats).reduce((sum, stats) => sum + stats.totalTossed, 0),
+      totalWon: Object.values(tokenStats).reduce((sum, stats) => sum + stats.totalWon, 0),
+      winRate: tosses.length > 0 ? (wins.length / tosses.length) * 100 : 0,
+      avgToss: tosses.length > 0 ? Object.values(tokenStats).reduce((sum, stats) => sum + stats.totalTossed, 0) / tosses.length : 0,
+      avgWin: wins.length > 0 ? Object.values(tokenStats).reduce((sum, stats) => sum + stats.totalWon, 0) / wins.length : 0,
+    };
 
     return {
-      totalTosses,
-      totalWins,
-      totalTossed,
-      totalWon,
-      winRate,
-      avgToss,
-      avgWin,
+      tokenStats,
+      overall,
+      singleToken: false,
     };
-  }, [tossesData, winsData]);
-
-  const formatValue = (value: number) => {
-    if (value >= 1000000) return `${(value / 1_000_000).toFixed(2)}M`;
-    if (value >= 1000) return `${(value / 1_000).toFixed(2)}K`;
-    return value.toFixed(4);
-  };
+  }, [tosses, wins, selectedTokenFilter]);
 
   const formatDate = (timestamp: string) => {
     return new Date(timestamp).toLocaleDateString('en-US', {
@@ -124,34 +175,48 @@ export default function Statistics() {
     return `${hash.slice(0, 6)}...${hash.slice(-4)}`;
   };
 
-  const hasError = tossesError || winsError;
-
   return (
     <div className="flex w-full flex-col items-center justify-start pt-4 lg:p-4">
       <div className="flex w-full flex-col gap-6 px-4">
         {/* Header */}
         <div className="flex w-full flex-col items-start gap-4 md:flex-row md:items-center">
-          <h1 className="font-bold font-mono text-4xl text-primary-200">
+          <h1 className="flex flex-col gap-1 font-bold font-mono text-4xl text-primary-200">
             Statistics
           </h1>
-          <div className="flex items-center gap-2">
-            {address && (
-              <div className="flex items-center gap-3 ml-4">
+          <div className="flex w-full justify-end items-center gap-6 flex-wrap">
+            {/* Token Filter */}
+            <div className="flex items-center gap-2">
+              <label className="font-bold font-mono text-primary-200 text-sm">
+                FILTER BY TOKEN:
+              </label>
+              <select
+                value={selectedTokenFilter}
+                onChange={(e) => setSelectedTokenFilter(e.target.value)}
+                className="bg-primary-200/10 border border-primary-200/20 rounded py-1 text-primary-200 font-mono text-sm"
+              >
+                <option value="all">All Tokens</option>
+                {DEFAULT_TOKENS.map(token => (
+                  <option key={token.address} value={token.address}>
+                    {token.symbol}
+                  </option>
+                ))}
+              </select>
+            </div>
 
+            {address && (
+              <div className="flex items-center gap-2">
+                <label
+                  htmlFor="stats-toggle"
+                  className="font-bold font-mono text-primary-200 text-sm cursor-pointer flex items-center gap-2"
+                >
+                  MY STATS                </label>
                 <Switch
                   id="stats-toggle"
                   checked={showPersonalStats}
                   onCheckedChange={setShowPersonalStats}
                   className="data-[state=checked]:bg-drip-300 data-[state=unchecked]:bg-primary-200/20"
                 />
-                <label
-                  htmlFor="stats-toggle"
-                  className="font-bold font-mono text-primary-200 text-sm cursor-pointer flex items-center gap-2"
-                >
-
-                  SHOW MY STATS
-                  <User className="size-4" />
-                </label>
+                <User className="size-4" />
               </div>
             )}
           </div>
@@ -159,70 +224,164 @@ export default function Statistics() {
 
         {/* Statistics Summary Cards */}
         {statistics && (
-          <div className="grid grid-cols-2 gap-4 md:grid-cols-4 lg:grid-cols-7">
-            <div className="rounded-lg bg-primary-200/5 p-4">
-              <div className="flex items-center gap-2">
-                <Coins className="size-5 text-blue-400" />
-                <span className="font-mono text-primary-200/70 text-sm">Total Tosses</span>
-              </div>
-              <div className="font-bold font-mono text-2xl text-primary-200">
-                {statistics.totalTosses.toLocaleString()}
-              </div>
-            </div>
-            <div className="rounded-lg bg-primary-200/5 p-4">
-              <div className="flex items-center gap-2">
-                <Trophy className="size-5 text-yellow-400" />
-                <span className="font-mono text-primary-200/70 text-sm">Total Wins</span>
-              </div>
-              <div className="font-bold font-mono text-2xl text-primary-200">
-                {statistics.totalWins.toLocaleString()}
-              </div>
-            </div>
-            <div className="rounded-lg bg-primary-200/5 p-4">
-              <div className="flex items-center gap-2">
-                <TrendingUp className="size-5 text-green-400" />
-                <span className="font-mono text-primary-200/70 text-sm">Win Rate</span>
-              </div>
-              <div className="font-bold font-mono text-2xl text-green-400">
-                {statistics.winRate.toFixed(1)}%
-              </div>
-            </div>
-            <div className="rounded-lg bg-primary-200/5 p-4">
-              <div className="flex items-center gap-2">
-                <BarChart3 className="size-5 text-purple-400" />
-                <span className="font-mono text-primary-200/70 text-sm">Tossed</span>
-              </div>
-              <div className="font-bold font-mono text-xl text-primary-200">
-                {formatValue(statistics.totalTossed)} HYPE
-              </div>
-            </div>
-            <div className="rounded-lg bg-primary-200/5 p-4">
-              <div className="flex items-center gap-2">
-                <Trophy className="size-5 text-drip-300" />
-                <span className="font-mono text-primary-200/70 text-sm">Won</span>
-              </div>
-              <div className="font-bold font-mono text-xl text-drip-300">
-                {formatValue(statistics.totalWon)} HYPE
-              </div>
-            </div>
-            <div className="rounded-lg bg-primary-200/5 p-4">
-              <div className="flex items-center gap-2">
-                <Coins className="size-5 text-blue-300" />
-                <span className="font-mono text-primary-200/70 text-sm">Avg Toss</span>
-              </div>
-              <div className="font-bold font-mono text-xl text-primary-200">
-                {formatValue(statistics.avgToss)} HYPE
-              </div>
-            </div>
-            <div className="rounded-lg bg-primary-200/5 p-4">
-              <div className="flex items-center gap-2">
-                <Trophy className="size-5 text-yellow-300" />
-                <span className="font-mono text-primary-200/70 text-sm">Avg Win</span>
-              </div>
-              <div className="font-bold font-mono text-xl text-primary-200">
-                {formatValue(statistics.avgWin)} HYPE
-              </div>
-            </div>
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+            {/* Show single token stats or multi-token breakdown */}
+            {statistics.singleToken ? (
+              <>
+                {/* Single Token Cards */}
+                <div className="flex flex-col gap-3 rounded-lg bg-primary-200/5 backdrop-blur-lg p-6">
+                  <div className="flex items-center gap-2">
+                    <Coins className="size-5 text-blue-400" />
+                    <span className="font-mono text-primary-200/70 text-sm">Total Tosses</span>
+                  </div>
+                  <div className="font-bold font-mono text-2xl text-primary-200">
+                    {(statistics.totalTosses || 0).toLocaleString()}
+                  </div>
+
+                </div>
+
+                <div className="flex flex-col gap-3 rounded-lg bg-primary-200/5 backdrop-blur-lg p-6">
+                  <div className="flex items-center gap-2">
+                    <Trophy className="size-5 text-yellow-400" />
+                    <span className="font-mono text-primary-200/70 text-sm">Total Wins</span>
+                  </div>
+                  <div className="font-bold font-mono text-2xl text-primary-200">
+                    {(statistics.totalWins || 0).toLocaleString()}
+                  </div>
+
+                </div>
+
+                <div className="flex flex-col gap-3 rounded-lg bg-primary-200/5 backdrop-blur-lg p-6">
+                  <div className="flex items-center gap-2">
+                    <TrendingUp className="size-5 text-green-400" />
+                    <span className="font-mono text-primary-200/70 text-sm">Win Rate</span>
+                  </div>
+                  <div className="font-bold font-mono text-2xl text-green-400">
+                    {(statistics.winRate || 0).toFixed(1)}%
+                  </div>
+
+                </div>
+
+                <div className="flex flex-col gap-3 rounded-lg bg-primary-200/5 backdrop-blur-lg p-6">
+                  <div className="flex items-center gap-2">
+                    <BarChart3 className="size-5 text-purple-400" />
+                    <span className="font-mono text-primary-200/70 text-sm">Total Tossed</span>
+                  </div>
+                  <div className="font-bold font-mono text-xl text-primary-200">
+                    {(statistics.totalTossed || 0).toFixed(2)} {statistics.tokenSymbol}
+                  </div>
+                </div>
+
+                <div className="flex flex-col gap-3 rounded-lg bg-primary-200/5 backdrop-blur-lg p-6">
+                  <div className="flex items-center gap-2">
+                    <Trophy className="size-5 text-drip-300" />
+                    <span className="font-mono text-primary-200/70 text-sm">Total Won</span>
+                  </div>
+                  <div className="font-bold font-mono text-xl text-drip-300">
+                    {(statistics.totalWon || 0).toFixed(2)} {statistics.tokenSymbol}
+                  </div>
+                </div>
+
+                <div className="flex flex-col gap-3 rounded-lg bg-primary-200/5 backdrop-blur-lg p-6">
+                  <div className="flex items-center gap-2">
+                    <Coins className="size-5 text-blue-300" />
+                    <span className="font-mono text-primary-200/70 text-sm">Avg Toss</span>
+                  </div>
+                  <div className="font-bold font-mono text-xl text-primary-200">
+                    {(statistics.avgToss || 0).toFixed(2)} {statistics.tokenSymbol}
+                  </div>
+                </div>
+              </>
+            ) : (
+              <>
+                {/* Multi Token Cards with Breakdown */}
+                <div className="flex flex-col gap-3 rounded-lg bg-primary-200/5 backdrop-blur-lg p-6">
+                  <div className="flex items-center gap-2">
+                    <Coins className="size-5 text-blue-400" />
+                    <span className="font-mono text-primary-200/70 text-sm">Total Tosses</span>
+                  </div>
+                  <div className="font-bold font-mono text-2xl text-primary-200 mb-2">
+                    {(statistics.overall?.totalTosses || 0).toLocaleString()}
+                  </div>
+
+                </div>
+
+                <div className="flex flex-col gap-3 rounded-lg bg-primary-200/5 backdrop-blur-lg p-6">
+                  <div className="flex items-center gap-2">
+                    <Trophy className="size-5 text-yellow-400" />
+                    <span className="font-mono text-primary-200/70 text-sm">Total Wins</span>
+                  </div>
+                  <div className="font-bold font-mono text-2xl text-primary-200 mb-2">
+                    {(statistics.overall?.totalWins || 0).toLocaleString()}
+                  </div>
+
+                </div>
+
+                <div className="flex flex-col gap-3 rounded-lg bg-primary-200/5 backdrop-blur-lg p-6">
+                  <div className="flex items-center gap-2">
+                    <TrendingUp className="size-5 text-green-400" />
+                    <span className="font-mono text-primary-200/70 text-sm">Win Rate</span>
+                  </div>
+                  <div className="font-bold font-mono text-2xl text-green-400 mb-2">
+                    {(statistics.overall?.winRate || 0).toFixed(1)}%
+                  </div>
+                </div>
+
+                <div className="flex flex-col gap-3 rounded-lg bg-primary-200/5 backdrop-blur-lg p-6">
+                  <div className="flex items-center gap-2">
+                    <BarChart3 className="size-5 text-purple-400" />
+                    <span className="font-mono text-primary-200/70 text-sm">Total Tossed</span>
+                  </div>
+
+                  <div className="space-y-1">
+                    {statistics.tokenStats && Object.entries(statistics.tokenStats).map(([address, stats]) => (
+                      stats.totalTossed > 0 && (
+                        <div key={address} className="flex justify-between text-sm">
+                          <span className="text-primary-200/70">{stats.symbol}:</span>
+                          <span className="text-primary-200 font-mono">{stats.totalTossed.toFixed(2)}</span>
+                        </div>
+                      )
+                    ))}
+                  </div>
+                </div>
+
+                <div className="flex flex-col gap-3 rounded-lg bg-primary-200/5 backdrop-blur-lg p-6">
+                  <div className="flex items-center gap-2">
+                    <Trophy className="size-5 text-drip-300" />
+                    <span className="font-mono text-primary-200/70 text-sm">Total Won</span>
+                  </div>
+
+                  <div className="space-y-1">
+                    {statistics.tokenStats && Object.entries(statistics.tokenStats).map(([address, stats]) => (
+                      stats.totalWon > 0 && (
+                        <div key={address} className="flex justify-between text-sm">
+                          <span className="text-primary-200/70">{stats.symbol}:</span>
+                          <span className="text-drip-300 font-mono">{stats.totalWon.toFixed(2)}</span>
+                        </div>
+                      )
+                    ))}
+                  </div>
+                </div>
+
+                <div className="flex flex-col gap-3 rounded-lg bg-primary-200/5 backdrop-blur-lg p-6">
+                  <div className="flex items-center gap-2">
+                    <Coins className="size-5 text-blue-300" />
+                    <span className="font-mono text-primary-200/70 text-sm">Avg Toss</span>
+                  </div>
+
+                  <div className="space-y-1">
+                    {statistics.tokenStats && Object.entries(statistics.tokenStats).map(([address, stats]) => (
+                      stats.totalTosses > 0 && (
+                        <div key={address} className="flex justify-between text-sm">
+                          <span className="text-primary-200/70">{stats.symbol}:</span>
+                          <span className="text-primary-200 font-mono">{stats.avgToss.toFixed(2)}</span>
+                        </div>
+                      )
+                    ))}
+                  </div>
+                </div>
+              </>
+            )}
           </div>
         )}
 
@@ -241,7 +400,7 @@ export default function Statistics() {
               <Coins className="size-6 text-blue-400" />
               Recent Tosses
             </h2>
-            <div className="scrollbar-custom max-h-[60vh] overflow-y-auto overflow-x-auto rounded-lg bg-primary-200/5 p-4">
+            <div className="scrollbar-custom max-h-[60vh] overflow-y-auto overflow-x-auto rounded-lg bg-primary-200/5 backdrop-blur-lg p-4">
               <Table>
                 <TableHeader>
                   <TableRow className="border-primary-200/20 border-b font-mono hover:bg-primary-200/5">
@@ -252,17 +411,19 @@ export default function Statistics() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {tossesData?.tosses?.map((toss: TossEvent, index: number) => (
-                    <TableRow
+                  {tosses?.map((toss: TossEvent, index: number) => {
+                    const tokenDecimal = getDecimalsByAddress(toss.token_address) || 18;
+                    const tokenSymbol = getTokenSymbolByAddress(toss.token_address) || 'HYPE';
+                    return (<TableRow
                       key={`${toss.tx_hash}-${index}`}
-                      className="border-primary-200/10 border-b text-primary-200 hover:bg-primary-200/5"
+                      className="border-primary-200/10 border-b text-primary-200 hover:bg-primary-200/5 text-nowrap custom-scrollbar"
                     >
                       <TableCell className="font-mono">
                         {toss.frog_address ? formatAddress(toss.frog_address) : 'You'}
                       </TableCell>
                       <TableCell className="font-bold">
                         <Badge className="border border-blue-400 bg-blue-400/10 text-blue-400">
-                          {formatValue(Number(toss.amount || 0) / 1e18)} HYPE
+                          {formatValue(BigInt(toss.amount), tokenDecimal)} {tokenSymbol}
                         </Badge>
                       </TableCell>
                       <TableCell className="text-primary-200/70 text-sm">
@@ -283,8 +444,8 @@ export default function Statistics() {
                           'N/A'
                         )}
                       </TableCell>
-                    </TableRow>
-                  ))}
+                    </TableRow>)
+                  })}
 
                   {/* Loading skeletons */}
                   {isFetchingTosses &&
@@ -303,7 +464,7 @@ export default function Statistics() {
                       ))}
 
                   {/* Empty state */}
-                  {!isFetchingTosses && (!tossesData?.tosses?.length) && (
+                  {!isFetchingTosses && (!tosses?.length) && (
                     <TableRow>
                       <TableCell
                         colSpan={4}
@@ -324,7 +485,7 @@ export default function Statistics() {
               <Trophy className="size-6 text-yellow-400" />
               Recent Wins
             </h2>
-            <div className="scrollbar-custom max-h-[60vh] overflow-y-auto overflow-x-auto rounded-lg bg-primary-200/5 p-4">
+            <div className="scrollbar-custom max-h-[60vh] overflow-y-auto overflow-x-auto rounded-lg bg-primary-200/5 backdrop-blur-lg p-4">
               <Table>
                 <TableHeader>
                   <TableRow className="border-primary-200/20 border-b font-mono hover:bg-primary-200/5">
@@ -335,39 +496,43 @@ export default function Statistics() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {(winsData?.winners || winsData?.wins || []).map((win: WinEvent, index: number) => (
-                    <TableRow
-                      key={`${win.tx_hash}-${index}`}
-                      className="border-primary-200/10 border-b text-primary-200 hover:bg-primary-200/5"
-                    >
-                      <TableCell className="font-mono">
-                        {win.winner_address ? formatAddress(win.winner_address) : showPersonalStats ? 'You' : 'N/A'}
-                      </TableCell>
-                      <TableCell className="font-bold">
-                        <Badge className="border border-drip-300 bg-drip-300/10 text-drip-300">
-                          {formatValue(Number(win.prize || 0) / 1e18)} HYPE
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="text-primary-200/70 text-sm">
-                        {win.timestamp ? formatDate(win.timestamp) : 'N/A'}
-                      </TableCell>
-                      <TableCell className="font-mono text-primary-200/70 text-sm">
-                        {win.tx_hash ? (
-                          <a
-                            href={`${BLOCKSCAN_BASE_URL}tx/${win.tx_hash}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="flex items-center gap-1 hover:text-primary-200 transition-colors"
-                          >
-                            {formatHash(win.tx_hash)}
-                            <ExternalLink className="size-3" />
-                          </a>
-                        ) : (
-                          'N/A'
-                        )}
-                      </TableCell>
-                    </TableRow>
-                  ))}
+                  {wins.map((win: WinEvent, index: number) => {
+                    const tokenDecimal = getDecimalsByAddress(win.token_address) || 18;
+                    const tokenSymbol = getTokenSymbolByAddress(win.token_address) || 'HYPE';
+                    return (
+                      <TableRow
+                        key={`${win.tx_hash}-${index}`}
+                        className="border-primary-200/10 border-b text-primary-200 hover:bg-primary-200/5 text-nowrap custom-scrollbar"
+                      >
+                        <TableCell className="font-mono">
+                          {win.winner_address ? formatAddress(win.winner_address) : showPersonalStats ? 'You' : 'N/A'}
+                        </TableCell>
+                        <TableCell className="font-bold">
+                          <Badge className="border border-drip-300 bg-drip-300/10 text-drip-300">
+                            {formatValue(BigInt(win.prize), tokenDecimal)} {tokenSymbol}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-primary-200/70 text-sm">
+                          {win.timestamp ? formatDate(win.timestamp) : 'N/A'}
+                        </TableCell>
+                        <TableCell className="font-mono text-primary-200/70 text-sm">
+                          {win.tx_hash ? (
+                            <a
+                              href={`${BLOCKSCAN_BASE_URL}tx/${win.tx_hash}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="flex items-center gap-1 hover:text-primary-200 transition-colors"
+                            >
+                              {formatHash(win.tx_hash)}
+                              <ExternalLink className="size-3" />
+                            </a>
+                          ) : (
+                            'N/A'
+                          )}
+                        </TableCell>
+                      </TableRow>
+                    )
+                  })}
 
                   {/* Loading skeletons */}
                   {isFetchingWins &&
@@ -386,7 +551,7 @@ export default function Statistics() {
                       ))}
 
                   {/* Empty state */}
-                  {!isFetchingWins && (!(winsData?.winners || winsData?.wins)?.length) && (
+                  {!isFetchingWins && (!wins?.length) && (
                     <TableRow>
                       <TableCell
                         colSpan={4}

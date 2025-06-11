@@ -22,15 +22,17 @@ import {
 } from '@/components/ui/popover';
 import { useAppStore, type Token } from '@/stores/appStore';
 import { Skeleton } from './ui/skeleton';
+import { getPondStatus, PondStatus } from '@/functions/getPondStatus';
+import { PondComprehensiveInfo } from '@/lib/types';
 
 interface TokenSelectorProps {
-	totalValue?: bigint;
+	pondInfo: PondComprehensiveInfo;
 	isLoading?: boolean;
 	className?: string;
 }
 
 export default function TokenSelector({
-	totalValue,
+	pondInfo,
 	isLoading = false,
 	className,
 }: TokenSelectorProps) {
@@ -44,6 +46,11 @@ export default function TokenSelector({
 		clearEvents,
 		setPondTypes
 	} = useAppStore();
+
+	const pondStatus = getPondStatus(pondInfo);
+	const isSelectWinner = pondStatus === PondStatus.SelectWinner;
+
+	const totalValue = isSelectWinner ? 0n : pondInfo?.totalValue || 0n;
 
 	const handleTokenSelect = (token: Token) => {
 		// Only proceed if it's a different token
@@ -70,7 +77,7 @@ export default function TokenSelector({
 		}
 	};
 
-	const displayAmount = totalValue ? formatValue(totalValue) : '0';
+	const displayAmount = totalValue ? formatValue(totalValue, selectedToken?.decimals) : '0';
 
 	return (
 		<div className={cn('flex items-center gap-4', className)}>
@@ -97,6 +104,13 @@ export default function TokenSelector({
 						<span className="font-bold text-3xl md:text-5xl">
 							{selectedToken.symbol}
 						</span>
+						<Image
+							src={selectedToken.logo ?? ''}
+							alt={`${selectedToken.symbol} logo`}
+							width={38}
+							height={38}
+							className="flex rounded-full mb-1"
+						/>
 						<ChevronDown className="!size-6 ml-2" />
 					</Button>
 				</PopoverTrigger>

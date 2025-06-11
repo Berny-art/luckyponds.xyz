@@ -60,10 +60,6 @@ export default function PondInterface({ tokenAddress, initialReferrerCode }: Pon
 		applyReferralCode,
 	} = useReferralCode({ initialReferrerCode });
 
-	// State for timer information
-	const [timeRemaining, setTimeRemaining] = useState<number>(0);
-	const [isAboutToEnd, setIsAboutToEnd] = useState<boolean>(false);
-
 	// State to track if we've processed the referral
 	const [hasProcessedReferral, setHasProcessedReferral] = useState(false);
 
@@ -162,12 +158,6 @@ export default function PondInterface({ tokenAddress, initialReferrerCode }: Pon
 	const initialEventsAddedRef = useRef(false);
 	const eventsTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-	// Handler for timer updates
-	const handleTimerUpdate = (remaining: number, aboutToEnd: boolean) => {
-		setTimeRemaining(remaining);
-		setIsAboutToEnd(aboutToEnd);
-	};
-
 	// Handler for pond selection changes
 	const handlePondSelect = (newPondId: string) => {
 		setSelectedPond(newPondId);
@@ -200,7 +190,7 @@ export default function PondInterface({ tokenAddress, initialReferrerCode }: Pon
 				const sampleEvent = {
 					id: `${participant.tossAmount}-${participant.participant}-${Date.now()}`,
 					address: participant.participant,
-					amount: formatValue(participant.tossAmount),
+					amount: formatValue(participant.tossAmount, selectedToken?.decimals).toString(),
 					timestamp: Math.floor(Date.now() / 1000),
 					type: 'CoinTossed' as const,
 					pondType: selectedPond || '',
@@ -215,6 +205,7 @@ export default function PondInterface({ tokenAddress, initialReferrerCode }: Pon
 	}, [
 		pondInfo?.recentParticipants,
 		selectedPond,
+		selectedToken?.decimals,
 		addEvent,
 		isPondDataFetching,
 	]);
@@ -223,10 +214,6 @@ export default function PondInterface({ tokenAddress, initialReferrerCode }: Pon
 	useEffect(() => {
 		// When the current token address changes, force a complete data refresh
 		if (currentTokenAddress) {
-			// Clear timer states
-			setTimeRemaining(0);
-			setIsAboutToEnd(false);
-
 			// Force data refresh after a short delay to ensure hooks are updated
 			setTimeout(() => {
 				refetchAll();
@@ -246,11 +233,13 @@ export default function PondInterface({ tokenAddress, initialReferrerCode }: Pon
 						<h1 className="font-bold font-mono text-3xl text-primary-200 uppercase md:text-5xl">
 							WIN
 						</h1>
-						<TokenSelector
-							totalValue={pondInfo?.totalValue}
-							isLoading={isLoading}
-							className="justify-center"
-						/>
+						{pondInfo && (
+							<TokenSelector
+								pondInfo={pondInfo}
+								isLoading={isLoading}
+								className="justify-center"
+							/>
+						)}
 					</div>
 
 					{/* Countdown Timer */}
@@ -264,7 +253,6 @@ export default function PondInterface({ tokenAddress, initialReferrerCode }: Pon
 							pondInfo && (
 								<PondTimer
 									pondInfo={pondInfo}
-									onTimerUpdate={handleTimerUpdate}
 									key={`timer-${selectedPond}-${pondInfo.endTime}-${pondInfo.period}`}
 								/>
 							)
@@ -302,8 +290,6 @@ export default function PondInterface({ tokenAddress, initialReferrerCode }: Pon
 							<CoinTossInput
 								pondInfo={pondInfo}
 								onTransactionSuccess={handleTransactionSuccess} // Use enhanced handler
-								timeRemaining={timeRemaining}
-								isAboutToEnd={isAboutToEnd}
 							/>
 						)
 					)}
@@ -350,7 +336,7 @@ export default function PondInterface({ tokenAddress, initialReferrerCode }: Pon
 									}
 								}}
 								onKeyDown={(e) =>
-									e.key === 'f' && hasHyperModePonds && setLightningMode(!lightningMode)
+									e.key === 'h' && hasHyperModePonds && setLightningMode(!lightningMode)
 								}
 								aria-label="Toggle fast mode"
 								aria-disabled={!hasHyperModePonds}

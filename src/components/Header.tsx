@@ -96,7 +96,18 @@ export default function Header() {
 				</div>
 
 				{/* Mobile Hamburger Menu */}
-				<div className="flex lg:hidden">
+				<div className="flex gap-6 lg:hidden">
+					<button
+						onClick={() => setSoundEnabled(!isSoundEnabled)}
+						className="hover:text-primary-200 text-drip-300"
+						title={isSoundEnabled ? 'Disable sound' : 'Enable sound'}
+					>
+						{isSoundEnabled ? (
+							<Volume2 className="size-6" />
+						) : (
+							<VolumeX className="size-6" />
+						)}
+					</button>
 					<Sheet>
 						<SheetTrigger asChild>
 							<Button
@@ -146,17 +157,7 @@ export default function Header() {
 
 								{/* Social Links and Sound Control */}
 								<div className="flex gap-6 px-4">
-									<button
-										onClick={() => setSoundEnabled(!isSoundEnabled)}
-										className="hover:text-primary-200 text-drip-300"
-										title={isSoundEnabled ? 'Disable sound' : 'Enable sound'}
-									>
-										{isSoundEnabled ? (
-											<Volume2 className="size-6" />
-										) : (
-											<VolumeX className="size-6" />
-										)}
-									</button>
+
 									<a
 										href="https://discord.gg/pXHSuqCvbm"
 										target="_blank"

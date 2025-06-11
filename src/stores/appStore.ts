@@ -44,7 +44,7 @@ export interface ContractEvent {
 }
 
 // Default tokens
-const DEFAULT_TOKENS: Token[] = [
+export const DEFAULT_TOKENS: Token[] = [
 	{
 		symbol: 'HYPE',
 		address: '0x0000000000000000000000000000000000000000',
@@ -53,22 +53,22 @@ const DEFAULT_TOKENS: Token[] = [
 		decimals: 18,
 		isNative: true,
 	},
-	// {
-	// 	symbol: 'BUDDY',
-	// 	address: '0x0000000000000000000000000000000000000000',
-	// 	name: 'Alright Buddy',
-	// 	logo: 'https://assets.coingecko.com/coins/images/54657/standard/alright_buddy_pfp.png?1740895394',
-	// 	decimals: 18,
-	// 	isNative: true,
-	// },
-	// {
-	// 	symbol: 'PURR',
-	// 	address: '0xC003D79B8a489703b1753711E3ae9fFDFC8d1a82',
-	// 	name: 'Purr',
-	// 	logo: 'https://assets.coingecko.com/coins/images/37125/standard/PURR_CG.png',	
-	// 	decimals: 18,
-	// 	isNative: false,
-	// },
+	{
+		symbol: 'BUDDY',
+		address: '0x47bb061C0204Af921F43DC73C7D7768d2672DdEE',
+		name: 'Alright Buddy',
+		logo: 'https://assets.coingecko.com/coins/images/54657/standard/alright_buddy_pfp.png?1740895394',
+		decimals: 6,
+		isNative: false,
+	},
+	{
+		symbol: 'RUB',
+		address: '0x7DCfFCb06B40344eecED2d1Cbf096B299fE4b405',
+		name: 'RUB',
+		logo: 'https://raw.githubusercontent.com/HyperSwap-Labs/hyperswap-token-list/refs/heads/main/assets/rub.png',	
+		decimals: 18,
+		isNative: false,
+	},
 ];
 
 // Consolidated app state interface

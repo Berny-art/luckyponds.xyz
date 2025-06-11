@@ -3,23 +3,18 @@
 import { useState, useEffect, useMemo, useCallback, type ChangeEvent } from 'react';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
-import { formatEther, parseEther } from 'viem';
 import { useAccount, useBalance } from 'wagmi';
 import CoinTossButton from './CoinTossButton';
 import type { PondComprehensiveInfo } from '@/lib/types';
 import { useAppStore } from '@/stores/appStore';
-import { formatValue } from '@/lib/utils';
+import { formatValue, formatTokenAmount, parseTokenAmount } from '@/lib/utils';
 
 export default function CoinTossInput({
 	pondInfo,
 	onTransactionSuccess,
-	timeRemaining,
-	isAboutToEnd,
 }: {
 	pondInfo: PondComprehensiveInfo;
 	onTransactionSuccess?: () => void;
-	timeRemaining?: number;
-	isAboutToEnd?: boolean;
 }) {
 	const { address } = useAccount();
 	const { selectedToken, showAnimation } = useAppStore();
@@ -36,12 +31,12 @@ export default function CoinTossInput({
 	const [tossAmount, setTossAmount] = useState('0');
 
 	// Get the price per toss from pond info
-	const minTossPrice = pondInfo?.minTossPrice || parseEther('0.01');
-	const remainingAmount = pondInfo?.remainingTossAmount || parseEther('10');
-	const maxTotalAmount = pondInfo?.maxTotalTossAmount || parseEther('10');
+	const minTossPrice = pondInfo?.minTossPrice || parseTokenAmount('0.01', selectedToken?.decimals || 18);
+	const remainingAmount = pondInfo?.remainingTossAmount || parseTokenAmount('10', selectedToken?.decimals || 18);
+	const maxTotalAmount = pondInfo?.maxTotalTossAmount || parseTokenAmount('10', selectedToken?.decimals || 18);
 
 	// Format the toss price for display
-	const formattedTossPrice = formatEther(minTossPrice);
+	const formattedTossPrice = formatTokenAmount(minTossPrice, selectedToken?.decimals || 18);
 
 	// Calculate max possible tosses based on user balance and remaining pond amount
 	const maxTosses = useMemo(() => {
@@ -148,19 +143,21 @@ export default function CoinTossInput({
 				<div className="flex w-full items-center gap-4 rounded-lg bg-primary-200 px-4 py-2 font-mono text-black">
 					<div className="flex flex-col md:w-full">
 						<div className='flex flex-col gap-0'>
-							<div className="flex items-center gap-2">
+							<div className="flex flex-col md:flex-row md:items-center md:gap-2">
 								<h3 className="font-bold text-lg">Tosses</h3>
-
-								<p className="text-nowrap text-xs opacity-60">
+								<p className="flex md:hidden text-nowrap text-xs opacity-60">
+									{formattedTossPrice} {tokenSymbol} / Toss
+								</p>
+								<p className="hidden md:flex text-nowrap text-xs opacity-60">
 									({formattedTossPrice} {tokenSymbol} / Toss)
 								</p>
 							</div>
 						</div>
-						<p className='text-nowrap text-xs text-secondary-950'>Balance: {formatValue(balance?.value)} {balance?.symbol}</p>
+						<p className='text-nowrap text-xs text-secondary-950'>Balance: {formatValue(balance?.value, selectedToken?.decimals)} {balance?.symbol}</p>
 
 						{!canToss && isConnected && (
 							<p className="mt-1 text-red-600 text-xs">
-								Insufficient balance for tossing
+								Insufficient balance
 							</p>
 						)}
 					</div>
@@ -181,7 +178,7 @@ export default function CoinTossInput({
 							onChange={handleInputChange}
 							min={1}
 							max={maxTosses}
-							className="border-2 border-secondary-950 text-center font-bold text-xl shadow-none"
+							className="border-2 border-secondary-950 text-center font-bold md:text-xl shadow-none"
 							disabled={!canToss}
 							onBlur={() => {
 								// Ensure valid value on blur
@@ -216,14 +213,12 @@ export default function CoinTossInput({
 			{
 				pondInfo && (
 					<CoinTossButton
-						amount={formatEther(BigInt(tossAmount))}
+						amount={formatTokenAmount(BigInt(tossAmount), selectedToken?.decimals || 18)}
 						numberOfTosses={numberOfTosses}
 						pondInfo={pondInfo}
 						onTransactionSuccess={onTransactionSuccess}
-						timeRemaining={timeRemaining}
-						isAboutToEnd={isAboutToEnd}
 						canToss={canToss}
-						maxTossAmount={formatEther(maxTotalAmount)}
+						maxTossAmount={formatTokenAmount(maxTotalAmount, selectedToken?.decimals || 18)}
 					/>
 				)
 			}

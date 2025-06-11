@@ -55,7 +55,7 @@ export default function PondWinners({ classNames }: { classNames?: string }) {
 				<PondWinnerCard
 					key={winner.title}
 					title={winner.title}
-					amount={formatValue(winner.lastPrize)}
+					amount={formatValue(winner.lastPrize, selectedToken.decimals).toString()}
 					winner={formatWinner(winner.lastWinner)}
 					hasWinner={!!hasWinner(winner.lastWinner)}
 					period={winner.period}
