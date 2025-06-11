@@ -190,7 +190,7 @@ export default function PondInterface({ tokenAddress, initialReferrerCode }: Pon
 				const sampleEvent = {
 					id: `${participant.tossAmount}-${participant.participant}-${Date.now()}`,
 					address: participant.participant,
-					amount: formatValue(participant.tossAmount),
+					amount: formatValue(participant.tossAmount, selectedToken?.decimals).toString(),
 					timestamp: Math.floor(Date.now() / 1000),
 					type: 'CoinTossed' as const,
 					pondType: selectedPond || '',
@@ -205,6 +205,7 @@ export default function PondInterface({ tokenAddress, initialReferrerCode }: Pon
 	}, [
 		pondInfo?.recentParticipants,
 		selectedPond,
+		selectedToken?.decimals,
 		addEvent,
 		isPondDataFetching,
 	]);

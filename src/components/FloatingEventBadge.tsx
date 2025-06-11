@@ -1,7 +1,7 @@
 // components/FloatingEventBadge.tsx
 'use client';
 
-import { formatAddress, formatValue } from '@/lib/utils';
+import { formatAddress, formatValue, getTokenSymbolByAddress, formatTokenAmount } from '@/lib/utils';
 import {
 	OneCoin,
 	TwoCoins,
@@ -11,9 +11,8 @@ import {
 	MultipleCoins,
 } from './elements/CoinIcons';
 import { Badge } from './ui/badge';
-import { formatEther } from 'ethers';
 import { useEffect, useState, useRef } from 'react';
-import type { ContractEvent } from '@/stores/appStore';
+import { useAppStore, type ContractEvent } from '@/stores/appStore';
 
 function getCoinIcon(multiplier: number) {
 	if (multiplier >= 6) return <MultipleCoins />;
@@ -42,6 +41,8 @@ function FloatingEventBadge({ event, minTossAmount }: FloatingEventBadgeProps) {
 			left: `${Math.floor(Math.random() * 80) + 10}%`, // Random position between 10-90%
 		},
 	};
+	const { selectedToken } = useAppStore();
+	const symbol = getTokenSymbolByAddress(eventWithPosition.address);
 
 	// Create a more balanced randomization that evenly distributes left and right
 	const randomHorizontalOffset = Math.floor(Math.random() * 120) - 60; // Range: -60 to +60
@@ -90,7 +91,7 @@ function FloatingEventBadge({ event, minTossAmount }: FloatingEventBadgeProps) {
 
 	// Parse event amount to calculate multiplier
 	const eventAmount = Number.parseFloat(event.amount);
-	const minAmount = Number.parseFloat(formatEther(minTossAmount));
+	const minAmount = Number.parseFloat(formatTokenAmount(minTossAmount, selectedToken?.decimals || 18));
 	const multiplier = eventAmount / minAmount;
 
 	const coinIcon = getCoinIcon(multiplier);
@@ -113,7 +114,7 @@ function FloatingEventBadge({ event, minTossAmount }: FloatingEventBadgeProps) {
 					className="flex items-center gap-2 bg-primary-200/30 text-primary-200 text-xs"
 				>
 					<span className="text-nowrap font-bold">
-						{formatValue(event.amount)} HYPE
+						{formatValue(event.amount, selectedToken?.decimals)} {symbol || selectedToken?.symbol || 'HYPE'}
 					</span>
 					<span className="text-nowrap font-bold">/</span>
 					<span className="text-nowrap font-mono">

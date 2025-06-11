@@ -4,7 +4,6 @@
 import { useState, useEffect } from 'react';
 import { useWriteContract, useWaitForTransactionReceipt, useAccount } from 'wagmi';
 import { pondCoreConfig } from '@/contracts/PondCore';
-import { parseEther } from 'viem';
 import { toast } from 'sonner';
 import { TokenType } from '@/lib/types';
 import { 
@@ -12,7 +11,7 @@ import {
 	getTossFunctionName
 } from '@/utils/tokenUtils';
 import { sendDiscordWebhook } from '@/utils/discordWebhook';
-import { formatValue } from '@/lib/utils';
+import { formatValue, parseTokenAmount } from '@/lib/utils';
 import type { Token } from '@/stores/appStore';
 import type { PondComprehensiveInfo } from '@/lib/types';
 
@@ -148,7 +147,7 @@ export function useTossCoin() {
 				const { userAddress, amount, selectedToken, pondInfo } = pendingWebhookData;
 				
 				// Calculate new total value (existing + tossed amount)
-				const tossedAmount = parseEther(amount);
+				const tossedAmount = parseTokenAmount(amount, selectedToken.decimals);
 				const newTotalValue = pondInfo.totalValue + tossedAmount;
 				
 				sendDiscordWebhook({
@@ -157,7 +156,7 @@ export function useTossCoin() {
 					selectedToken,
 					pondName: pondInfo.name.replace('ETH', '').trim(), // Remove 'ETH' if present and trim
 					pondSymbol: selectedToken.symbol,
-					totalValue: formatValue(newTotalValue),
+					totalValue: formatValue(newTotalValue, selectedToken.decimals).toString(),
 					txHash,
 				}).catch(error => {
 					console.error('Discord webhook error:', error);
@@ -195,7 +194,7 @@ export function useTossCoin() {
 			setTxHash(null);
 			setIsLoading(false);
 		}
-	}, [txHash, isSuccess, isError, error]);
+	}, [txHash, isSuccess, isError, error, pendingWebhookData]);
 
 	// Function to handle coin toss
 	const tossCoin = async (
@@ -229,7 +228,7 @@ export function useTossCoin() {
 
 			// Format the pond type for the contract
 			const pondTypeFormatted = pondType as `0x${string}`;
-			const amountFormatted = parseEther(amount);
+			const amountFormatted = parseTokenAmount(amount, token?.decimals || 18);
 
 			// Get the function name to call
 			const functionName = getTossFunctionName(tokenType);

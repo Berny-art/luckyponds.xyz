@@ -81,7 +81,7 @@ export default function PondInfo({
 				<div className="flex items-center justify-between">
 					<span className="font-bold text-sm">Prize Pool:</span>
 					<span className="font-mono text-drip-300 text-sm">
-						{isSelectWinner ? 0 : formatValue(pondInfo.totalValue)} {selectedToken.symbol}
+						{isSelectWinner ? 0 : formatValue(pondInfo.totalValue, selectedToken.decimals)} {selectedToken.symbol}
 					</span>
 				</div>
 
@@ -89,7 +89,7 @@ export default function PondInfo({
 					<div className="flex items-center justify-between">
 						<span className="font-bold text-sm">Your Stake:</span>
 						<span className="font-mono text-sm">
-							{isSelectWinner ? 0 : formatValue(pondInfo.userTossAmount)} {selectedToken.symbol}
+							{isSelectWinner ? 0 : formatValue(pondInfo.userTossAmount, selectedToken.decimals)} {selectedToken.symbol}
 						</span>
 					</div>
 				)}

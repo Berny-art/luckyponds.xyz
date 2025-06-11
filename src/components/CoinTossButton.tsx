@@ -151,7 +151,7 @@ export default function CoinTossButton({
     }
 
     // Connected - show standard toss message
-    return `Toss ${formatValue(amount, 1)} ${selectedToken.symbol} in ${displayPondName} pond`;
+    return `Toss ${formatValue(amount, selectedToken?.decimals)} ${selectedToken.symbol} in ${displayPondName} pond`;
   }, [
     isConnected,
     isLoading,
@@ -160,6 +160,7 @@ export default function CoinTossButton({
     isInFirstSecondsAfterEnd,
     amount,
     selectedToken?.symbol,
+    selectedToken?.decimals,
     displayPondName,
   ]);
 

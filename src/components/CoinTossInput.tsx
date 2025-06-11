@@ -3,12 +3,11 @@
 import { useState, useEffect, useMemo, useCallback, type ChangeEvent } from 'react';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
-import { formatEther, parseEther } from 'viem';
 import { useAccount, useBalance } from 'wagmi';
 import CoinTossButton from './CoinTossButton';
 import type { PondComprehensiveInfo } from '@/lib/types';
 import { useAppStore } from '@/stores/appStore';
-import { formatValue } from '@/lib/utils';
+import { formatValue, formatTokenAmount, parseTokenAmount } from '@/lib/utils';
 
 export default function CoinTossInput({
 	pondInfo,
@@ -32,12 +31,12 @@ export default function CoinTossInput({
 	const [tossAmount, setTossAmount] = useState('0');
 
 	// Get the price per toss from pond info
-	const minTossPrice = pondInfo?.minTossPrice || parseEther('0.01');
-	const remainingAmount = pondInfo?.remainingTossAmount || parseEther('10');
-	const maxTotalAmount = pondInfo?.maxTotalTossAmount || parseEther('10');
+	const minTossPrice = pondInfo?.minTossPrice || parseTokenAmount('0.01', selectedToken?.decimals || 18);
+	const remainingAmount = pondInfo?.remainingTossAmount || parseTokenAmount('10', selectedToken?.decimals || 18);
+	const maxTotalAmount = pondInfo?.maxTotalTossAmount || parseTokenAmount('10', selectedToken?.decimals || 18);
 
 	// Format the toss price for display
-	const formattedTossPrice = formatEther(minTossPrice);
+	const formattedTossPrice = formatTokenAmount(minTossPrice, selectedToken?.decimals || 18);
 
 	// Calculate max possible tosses based on user balance and remaining pond amount
 	const maxTosses = useMemo(() => {
@@ -152,7 +151,7 @@ export default function CoinTossInput({
 								</p>
 							</div>
 						</div>
-						<p className='text-nowrap text-xs text-secondary-950'>Balance: {formatValue(balance?.value)} {balance?.symbol}</p>
+						<p className='text-nowrap text-xs text-secondary-950'>Balance: {formatValue(balance?.value, selectedToken?.decimals)} {balance?.symbol}</p>
 
 						{!canToss && isConnected && (
 							<p className="mt-1 text-red-600 text-xs">
@@ -212,12 +211,12 @@ export default function CoinTossInput({
 			{
 				pondInfo && (
 					<CoinTossButton
-						amount={formatEther(BigInt(tossAmount))}
+						amount={formatTokenAmount(BigInt(tossAmount), selectedToken?.decimals || 18)}
 						numberOfTosses={numberOfTosses}
 						pondInfo={pondInfo}
 						onTransactionSuccess={onTransactionSuccess}
 						canToss={canToss}
-						maxTossAmount={formatEther(maxTotalAmount)}
+						maxTossAmount={formatTokenAmount(maxTotalAmount, selectedToken?.decimals || 18)}
 					/>
 				)
 			}

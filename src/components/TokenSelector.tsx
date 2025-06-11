@@ -77,7 +77,7 @@ export default function TokenSelector({
 		}
 	};
 
-	const displayAmount = totalValue ? formatValue(totalValue) : '0';
+	const displayAmount = totalValue ? formatValue(totalValue, selectedToken?.decimals) : '0';
 
 	return (
 		<div className={cn('flex items-center gap-4', className)}>

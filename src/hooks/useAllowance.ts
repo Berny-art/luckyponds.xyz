@@ -3,7 +3,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useWriteContract, useWaitForTransactionReceipt, useReadContract, useAccount, useBalance } from 'wagmi';
 import { useQueryClient } from '@tanstack/react-query';
-import { parseEther, formatEther } from 'viem';
 import { toast } from 'sonner';
 import { 
 	ERC20_ABI, 
@@ -13,6 +12,7 @@ import {
 	needsApproval 
 } from '@/utils/tokenUtils';
 import { pondCoreConfig } from '@/contracts/PondCore';
+import { parseTokenAmount, formatTokenAmount } from '@/lib/utils';
 import type { Token } from '@/stores/appStore';
 import type { PondComprehensiveInfo } from '@/lib/types';
 
@@ -38,9 +38,9 @@ export function useAllowance(token?: Token, maxTossAmount?: string, pondInfo?: P
 	const getMaxTossAmount = useMemo(() => {
 		if (!balance || !pondInfo || !token) return maxTossAmount || '0';
 
-		const minTossPrice = pondInfo.minTossPrice || parseEther('0.01');
-		const remainingAmount = pondInfo.remainingTossAmount || parseEther('10');
-		const maxTotalAmount = pondInfo.maxTotalTossAmount || parseEther('10');
+		const minTossPrice = pondInfo.minTossPrice || parseTokenAmount('0.01', token.decimals);
+		const remainingAmount = pondInfo.remainingTossAmount || parseTokenAmount('10', token.decimals);
+		const maxTotalAmount = pondInfo.maxTotalTossAmount || parseTokenAmount('10', token.decimals);
 
 		// Calculate how many tosses are possible based on different constraints
 		// 1. User's balance constraint - how many tosses can they afford?
@@ -66,7 +66,7 @@ export function useAllowance(token?: Token, maxTossAmount?: string, pondInfo?: P
 		
 		// Calculate total amount for max tosses
 		const calculatedMaxTossAmount = BigInt(maxTosses) * minTossPrice;
-		return formatEther(calculatedMaxTossAmount);
+		return formatTokenAmount(calculatedMaxTossAmount, token.decimals);
 	}, [balance, pondInfo, token, maxTossAmount]);
 
 	const effectiveMaxTossAmount = maxTossAmount || getMaxTossAmount;
@@ -146,7 +146,7 @@ export function useAllowance(token?: Token, maxTossAmount?: string, pondInfo?: P
 			return false; // Don't show approval needed while loading
 		}
 
-		const requiredAmount = parseEther(effectiveMaxTossAmount);
+		const requiredAmount = parseTokenAmount(effectiveMaxTossAmount, token?.decimals || 18);
 		const needsApprovalResult = needsApproval(currentAllowance || 0n, requiredAmount);
 		
 		return needsApprovalResult;
@@ -167,7 +167,7 @@ export function useAllowance(token?: Token, maxTossAmount?: string, pondInfo?: P
 			toast.loading('Requesting token approval...', { id: 'approval-loading' });
 
 			// Apply the multiplier to reduce future approval needs
-			const baseAmount = parseEther(effectiveMaxTossAmount);
+			const baseAmount = parseTokenAmount(effectiveMaxTossAmount, token.decimals);
 			const approvalAmount = baseAmount * APPROVAL_MULTIPLIER;
 
 			const hash = await writeContractAsync({
