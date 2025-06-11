@@ -38,7 +38,7 @@ const frogTheme = merge(darkTheme(), {
 
 // add terms and conditions url: https://lucky-ponds.gitbook.io/lucky-ponds/legal/terms-and-conditions
 const getSiweMessageOptions: GetSiweMessageOptions = () => ({
-	statement: 'Sign in to Lucky Ponds',
+	statement: 'By signing in to Lucky Ponds, you agree to the Terms of Service (https://lucky-ponds-1.gitbook.io/lucky-ponds/legal/quickstart)',
 });
 
 // Optimized QueryClient configuration for better performance
