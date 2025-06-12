@@ -14,6 +14,7 @@ import { formatValue } from '@/lib/utils';
 import AllowanceButton from './AllowanceButton';
 import { useTransactionMonitor } from '@/hooks/useTransactionMonitor';
 import { getPondTimingStates } from '@/lib/timeUtils';
+import { getPondStatus, PondStatus } from '@/functions/getPondStatus';
 
 interface CoinTossButtonProps {
   amount: string;
@@ -58,6 +59,10 @@ export default function CoinTossButton({
     isInFirstSecondsAfterEnd,
     isPondDisabled
   } = timingStates;
+
+  // Check if pond is in SelectWinner status
+  const pondStatus = getPondStatus(pondInfo);
+  const isSelectWinner = pondStatus === PondStatus.SelectWinner;
 
   // Combine all loading states
   const isLoading = tossLoading || isMonitoring;
@@ -158,6 +163,7 @@ export default function CoinTossButton({
     isPondDisabled,
     isInFirstSecondsAfterStart,
     isInFirstSecondsAfterEnd,
+    isSelectWinner,
     amount,
     selectedToken?.symbol,
     selectedToken?.decimals,
