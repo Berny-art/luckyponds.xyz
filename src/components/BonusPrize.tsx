@@ -2,7 +2,6 @@ import Image from "next/image";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "./ui/dialog";
 import Link from "next/link";
 import { BONUS_PRIZE } from "@/lib/constants";
-import { Button } from "./ui/button";
 import { Gift } from "lucide-react";
 
 export default function BonusPrize({ isIconOnly = false }: { isIconOnly?: boolean }) {

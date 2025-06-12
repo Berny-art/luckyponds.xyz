@@ -7,7 +7,6 @@ import { Toaster } from '@/components/ui/sonner';
 import Image from 'next/image';
 import { Analytics } from "@vercel/analytics/next"
 import BottomBar from '@/components/BottomBar';
-import BonusPrize from '@/components/BonusPrize';
 
 const RobotoMono = Roboto_Mono({
 	variable: '--font-roboto-mono',
