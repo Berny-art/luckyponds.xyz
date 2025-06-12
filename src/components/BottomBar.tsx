@@ -82,7 +82,7 @@ export default function BottomBar() {
           {isLoading ? (
             // Loading state
             <div className="flex items-center gap-2 px-4 text-primary-200 font-mono text-sm uppercase h-full">
-              <p>Loading recent events...</p>
+              <p>Pondering events...</p>
             </div>
           ) : combinedEvents.length === 0 ? (
             // No events state
