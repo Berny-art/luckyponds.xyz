@@ -64,7 +64,7 @@ export const DEFAULT_TOKENS: Token[] = [
 	{
 		symbol: 'RUB',
 		address: '0x7DCfFCb06B40344eecED2d1Cbf096B299fE4b405',
-		name: 'RUB',
+		name: 'Reverse Unit Bias',
 		logo: 'https://raw.githubusercontent.com/HyperSwap-Labs/hyperswap-token-list/refs/heads/main/assets/rub.png',	
 		decimals: 18,
 		isNative: false,

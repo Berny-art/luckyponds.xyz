@@ -6,6 +6,7 @@ import HeaderWrapper from '@/components/HeaderWrapper';
 import { Toaster } from '@/components/ui/sonner';
 import Image from 'next/image';
 import { Analytics } from "@vercel/analytics/next"
+import BottomBar from '@/components/BottomBar';
 
 const RobotoMono = Roboto_Mono({
 	variable: '--font-roboto-mono',
@@ -62,10 +63,11 @@ export default function RootLayout({
 							alt="decoration"
 							width={1920}
 							height={400}
-							className="w-full object-cover"
+							className="w-full object-cover opacity-50 blur-sm"
 							priority={false}
 						/>
 					</div>
+					<BottomBar />
 				</Providers>
 				<Toaster
 					expand={true}
