@@ -14,6 +14,7 @@ import { sendDiscordWebhook } from '@/utils/discordWebhook';
 import { formatValue, parseTokenAmount } from '@/lib/utils';
 import type { Token } from '@/stores/appStore';
 import type { PondComprehensiveInfo } from '@/lib/types';
+import { getPondStatus, PondStatus } from '@/functions/getPondStatus';
 
 /**
  * Maps technical blockchain errors to user-friendly messages
@@ -102,6 +103,7 @@ const getUserFriendlyErrorMessage = (errorMessage: string): string => {
 export function useTossCoin() {
 	const [isLoading, setIsLoading] = useState(false);
 	const [txHash, setTxHash] = useState<`0x${string}` | null>(null);
+	const [selectWinnerTxHash, setSelectWinnerTxHash] = useState<`0x${string}` | null>(null);
 	const [lastTxResult, setLastTxResult] = useState<{
 		success: boolean;
 		hash?: `0x${string}`;
@@ -116,13 +118,59 @@ export function useTossCoin() {
 		pondInfo: PondComprehensiveInfo;
 	} | null>(null);
 
+	// Store pending toss data for after winner selection
+	const [pendingTossData, setPendingTossData] = useState<{
+		pondType: string;
+		amount: string;
+		tokenType: TokenType;
+		token?: Token;
+		pondInfo?: PondComprehensiveInfo;
+	} | null>(null);
+
 	const { writeContractAsync } = useWriteContract();
 	const { address } = useAccount();
 
-	// Watch for transaction status
+	// Watch for winner selection transaction status
+	const { isSuccess: isSelectWinnerSuccess, isError: isSelectWinnerError, error: selectWinnerError } = useWaitForTransactionReceipt({
+		hash: selectWinnerTxHash as `0x${string}`,
+	});
+
+	// Watch for main transaction status
 	const { isSuccess, isError, error } = useWaitForTransactionReceipt({
 		hash: txHash as `0x${string}`,
 	});
+
+	// Handle winner selection transaction completion
+	useEffect(() => {
+		if (!selectWinnerTxHash) return;
+
+		if (isSelectWinnerSuccess && pendingTossData) {
+			toast.dismiss('select-winner-loading');
+			toast.success('Pond prepared! Now processing your toss...', { duration: 2000 });
+			
+			// Clear winner selection hash and proceed with the toss
+			setSelectWinnerTxHash(null);
+			
+			// Execute the pending toss
+			const { pondType, amount, tokenType, token, pondInfo } = pendingTossData;
+			setPendingTossData(null);
+			
+			// Execute the actual toss without winner selection check
+			executeToss(pondType, amount, tokenType, token, pondInfo);
+		}
+
+		if (isSelectWinnerError && selectWinnerError) {
+			toast.dismiss('select-winner-loading');
+			const friendlyMessage = getUserFriendlyErrorMessage(selectWinnerError.message || '');
+			toast.error('Failed to select winner', {
+				description: friendlyMessage,
+			});
+			
+			setSelectWinnerTxHash(null);
+			setPendingTossData(null);
+			setIsLoading(false);
+		}
+	}, [selectWinnerTxHash, isSelectWinnerSuccess, isSelectWinnerError, selectWinnerError, pendingTossData]);
 
 	// Use useEffect to handle transaction status changes
 	useEffect(() => {
@@ -196,34 +244,15 @@ export function useTossCoin() {
 		}
 	}, [txHash, isSuccess, isError, error, pendingWebhookData]);
 
-	// Function to handle coin toss
-	const tossCoin = async (
+	// Helper function to execute the actual toss (without winner selection logic)
+	const executeToss = async (
 		pondType: string,
 		amount: string,
-		tokenType: TokenType = TokenType.NATIVE,
+		tokenType: TokenType,
 		token?: Token,
 		pondInfo?: PondComprehensiveInfo
 	) => {
-		if (!pondType || amount === '0') {
-			toast.error('Invalid toss parameters', {
-				description: 'Please select a pond and enter a valid amount.',
-			});
-			return { success: false, error: new Error('Invalid parameters') };
-		}
-
-		// Validate token type support
-		if (!isTokenTypeSupported(tokenType)) {
-			toast.error('Unsupported token type', {
-				description: 'This token type is not currently supported.',
-			});
-			return { success: false, error: new Error('Unsupported token type') };
-		}
-
 		try {
-			setIsLoading(true);
-			// Reset previous transaction result
-			setLastTxResult(null);
-
 			toast.loading('Preparing transaction...', { id: 'toss-loading' });
 
 			// Format the pond type for the contract
@@ -309,6 +338,77 @@ export function useTossCoin() {
 
 			return { success: false, error };
 		}
+	};
+
+	// Function to handle coin toss
+	const tossCoin = async (
+		pondType: string,
+		amount: string,
+		tokenType: TokenType = TokenType.NATIVE,
+		token?: Token,
+		pondInfo?: PondComprehensiveInfo
+	) => {
+		if (!pondType || amount === '0') {
+			toast.error('Invalid toss parameters', {
+				description: 'Please select a pond and enter a valid amount.',
+			});
+			return { success: false, error: new Error('Invalid parameters') };
+		}
+
+		// Validate token type support
+		if (!isTokenTypeSupported(tokenType)) {
+			toast.error('Unsupported token type', {
+				description: 'This token type is not currently supported.',
+			});
+			return { success: false, error: new Error('Unsupported token type') };
+		}
+
+		setIsLoading(true);
+		// Reset previous transaction result
+		setLastTxResult(null);
+
+		// Check if pond status is SelectWinner and handle winner selection first
+		if (pondInfo) {
+			const pondStatus = getPondStatus(pondInfo);
+			if (pondStatus === PondStatus.SelectWinner) {
+				try {
+					toast.loading('Preparing pond...', { id: 'select-winner-loading' });
+					
+					// Store the toss data for after winner selection
+					setPendingTossData({
+						pondType,
+						amount,
+						tokenType,
+						token,
+						pondInfo
+					});
+					
+					// Call selectLuckyWinner first
+					const selectWinnerHash = await writeContractAsync({
+						...pondCoreConfig,
+						address: pondCoreConfig.address as `0x${string}`,
+						functionName: 'selectLuckyWinner',
+						args: [pondType as `0x${string}`],
+						type: 'legacy',
+					});
+
+					setSelectWinnerTxHash(selectWinnerHash);
+					return { success: true, hash: selectWinnerHash, pending: true };
+					
+				} catch (selectWinnerError: any) {
+					toast.dismiss('select-winner-loading');
+					setIsLoading(false);
+					const friendlyMessage = getUserFriendlyErrorMessage(selectWinnerError?.message || '');
+					toast.error('Failed to prepare pond.', {
+						description: friendlyMessage,
+					});
+					return { success: false, error: selectWinnerError };
+				}
+			}
+		}
+
+		// If not in SelectWinner status, proceed with normal toss
+		return await executeToss(pondType, amount, tokenType, token, pondInfo);
 	};
 
 	return { 
