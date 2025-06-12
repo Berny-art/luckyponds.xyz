@@ -25,6 +25,7 @@ import { useReferralCode } from '@/hooks/useReferralCode';
 import { useAccount } from 'wagmi';
 import { toast } from 'sonner';
 import Link from 'next/link';
+import BonusPrize from './BonusPrize';
 
 interface PondInterfaceProps {
 	tokenAddress?: string;
@@ -44,7 +45,7 @@ export default function PondInterface({ tokenAddress, initialReferrerCode }: Pon
 		addEvent,
 	} = useAppStore();
 
-	const { isSm, isLg } = useResponsiveBreakpoints();
+	const { isSm, isMd, isLg } = useResponsiveBreakpoints();
 	const { address, isConnected } = useAccount();
 	const [lightningMode, setLightningMode] = useLocalStorage(
 		'lightningMode',
@@ -301,7 +302,7 @@ export default function PondInterface({ tokenAddress, initialReferrerCode }: Pon
 
 				{pondInfo && !isLoading && <FloatingEvents pondInfo={pondInfo} />}
 
-				<div className="-left-16 absolute top-0 z-40 flex gap-4 lg:flex-col">
+				<div className="-left-16 absolute top-0 z-40 flex gap-2 md:gap-4 lg:flex-col">
 					{pondInfo && !isLoading && (
 						<>
 							<ShakeNotification />
@@ -344,6 +345,9 @@ export default function PondInterface({ tokenAddress, initialReferrerCode }: Pon
 								{isLg ? `Hyper Mode ${lightningMode ? 'ON' : 'OFF'}` : ''}
 								<Zap size={18} />
 							</div>
+							{!isMd && (
+								<BonusPrize isIconOnly />
+							)}
 							{isSm && (
 								<ReferDialog initialReferrerCode={referrerCode} />
 							)}
@@ -365,6 +369,7 @@ export default function PondInterface({ tokenAddress, initialReferrerCode }: Pon
 					)}
 				</div>
 			</div>
+			<BonusPrize />
 		</div>
 	);
 }

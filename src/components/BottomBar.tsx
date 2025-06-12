@@ -71,7 +71,7 @@ export default function BottomBar() {
   }, [tosses, wins]);
 
   return (
-    <div className="fixed bottom-0 left-0 bg-[#344441] w-full flex gap-4 h-6 md:h-8 overflow-hidden">
+    <div className="fixed bottom-0 z-20 left-0 bg-[#344441] w-full flex gap-4 h-6 md:h-8 overflow-hidden">
       <div className="flex w-full items-center">
         <div className="flex h-full items-center justify-center font-mono font-bold text-sm md:text-base text-secondary-950 bg-drip-300 px-4 md:px-8 z-10">
           LIVE

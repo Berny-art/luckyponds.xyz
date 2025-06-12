@@ -45,15 +45,15 @@ export default function StandardPonds({
 	const getPondDescription = (period: PondPeriod): string => {
 		switch (period) {
 			case PondPeriod.FIVE_MIN:
-				return 'Fast draw';
+				return 'Hypermode';
 			case PondPeriod.HOURLY:
-				return 'Quick draw';
+				return 'Hypermode';
 			case PondPeriod.DAILY:
-				return 'Pick';
+				return 'Pond';
 			case PondPeriod.WEEKLY:
-				return 'Draw';
+				return 'Bonus Pond';
 			case PondPeriod.MONTHLY:
-				return 'Lucky';
+				return 'Mega Pond';
 			default:
 				return 'Custom';
 		}
@@ -102,16 +102,16 @@ export default function StandardPonds({
 	// lightningMode
 	const visiblePonds = !lightningMode
 		? displayPonds.filter((pond) =>
-				[PondPeriod.DAILY, PondPeriod.WEEKLY, PondPeriod.MONTHLY].includes(
+			[PondPeriod.DAILY, PondPeriod.WEEKLY, PondPeriod.MONTHLY].includes(
+				pond.period,
+			),
+		)
+		: displayPonds.filter(
+			(pond) =>
+				![PondPeriod.DAILY, PondPeriod.WEEKLY, PondPeriod.MONTHLY].includes(
 					pond.period,
 				),
-			)
-		: displayPonds.filter(
-				(pond) =>
-					![PondPeriod.DAILY, PondPeriod.WEEKLY, PondPeriod.MONTHLY].includes(
-						pond.period,
-					),
-			);
+		);
 
 	return (
 		<div className="flex w-full items-center justify-start gap-2 rounded">
