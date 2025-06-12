@@ -63,14 +63,12 @@ export default function BonusPrize({ isIconOnly = false }: { isIconOnly?: boolea
             </div>
             <div>
               <h3 className="text-lg font-bold">How to Participate</h3>
-              <ol className="list-decimal ml-2 pl-5 text-sm font-medium">
-                <li>Toss a coin in any weekly pond.</li>
-                <li>Every toss counts. Even multiple.</li>
-                {BONUS_PRIZE.sponorUrl && (
-                  <li>Go to our sponsor <Link href={BONUS_PRIZE.sponorUrl} target="_blank" className="text-drip-300 underline">{BONUS_PRIZE.sponsoredBy}</Link></li>
-                )}
-                <li>Follow <Link href={BONUS_PRIZE.luckyPondsXUrl} target="_blank" className="text-drip-300 underline">@LuckyPonds</Link> on X.</li>
+              <ol className="list-decimal ml-2 pl-5 text-sm font-medium mb-3">
+                <li>Toss a coin in any pond.</li>
+                <li>More tosses, more chances.</li>
+
               </ol>
+              <p className="text-xs">Follow <Link href={BONUS_PRIZE.luckyPondsXUrl} target="_blank" className="text-drip-300 underline">@LuckyPonds</Link> on X for winner announcement. Randomly picked on June 16, 06:00 UTC.</p>
             </div>
           </div>
         </div>
