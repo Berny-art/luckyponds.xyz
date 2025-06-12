@@ -43,16 +43,6 @@ export default function Statistics() {
   const statistics = useMemo(() => {
     if (!tosses && !wins) return null;
 
-    // Debug: Log the token addresses we're seeing in the data
-    console.log('DEBUG: Tosses data sample:', tosses?.slice(0, 3));
-    console.log('DEBUG: Wins data sample:', wins?.slice(0, 3));
-    console.log('DEBUG: DEFAULT_TOKENS addresses:', DEFAULT_TOKENS.map(t => t.address));
-
-    const uniqueTossTokens = [...new Set(tosses?.map(t => t.token_address) || [])];
-    const uniqueWinTokens = [...new Set(wins?.map(w => w.token_address) || [])];
-    console.log('DEBUG: Unique toss token addresses:', uniqueTossTokens);
-    console.log('DEBUG: Unique win token addresses:', uniqueWinTokens);
-
     // When filtering by specific token, show simple totals
     if (selectedTokenFilter !== 'all') {
       const tokenInfo = DEFAULT_TOKENS.find(t => t.address === selectedTokenFilter);

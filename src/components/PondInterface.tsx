@@ -225,7 +225,7 @@ export default function PondInterface({ tokenAddress, initialReferrerCode }: Pon
 	const isLoading = isLoadingPondTypes || isPondDataLoading;
 
 	return (
-		<div className="flex w-full flex-col justify-center gap-8 overflow-x-hidden p-4 pb-12 md:flex-row md:pb-0">
+		<div className="flex w-full flex-col justify-center gap-8 overflow-x-hidden p-4 pb-16 md:flex-row md:pb-0">
 			<div className="relative flex w-full items-center justify-center gap-2 pt-12 lg:pt-0">
 				<div className="relative flex w-full flex-col items-center justify-center gap-4 md:max-w-[500px]">
 					{/* Header with Token Selector */}

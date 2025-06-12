@@ -44,7 +44,7 @@ export default function Header() {
 							Lucky Ponds
 						</p>
 						<Link href="https://hyperfrogs.xyz" target="_blank">
-							<Badge className="hover:bg-primary-200/80">By Hyper Frogs</Badge>
+							<Badge className="hover:bg-primary-200/80">Beta</Badge>
 						</Link>
 					</div>
 
