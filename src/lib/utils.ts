@@ -47,7 +47,9 @@ export function formatValue(value: bigint | string | number | undefined, tokenDe
 		decimalPlaces = 4;
 	} else if (numValue < 1) {
 		decimalPlaces = 2;
-	} else {
+	} else if (numValue < 100) {
+		decimalPlaces = 1;
+	}	else {
 		decimalPlaces = 0;
 	}
 	return parseFloat(numValue.toFixed(decimalPlaces));

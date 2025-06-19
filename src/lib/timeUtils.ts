@@ -160,7 +160,7 @@ function getNextDailyEndTime(): number {
 }
 
 /**
- * Calculate the next weekly interval boundary (aligned to UTC, Monday start)
+ * Calculate the next weekly interval boundary (aligned to UTC, Sunday start)
  */
 function getNextWeeklyEndTime(): number {
 	const now = new Date();
@@ -169,10 +169,10 @@ function getNextWeeklyEndTime(): number {
 	// Get current day of week (0 = Sunday, 1 = Monday, etc.)
 	const currentDay = targetTime.getUTCDay();
 
-	// Calculate days until next Monday (start of week)
-	const daysUntilNextMonday = currentDay === 0 ? 1 : 8 - currentDay;
+	// Calculate days until next Sunday (end of week)
+	const daysUntilNextSunday = currentDay === 0 ? 7 : 7 - currentDay;
 
-	targetTime.setUTCDate(targetTime.getUTCDate() + daysUntilNextMonday);
+	targetTime.setUTCDate(targetTime.getUTCDate() + daysUntilNextSunday);
 	targetTime.setUTCHours(0, 0, 0, 0);
 
 	return targetTime.getTime();
@@ -180,6 +180,8 @@ function getNextWeeklyEndTime(): number {
 
 /**
  * Calculate the next monthly interval boundary (aligned to UTC)
+ * Monthly ponds end on the 1st day of the month at 00:00 UTC
+ * (i.e., at the end of the last day of the previous month)
  */
 function getNextMonthlyEndTime(): number {
 	const now = new Date();
@@ -195,6 +197,7 @@ function getNextMonthlyEndTime(): number {
 /**
  * Get the next UTC-based end time for a pond based on its period
  * This is used for frontend timing logic independent of contract endTime
+ * Weekly ponds end on Sunday at 00:00 UTC to match contract behavior
  * @param period The pond period type
  * @param contractEndTime Fallback to contract end time for custom periods
  * @returns Next end time in milliseconds
@@ -234,9 +237,10 @@ function getCurrentPondStartTime(period: PondPeriod, contractEndTime?: string | 
 		case PondPeriod.DAILY:
 			return endTime - (24 * 60 * 60 * 1000); // 1 day before end
 		case PondPeriod.WEEKLY:
-			return endTime - (7 * 24 * 60 * 60 * 1000); // 1 week before end
+			return endTime - (7 * 24 * 60 * 60 * 1000); // 1 week before end (Sunday to Sunday)
 		case PondPeriod.MONTHLY:
-			// For monthly, we need to calculate the previous month boundary
+			// For monthly, we go back exactly one month from the end time
+			// End: 1st of month at 00:00 UTC, Start: 1st of previous month at 00:00 UTC
 			const endDate = new Date(endTime);
 			const startDate = new Date(endDate);
 			startDate.setUTCMonth(startDate.getUTCMonth() - 1);
