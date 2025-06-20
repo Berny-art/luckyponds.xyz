@@ -68,7 +68,7 @@ export default function BonusPrize({ isIconOnly = false }: { isIconOnly?: boolea
                 <li>More tosses, more chances.</li>
 
               </ol>
-              <p className="text-xs">Follow <Link href={BONUS_PRIZE.luckyPondsXUrl} target="_blank" className="text-drip-300 underline">@LuckyPonds</Link> on X for winner announcement. Randomly picked on June 16, 06:00 UTC.</p>
+              <p className="text-xs">Follow <Link href={BONUS_PRIZE.luckyPondsXUrl} target="_blank" className="text-drip-300 underline">@LuckyPonds</Link> on X for winner announcement. Randomly picked on June 22.</p>
             </div>
           </div>
         </div>
