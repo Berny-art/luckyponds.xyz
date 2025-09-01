@@ -7,6 +7,7 @@ import {
 	trustWallet,
 	rabbyWallet,
 	walletConnectWallet,
+	injectedWallet,
 } from '@rainbow-me/rainbowkit/wallets';
 
 export const hyperliquid = {
@@ -42,6 +43,7 @@ export const config = getDefaultConfig({
 		{
 			groupName: 'Recommended',
 			wallets: [
+				injectedWallet,
 				metaMaskWallet,
 				rabbyWallet,
 				coinbaseWallet,

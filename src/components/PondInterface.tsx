@@ -306,7 +306,7 @@ export default function PondInterface({ tokenAddress, initialReferrerCode }: Pon
 					{pondInfo && !isLoading && (
 						<>
 							<ShakeNotification />
-							<div
+							{/* <div
 								className={cn(
 									'flex items-center justify-end gap-2 rounded-md border-2 border-drip-300',
 									lightningMode
@@ -343,14 +343,14 @@ export default function PondInterface({ tokenAddress, initialReferrerCode }: Pon
 								aria-disabled={!hasHyperModePonds}
 							>
 								{isLg ? `Hyper Mode ${lightningMode ? 'ON' : 'OFF'}` : ''}
-								<Zap size={18} />
-							</div>
+								<Zap size={18} />		
+							</div> */}
 							{!isMd && (
 								<BonusPrize isIconOnly />
 							)}
-							{isSm && (
-								<ReferDialog initialReferrerCode={referrerCode} />
-							)}
+
+							<ReferDialog initialReferrerCode={referrerCode} />
+
 							<Link
 								href='https://drip.trade/collections/hyper-frogs'
 								target="_blank">
