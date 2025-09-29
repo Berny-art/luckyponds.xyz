@@ -54,7 +54,8 @@ export function useStandardPondsForUI(
 						period: pond.period,
 						exists: pond.exists,
 					}))
-					.filter((pond) => pond.exists);
+					.filter((pond) => pond.exists && pond.period !== PondPeriod.DAILY);
+
 
 				// Update the store
 				if (enhancedPonds.length > 0) {
@@ -72,24 +73,19 @@ export function useStandardPondsForUI(
 					// Set first pond as selected if none is selected OR if token changed
 					// Check if the selectedPond exists in the current enhancedPonds
 					const pondExists = enhancedPonds.some(pond => pond.type === selectedPond);
-					console.log({pondExists, hyperModePonds, lightningMode, selectedPond, enhancedPonds});
 					if (!selectedPond || !pondExists) {
 						if (lightningMode && hyperModePonds) {
 							// Lightning mode: select 5-minute pond or first available hyper mode pond
 							const fiveMinPond = enhancedPonds.find(pond => pond.period === PondPeriod.FIVE_MIN);
 							const hourlyPond = enhancedPonds.find(pond => pond.period === PondPeriod.HOURLY);
 							setSelectedPond(fiveMinPond?.type || hourlyPond?.type || enhancedPonds[0]?.type);
-							console.log('first');
 						} else if (!lightningMode && hyperModePonds) {
 							// Normal mode with hyper ponds available: select daily pond
-							const dailyPond = enhancedPonds.find(pond => pond.period === PondPeriod.DAILY);
+							const dailyPond = enhancedPonds.find(pond => pond.period === PondPeriod.WEEKLY);
 							setSelectedPond(dailyPond?.type || enhancedPonds[0]?.type);
-							//it reaches here but doesnt select the daily pond. Whilst the daily pond exists
-							console.log('second');
 						} else {
 							// No hyper mode ponds: select first available pond
 							setSelectedPond(enhancedPonds[0]?.type);
-							console.log('third');
 						}
 					}
 
